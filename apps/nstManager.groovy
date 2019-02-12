@@ -4173,7 +4173,7 @@ String clientId() {
 
 String clientSecret() {
 	if(settings?.useMyClientId && settings?.clientSecret) { return settings?.clientSecret }
-	return devClientData()?.id ?: null//Developer Secret
+	return devClientData()?.secret ?: null//Developer Secret
 }
 
 def getNestAuthToken() { return (state?.authData && state?.authData?.token) ? state?.authData?.token : null }
