@@ -4160,29 +4160,30 @@ Map devClientData() {
 		1: [id: "MzFhZWE0NmMtNDA0OC00YzJiLWI2YmUtY2FjN2ZlMzA1ZDRj", secret: "Rm1PNDY5R1hmZFNWam43UGhLbmpHV1psbQ=="],
 		2: [id: "NjNlOWJlZmEtZGM2Mi00YjczLWFhZjQtZGNmMzgyNmRkNzA0", secret: "OGlxVDhYNDZ3YTJVWm5MMG9lM1RieU9hMA=="]
 	]
-	def d = m[clt]
-	return [id: d?.id?.decodeBase64()?.toString(), secret: d?.secret?.decodeBase64()?.toString()]
+	def id = m[clt]?.id?.decodeBase64()
+	def secret = m[clt]?.secret?.decodeBase64()
+	return [id: new String(id), secret: new String(secret)]
 }
 
 //These are the Nest OAUTH Methods to aquire the auth code and then Access Token.
 String clientId() {
 	if(settings?.useMyClientId && settings?.clientId) { return settings?.clientId }
-	return devClientData?.id as String ?: null//Developer ID
+	return devClientData()?.id ?: null//Developer ID
 }
 
 String clientSecret() {
 	if(settings?.useMyClientId && settings?.clientSecret) { return settings?.clientSecret }
-	return devClientData?.id as String ?: null//Developer Secret
+	return devClientData()?.id ?: null//Developer Secret
 }
 
 def getNestAuthToken() { return (state?.authData && state?.authData?.token) ? state?.authData?.token : null }
 
 def getOauthInitUrl() {
 	def oauthParams = [
-			response_type: "code",
-			client_id: clientId(),
-			state: getOauthState(),
-			redirect_uri: getCallbackUrl()
+		response_type: "code",
+		client_id: clientId(),
+		state: getOauthState(),
+		redirect_uri: getCallbackUrl()
 	]
 //Logger("getOauthInitUrl:  https://home.nest.com/login/oauth2?${toQueryString(oauthParams)}", "error")
 	return "https://home.nest.com/login/oauth2?${toQueryString(oauthParams)}"

@@ -12,7 +12,7 @@ preferences { }
 def devVer() { return "2.0.0" }
 
 metadata {
-	definition (name: "Nest Protect", author: "Anthony S.", namespace: "hubitat") {
+	definition (name: "Nest Protect", author: "Anthony S.", namespace: "tonesto7") {
 		//capability "Polling"
 		capability "Actuator"
 		capability "Sensor"
