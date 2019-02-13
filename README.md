@@ -1,6 +1,6 @@
  # NST Manager
 
- ### NST Manager App
+ ### NST Manager App for Hubitat
  This is the user created App and Device handlers for Nest.
  The App and Device Handlers work together to provide integration to the SmartThings ecosystem using Nest's Official API.
 
@@ -8,7 +8,7 @@
  * @tonesto7
  * @E_sch
 
- ## Contributors to initial development on ST
+ ## Contributors to initial development
  * @ghesp
  * @desertblade
 
