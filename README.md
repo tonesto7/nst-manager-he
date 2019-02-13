@@ -14,14 +14,14 @@
 
  ## What's New
 
-  * Please see the [NST Manager Community Forum Link]() for New Features
+  * Please see the [NST Manager Community Forum Link](https://community.hubitat.com/t/nst-manager-ported-to-hubitat/) for New Features
   * Instructions are here (from SmartThings) [NST Manager Things that are Smart Wiki](http://thingsthataresmart.wiki/index.php?title=NST_Manager)
 
  ## Links
  #### [NST Manager Things that are Smart Wiki](http://thingsthataresmart.wiki/index.php?title=NST_Manager)
  #### [GitHub Project Issues Link](https://github.com/tonesto7/nst-manager-he)
 
- #### [HE Community Forum Link]()
+ #### [HE Community Forum Link](https://community.hubitat.com/t/nst-manager-ported-to-hubitat/10363)
 
  _______
  ### Donations
