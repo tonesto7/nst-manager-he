@@ -1696,13 +1696,12 @@ def isMotionActive(sensors) {
 	def result
 	sensors?.each { sen ->
 		if(sen) {
-			//def sval = sen?.currentState("motion").value
 			def sval = sen?.currentMotion
 			if(sval == "active") { result = true }
 		}
 	}
 	return result
-	//return sensors?.currentState("motion")?.value.equals("active") ? true : false
+	//return sensors?.currentMotion?.equals("active") ? true : false
 }
 
 def getDeviceVarAvg(items, var) {
@@ -2373,7 +2372,7 @@ def getFanSwitchDesc(showOpt = true) {
 	settings?."${pName}FanSwitches"?.sort { it?.displayName }?.each { sw ->
 		swCnt = swCnt+1
 		swDesc += "${swCnt >= 1 ? "${swCnt == rmSwCnt ? "\n   └" : "\n   ├"}" : "\n   └"} ${sw?.label}: (${strCapitalize(sw?.currentSwitch)})"
-		swDesc += checkFanSpeedSupport(sw) ? "\n	 └ Current Spd: (${sw?.currentValue("currentState").toString()})" : ""
+		swDesc += checkFanSpeedSupport(sw) ? "\n	 └ Current Spd: (${sw?.currentSpeed?.toString()})" : ""
 	}
 	if(showOpt) {
 		if (settings?."${pName}FanSwitches") {
@@ -2622,33 +2621,33 @@ def doFanOperation(tempDiff, curTstatTemp, curHeatSetpoint, curCoolSetpoint, cir
 					}
 				}
 				if(swOn && state?.haveRunFan && checkFanSpeedSupport(sw)) {
-					def t0 = sw?.currentValue("currentState")
+					def t0 = sw?.currentSpeed
 					def speed = t0 ?: null
 					if(settings?."${pName}FanSwitchSpeedCtrl" && settings?."${pName}FanSwitchHighSpeed" && settings?."${pName}FanSwitchMedSpeed" && settings?."${pName}FanSwitchLowSpeed") {
 						if(tempDiff < settings?."${pName}FanSwitchMedSpeed".toDouble()) {
-							if(speed != "LOW") {
-								sw.lowSpeed()
+							if(speed != "low") {
+								sw.setSpeed("low")
 								LogAction("doFanOperation: Temp Difference (${tempDiff}${tUnitStr()}) is BELOW the Medium Speed Threshold of (${settings?."${pName}FanSwitchMedSpeed"}) | Turning '${sw}' Fan Switch on (LOW SPEED)", "info", false)
 								storeLastAction("Set Fan $sw to Low Speed", getDtNow(), pName)
 							}
 						}
 						else if(tempDiff >= settings?."${pName}FanSwitchMedSpeed".toDouble() && tempDiff < settings?."${pName}FanSwitchHighSpeed".toDouble()) {
-							if(speed != "MED") {
-								sw.medSpeed()
+							if(speed != "medium") {
+								sw.setSpeed("medium")
 								LogAction("doFanOperation: Temp Difference (${tempDiff}${tUnitStr()}) is ABOVE the Medium Speed Threshold of (${settings?."${pName}FanSwitchMedSpeed"}) | Turning '${sw}' Fan Switch on (MEDIUM SPEED)", "info", false)
 								storeLastAction("Set Fan $sw to Medium Speed", getDtNow(), pName)
 							}
 						}
 						else if(tempDiff >= settings?."${pName}FanSwitchHighSpeed".toDouble()) {
-							if(speed != "HIGH") {
-								sw.highSpeed()
+							if(speed != "high") {
+								sw.setSpeed("high")
 								LogAction("doFanOperation: Temp Difference (${tempDiff}${tUnitStr()}) is ABOVE the High Speed Threshold of (${settings?."${pName}FanSwitchHighSpeed"}) | Turning '${sw}' Fan Switch on (HIGH SPEED)", "info", false)
 								storeLastAction("Set Fan $sw to High Speed", getDtNow(), pName)
 							}
 						}
 					} else {
-						if(speed != "HIGH") {
-							sw.highSpeed()
+						if(speed != "high") {
+							sw.setSpeed("high")
 							LogAction("doFanOperation: Fan supports multiple speeds, with speed control disabled | Turning '${sw}' Fan Switch on (HIGH SPEED)", "info", false)
 							storeLastAction("Set Fan $sw to High Speed", getDtNow(), pName)
 						}
@@ -3674,7 +3673,7 @@ def isConWatConfigured() {
 	return (settings?.schMotContactOff && settings?.conWatContacts && settings?.conWatOffDelay) ? true : false
 }
 
-def getConWatContactsOk() { return settings?.conWatContacts?.currentState("contact")?.value.contains("open") ? false : true }
+def getConWatContactsOk() { return settings?.conWatContacts?.currentContact?.contains("open") ? false : true }
 //def conWatContactOk() { return (!settings?.conWatContacts) ? false : true }
 def conWatScheduleOk() { return autoScheduleOk(conWatPrefix()) }
 def getConWatOpenDtSec() { return !state?.conWatOpenDt ? 100000 : GetTimeDiffSeconds(state?.conWatOpenDt, null, "getConWatOpenDtSec").toInteger() }
@@ -3946,7 +3945,7 @@ def isLeakWatConfigured() {
 	return (settings?.schMotWaterOff && settings?.leakWatSensors) ? true : false
 }
 
-def getLeakWatSensorsOk() { return settings?.leakWatSensors?.currentState("water")?.value.contains("wet") ? false : true }
+def getLeakWatSensorsOk() { return settings?.leakWatSensors?.currentWater?.contains("wet") ? false : true }
 //def leakWatSensorsOk() { return (!settings?.leakWatSensors) ? false : true }
 //def leakWatScheduleOk() { return autoScheduleOk(leakWatPrefix()) }
 
@@ -7572,16 +7571,16 @@ private getDeviceSupportedCommands(dev) {
 }
 
 def checkFanSpeedSupport(dev) {
-	def req = ["lowSpeed", "medSpeed", "highSpeed"]
+	def req = ["setSpeed"]
 	def devCnt = 0
 	def devData = getDeviceSupportedCommands(dev)
 	devData.each { cmd ->
 		if(cmd.name in req) { devCnt = devCnt+1 }
 	}
-	def t0 = dev?.currentValue("currentState")
+	def t0 = dev?.currentSpeed
 	def speed = t0 ?: null
 	//log.debug "checkFanSpeedSupport (speed: $speed | devCnt: $devCnt)"
-	return (speed && devCnt == 3) ? true : false
+	return (speed && devCnt == 1) ? true : false
 }
 
 def getTstatCapabilities(tstat, autoType, dyn = false) {
@@ -7603,8 +7602,8 @@ def getTstatCapabilities(tstat, autoType, dyn = false) {
 }
 
 def getSafetyTemps(tstat, usedefault=true) {
-	def minTemp = tstat?.currentState("safetyTempMin")?.doubleValue
-	def maxTemp = tstat?.currentState("safetyTempMax")?.doubleValue
+	def minTemp = tstat?.currentSafetyTempMin?.doubleValue
+	def maxTemp = tstat?.currentSafetyTempMax?.doubleValue
 	if(minTemp == 0) {
 		if(usedefault) { minTemp = (getTemperatureScale() == "C") ? 7 : 45 }
 		else { minTemp = null }
@@ -7617,7 +7616,7 @@ def getSafetyTemps(tstat, usedefault=true) {
 }
 
 def getComfortDewpoint(tstat, usedefault=true) {
-	def maxDew = tstat?.currentState("comfortDewpointMax")?.doubleValue
+	def maxDew = tstat?.currentComfortDewpointMax?.doubleValue
 	maxDew = maxDew ?: 0.0
 	if(maxDew == 0.0) {
 		if(usedefault) {
