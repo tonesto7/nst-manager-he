@@ -22,7 +22,7 @@ definition(
 	iconX2Url: "",
 	iconX3Url: "")
 
-def appVersion() { "2.0.0" }
+def appVersion() { "2.0.1" }
 
 preferences {
 	page(name: "startPage")
@@ -230,7 +230,7 @@ void finishFixState(migrate=false) {
 def selectAutoPage() {
 	//LogTrace("selectAutoPage()")
 	if(!state?.autoTyp) {
-		return dynamicPage(name: "selectAutoPage", title: "Choose an Automation Type", uninstall: false, install: false, nextPage: null) {
+		return dynamicPage(name: "selectAutoPage", title: "Choose an Automation Type", uninstall: false, install: true, nextPage: null) {
 			def thereIsChoice = !parent.automationNestModeEnabled(null)
 			if(thereIsChoice) {
 				section("Set Nest Presence Based on location Modes, Presence Sensor, or Switches:") {
@@ -4146,7 +4146,7 @@ def nModePrefix() { return "nMode" }
 def nestModePresPage() {
 		//Logger("in nestModePresPage")
 	def pName = nModePrefix()
-	dynamicPage(name: "nestModePresPage", title: "Nest Mode - Nest Home/Away Automation", uninstall: false, install: false) {
+	dynamicPage(name: "nestModePresPage", title: "Nest Mode - Nest Home/Away Automation", uninstall: false, install: true) {
 		if(!nModePresSensor && !nModeSwitch) {
 			def modeReq = (nModeHomeModes && nModeAwayModes)
 			section(sectionTitleStr("Set Nest Presence with location Modes:")) {
@@ -5183,7 +5183,7 @@ def schMotPrefix() { return "schMot" }
 def schMotModePage() {
 Logger("in schmotModePage")
 	//def pName = schMotPrefix()
-	dynamicPage(name: "schMotModePage", title: "Thermostat Automation", uninstall: false, install: false) {
+	dynamicPage(name: "schMotModePage", title: "Thermostat Automation", uninstall: false, install: true) {
 		def dupTstat
 		def dupTstat1
 		def dupTstat2
@@ -6112,7 +6112,7 @@ def editSchedule(schedData) {
 	def sectStr = schedData?.secData?.schName ? (act ? "Enabled" : "Disabled") : "Tap to Enable"
 	def titleStr = "Schedule ${schedData?.secData?.scd} (${sectStr})"
 	section(title: "${titleStr}                                                            ") {//, hideable:schedData?.secData?.hideable, hidden: schedData?.secData?.hidden) {
-		input "${sLbl}SchedActive", "bool", title: imgTitle(getAppImg("${actIcon}"), inputTitleStr("Schedule Enabled")), description: ( (cnt == 1 && !act) ? "Enable to Edit Schedule" : null), required: true,
+		input "${sLbl}SchedActive", "bool", title: imgTitle(getAppImg("${actIcon}_icon.png"), inputTitleStr("Schedule Enabled")), description: ( (cnt == 1 && !act) ? "Enable to Edit Schedule" : null), required: true,
 				defaultValue: false, submitOnChange: true
 		if(act) {
 			input "${sLbl}name", "text", title: imgTitle(getAppImg("name_tag_icon.png"), inputTitleStr("Schedule Name")), required: true, defaultValue: "Schedule ${cnt}", multiple: false, submitOnChange: true
@@ -7097,37 +7097,37 @@ def getRecipientDesc(pName) {
 */
 
 def setDayModeTimePage1(params) {
-	def pName = nModePrefix()
-	def t0 = ["pName":"${pName}" ]
+	def mpName = nModePrefix()
+	def t0 = [pName:"${mpName}" ]
 	return setDayModeTimePage( t0 )
 }
 
 def setDayModeTimePage2(params) {
-	def pName = fanCtrlPrefix()
-	def t0 = ["pName":"${pName}" ]
+	def mpName = fanCtrlPrefix()
+	def t0 = [pName:"${mpName}" ]
 	return setDayModeTimePage( t0 )
 }
 
 def setDayModeTimePage3(params) {
-	def pName = conWatPrefix()
-	def t0 = ["pName":"${pName}" ]
+	def mpName = conWatPrefix()
+	def t0 = [pName:"${mpName}" ]
 	return setDayModeTimePage( t0 )
 }
 
 def setDayModeTimePage4(params) {
-	def pName = humCtrlPrefix()
-	def t0 = ["pName":"${pName}" ]
+	def mpName = humCtrlPrefix()
+	def t0 = [pName:"${mpName}" ]
 	return setDayModeTimePage( t0 )
 }
 
 def setDayModeTimePage5(params) {
-	def pName = extTmpPrefix()
-	def t0 = ["pName":"${pName}" ]
+	def mpName = extTmpPrefix()
+	def t0 = [pName:"${mpName}" ]
 	return setDayModeTimePage( t0 )
 }
 
 def setDayModeTimePage(params) {
-	def pName = params.pName
+	def pName = params?.pName
 	if(params?.pName) {
 		state.t_setDayData = params
 	} else {
@@ -7138,7 +7138,7 @@ def setDayModeTimePage(params) {
 		def inverted = settings["${pName}DmtInvert"] ? true : false
 		section("") {
 			def actIcon = settings?."${pName}DmtInvert" ? "inactive" : "active"
-			input "${pName}DmtInvert", "bool", title: imgTitle(getAppImg("${actIcon}"), inputTitleStr("${secDesc} in These? (tap to invert)")), defaultValue: false, submitOnChange: true
+			input "${pName}DmtInvert", "bool", title: imgTitle(getAppImg("${actIcon}_icon.png"), inputTitleStr("${secDesc} in These? (tap to invert)")), defaultValue: false, submitOnChange: true
 		}
 		section("${secDesc} During these Days, Times, or Modes:") {
 			def timeReq = (settings?."${pName}StartTime" || settings."${pName}StopTime") ? true : false
@@ -7214,7 +7214,10 @@ def autoScheduleOk(autoType) {
 		//scheduleTimeOk
 		def timeOk = true
 		if(settings?."${autoType}StartTime" && settings?."${autoType}StopTime") {
-			def inTime = (timeOfDayIsBetween(settings?."${autoType}StartTime", settings?."${autoType}StopTime", new Date(), getTimeZone())) ? true : false
+			def st1 = timeToday(settings?."${autoType}StartTime", getTimeZone())
+			def end1 = timeToday(settings?."${autoType}StopTime", getTimeZone())
+			//def inTime = (timeOfDayIsBetween(settings?."${autoType}StartTime", settings?."${autoType}StopTime", new Date(), getTimeZone())) ? true : false
+			def inTime = (timeOfDayIsBetween(st1, end1, new Date(), getTimeZone())) ? true : false
 			timeOk = ((inTime && !inverted) || (!inTime && inverted)) ? true : false
 		}
 
