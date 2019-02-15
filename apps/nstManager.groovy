@@ -21,7 +21,7 @@ definition(
 	oauth: true
 )
 
-def appVer() { "2.0.0" }
+def appVer() { "2.0.1" }
 def namespace()  { "tonesto7" }
 def devCltNum() { 1 }
 def restEnabled(){ true } // Enables the Rest Stream Device
@@ -136,7 +136,7 @@ def mainPage() {
 	//LogTrace("mainPage")
 	def isInstalled = state?.isInstalled
 	def setupComplete = (isInstalled == true)
-	return dynamicPage(name: "mainPage", title: "", nextPage: (!setupComplete ? "reviewSetupPage" : null), install: setupComplete, uninstall: isInstalled) {
+	return dynamicPage(name: "mainPage", title: "", nextPage: (!setupComplete ? "reviewSetupPage" : null), install: true, uninstall: isInstalled) {
 		appInfoSect()
 		def ttm_str = "Tap to modify"
 		def ttc_str = "Tap to configure"
@@ -182,7 +182,7 @@ def mainPage() {
 
 def deviceSelectPage() {
 	def isInstalled = state?.isInstalled
-	return dynamicPage(name: "deviceSelectPage", title: pageTitleStr("Device Selection"), nextPage: (!isInstalled ? "mainPage" : null), install: false, uninstall: false) {
+	return dynamicPage(name: "deviceSelectPage", title: pageTitleStr("Device Selection"), nextPage: (!isInstalled ? "mainPage" : null), install: true, uninstall: false) {
 		devicesPage()
 	}
 }
@@ -914,7 +914,7 @@ def uninstalled() {
 }
 
 def initialize() {
-	LogTrace("initialize")
+	LogAction("initialize", "debug", true)
 	restStreamHandler(true, "initialize()", false)
 	unschedule()
 	unsubscribe()
@@ -4218,14 +4218,16 @@ def callback() {
 			}
 			if(state?.authData?.token) {
 				LogAction("Nest AuthToken Generated SUCCESSFULLY", "info", true)
-				state?.needStrPoll = true
-				state?.needDevPoll = true
-				state?.needMetaPoll = true
-				state.needToFinalize = true
-				checkRemapping()  // settings updates do not take immiediate effect, so we have to wait before using them
-				state?.pollBlocked = true
-				state?.pollBlockedReason = "Awaiting fixDevAS"
-				runIn(4, "finishRemap", [overwrite: true])
+				if(state?.isInstalled) {
+					state?.needStrPoll = true
+					state?.needDevPoll = true
+					state?.needMetaPoll = true
+					state.needToFinalize = true
+					checkRemapping()  // settings updates do not take immiediate effect, so we have to wait before using them
+					state?.pollBlocked = true
+					state?.pollBlockedReason = "Awaiting fixDevAS"
+					runIn(4, "finishRemap", [overwrite: true])
+				}
 				success()
 			} else {
 				LogAction("Failure Generating Nest AuthToken", "error", true)
