@@ -20,13 +20,11 @@
 *
 ***********************************************************************************************************************/
 
-public static String version()	{ return "v4.2.0" }
+public static String version()	{ return "v1.0.1" }
 
 /***********************************************************************************************************************
 *
-* Version: 4.2.0
-*   12/29/2018:cleanups, event optimizations
-*
+* Based off Version: 4.2.0
 */
 
 import groovy.transform.Field
@@ -144,6 +142,8 @@ metadata	{
 //		attribute "visualDayPlus1WithText", "string"
 //		attribute "temperatureLowDayPlus1", "string"
 //		attribute "temperatureHighDayPlus1", "string"
+		attribute "temperatureLow", "string"
+		attribute "temperatureHigh", "string"
 //		attribute "forecastIcon", "string"
 //		attribute "forecast_icon_url", "string"
 //		attribute "forecast_text", "string"
@@ -326,8 +326,10 @@ def poll() {
 //	imgName = getImgName(obs.forecast.forecastday[1].day.condition.code, 1)
 //	sendEvent(name: "visualDayPlus1", value: '<img src=' + imgName + '>', /* isStateChange: true, */ displayed: true)
 //	sendEvent(name: "visualDayPlus1WithText", value: '<img src=' + imgName + '><br>' + obs.forecast.forecastday[1].day.condition.text, /* isStateChange: true, */ displayed: true)
+	sendEvent(name: "temperatureHigh", value: (!wantMetric() ? obs.forecast.forecastday[0].day.maxtemp_f : obs.forecast.forecastday[1].day.maxtemp_c), unit: "${(!wantMetric() ? 'F' : 'C')}", /* isStateChange: true, */ displayed: true)
 //	sendEvent(name: "temperatureHighDayPlus1", value: (!wantMetric() ? obs.forecast.forecastday[1].day.maxtemp_f :
 //							obs.forecast.forecastday[1].day.maxtemp_c), unit: "${(!wantMetric() ? 'F' : 'C')}", /* isStateChange: true, */ displayed: true)
+	sendEvent(name: "temperatureLow", value: (!wantMetric() ? obs.forecast.forecastday[0].day.mintemp_f : obs.forecast.forecastday[1].day.mintemp_c), unit: "${(!wantMetric() ? 'F' : 'C')}", /* isStateChange: true, */ displayed: true)
 //	sendEvent(name: "temperatureLowDayPlus1", value: (!wantMetric() ? obs.forecast.forecastday[1].day.mintemp_f :
 //							obs.forecast.forecastday[1].day.mintemp_c), unit: "${(!wantMetric() ? 'F' : 'C')}", /* isStateChange: true, */ displayed: true)
 
