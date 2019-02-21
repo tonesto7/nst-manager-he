@@ -22,7 +22,7 @@ definition(
 	iconX2Url: "",
 	iconX3Url: "")
 
-def appVersion() { "2.0.1" }
+def appVersion() { "2.0.2" }
 
 preferences {
 	page(name: "startPage")
@@ -5181,7 +5181,7 @@ def setTstatTempCheck() {
 def schMotPrefix() { return "schMot" }
 
 def schMotModePage() {
-Logger("in schmotModePage")
+//Logger("in schmotModePage")
 	//def pName = schMotPrefix()
 	dynamicPage(name: "schMotModePage", title: "Thermostat Automation", uninstall: false, install: true) {
 		def dupTstat
@@ -5189,7 +5189,7 @@ Logger("in schmotModePage")
 		def dupTstat2
 		def dupTstat3
 		def tStatPhys
-Logger("in schmotModePage0")
+//Logger("in schmotModePage0")
 		def tempScale = getTemperatureScale()
 		def tempScaleStr = "${tUnitStr()}"
 		section("Configure Thermostat") {
@@ -5198,21 +5198,21 @@ Logger("in schmotModePage0")
 			def tstat = settings?.schMotTstat
 			def tstatMir = settings?.schMotTstatMir
 			if(tstat) {
-Logger("in schmotModePage1")
+//Logger("in schmotModePage1")
 				getTstatCapabilities(tstat, schMotPrefix())
-Logger("in schmotModePage2")
+//Logger("in schmotModePage2")
 				def canHeat = state?.schMotTstatCanHeat
 				def canCool = state?.schMotTstatCanCool
 				tStatPhys = tstat?.currentNestType != "virtual" ? true : false
-Logger("in schmotModePage3")
+//Logger("in schmotModePage3")
 
 				def str = ""
 				def reqSenHeatSetPoint = getRemSenHeatSetTemp()
 				def reqSenCoolSetPoint = getRemSenCoolSetTemp()
 				def curZoneTemp = getRemoteSenTemp()
-Logger("in schmotModePage4")
+//Logger("in schmotModePage4")
 				def tempSrcStr = (getCurrentSchedule() && state?.remoteTempSourceStr == "Schedule") ? "Schedule ${getCurrentSchedule()} (${"${getSchedLbl(getCurrentSchedule())}" ?: "Not Found"})" : "(${state?.remoteTempSourceStr})"
-Logger("in schmotModePage5")
+//Logger("in schmotModePage5")
 
 				str += tempSrcStr ? "Zone Status:\n• Temp Source:${tempSrcStr?.toString().length() > 15 ? "\n  └" : ""} ${tempSrcStr}" : ""
 				str += curZoneTemp ? "\n• Temperature: (${curZoneTemp}${tempScaleStr})" : ""
@@ -5236,7 +5236,7 @@ Logger("in schmotModePage5")
 					str += "\n• Virtual: (${tstat?.currentNestType.toString() == "virtual" ? "True" : "False"})"
 				paragraph imgTitle(getAppImg("info_icon2.png"), paraTitleStr("${tstat.displayName} Zone Status")), state: (str != "" ? "complete" : null)
 				paragraph sectionTitleStr("${str}"), state: (str != "" ? "complete" : null)
-Logger("in schmotModePage6")
+//Logger("in schmotModePage6")
 
 				def t0Str = "ERROR:\nThe "
 				def t1Str = "Primary Thermostat was found in Mirror Thermostat List.\nPlease Correct to Proceed"
