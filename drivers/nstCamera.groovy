@@ -10,7 +10,7 @@ import groovy.time.TimeCategory
 
 preferences { }
 
-def devVer() { return "2.0.0" }
+def devVer() { return "2.0.1" }
 
 metadata {
 	definition (name: "Nest Camera", author: "Anthony S.", namespace: "tonesto7") {
@@ -103,8 +103,8 @@ def verifyDataAttr() {
 }
 
 def stateRemove(key) {
-        state.remove(key?.toString())
-        return true
+	state.remove(key?.toString())
+	return true
 }
 
 def parse(String description) {
@@ -363,6 +363,7 @@ def motionSoundEvtHandler() {
 	def data = state?.lastCamEvtData
 	if(data) {
 		motionEvtHandler(data)
+		data = state?.lastCamEvtData
 		soundEvtHandler(data)
 	}
 }
@@ -375,7 +376,27 @@ void motionEvtHandler(data) {
 	def motionStat = "inactive"
 	def motionPerStat = "inactive"
 	if(state?.restStreaming == true && data) {
-		if(data?.endDt && data?.hasMotion) {
+		if(data?.endDt && data?.hasMotion && !data?.sentMUpd) {
+			int t0 = GetTimeDiffSeconds(data?.startDt, data?.endDt)
+			int t1 = state?.motionSndChgWaitVal ?: 4
+			int newDur = Math.min( Math.max(3, t0) , t1)
+
+			t0 = GetTimeDiffSeconds(data?.endDt)
+			def howRecent = Math.max(1, t0)
+			//Logger("MOTION NewDur: ${newDur}    howRecent: ${howRecent}")
+
+			def tt0 = state?.lastCamEvtData
+			tt0.sentMUpd = true
+			state.lastCamEvtData = tt0
+			if(howRecent <= 60) {
+				def motGo = (data?.motionOnPersonOnly == true && data?.hasPerson != true) ? false : true
+				if(motGo) {
+					motionStat = "active"
+					if(data?.hasPerson) { motionPerStat = "active" }
+					runIn(newDur?.toInteger(), "motionSoundEvtHandler", [overwrite: true])
+				}
+			}
+/*
 			def newEndDt = null
 			use( TimeCategory ) {
 				newEndDt = Date.parse("E MMM dd HH:mm:ss z yyyy", data?.endDt.toString())+1.minutes
@@ -388,6 +409,7 @@ void motionEvtHandler(data) {
 					runIn(state?.motionSndChgWaitVal.toInteger()+6, "motionSoundEvtHandler", [overwrite: true])
 				}
 			}
+*/
 		}
 	}
 	if(isStateChange(device, "motion", motionStat.toString()) ) {
@@ -406,7 +428,24 @@ void soundEvtHandler(data) {
 	def curSound = device.currentState("sound")?.value?.toString()
 	def sndStat = "not detected"
 	if(state?.restStreaming == true && data) {
-		if(data?.endDt && data?.hasSound) {
+		if(data?.endDt && data?.hasSound && !data?.sentSUpd) {
+			int t0 = GetTimeDiffSeconds(data?.startDt, data?.endDt)
+			int t1 = state?.motionSndChgWaitVal ?: 4
+			int newDur = Math.min( Math.max(3, t0) , state?.motionSndChgWaitVal)
+
+			t0 = GetTimeDiffSeconds(data?.endDt)
+			def howRecent = Math.max(1, t0)
+			//Logger("SOUND NewDur: ${newDur}    howRecent: ${howRecent}")
+
+			def tt0 = state?.lastCamEvtData
+			tt0.sentSUpd = true
+			state.lastCamEvtData = tt0
+			if(howRecent <= 60) {
+				sndStat = "detected"
+				runIn(newDur?.toInteger(), "motionSoundEvtHandler", [overwrite: true])
+			}
+
+/*
 			def newEndDt = null
 			use( TimeCategory ) {
 				newEndDt = Date.parse("E MMM dd HH:mm:ss z yyyy", data?.endDt.toString())+1.minutes
@@ -417,6 +456,7 @@ void soundEvtHandler(data) {
 					runIn(state?.motionSndChgWaitVal.toInteger()+6, "motionSoundEvtHandler", [overwrite: true])
 				}
 			}
+*/
 		}
 	}
 	if(isStateChange(device, "sound", sndStat.toString())) {
@@ -424,6 +464,7 @@ void soundEvtHandler(data) {
 		sendEvent(name: "sound", value: sndStat, descriptionText: "Sound Sensor is: ${sndStat}", displayed: true, isStateChange: true, state: sndStat)
 	}
 }
+
 
 def apiStatusEvent(issueDesc) {
 	def curStat = device.currentState("apiStatus")?.value
@@ -546,10 +587,10 @@ void Logger(msg, logType = "debug") {
 		}
 		//log.debug "set enRemDiagLogging to ${state?.enRemDiagLogging}"
 	}
-        if(state?.enRemDiagLogging) {
+	if(state?.enRemDiagLogging) {
 		def theId = lastN(device.getId().toString(),5)
-                parent.saveLogtoRemDiagStore(smsg, logType, "Camera-${theId}")
-        } else {
+		parent.saveLogtoRemDiagStore(smsg, logType, "Camera-${theId}")
+	} else {
 	switch (logType) {
 		case "trace":
 			log.trace "${msg}"
