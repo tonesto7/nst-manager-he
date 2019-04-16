@@ -2,17 +2,17 @@
  *  Nest Protect
  *	Copyright (C) 2018, 2019 Anthony Santilli.
  *	Author: Anthony Santilli (@tonesto7), Eric Schott (@imnotbob)
- *  Modified: 02/11/2019
+ *  Modified: 04/07/2019
  */
 
 import java.text.SimpleDateFormat
 
 preferences { }
 
-def devVer() { return "2.0.0" }
+def devVer() { return "2.0.1" }
 
 metadata {
-	definition (name: "Nest Protect", author: "Anthony S.", namespace: "tonesto7") {
+	definition (name: "Nest Protect", author: "Anthony S.", namespace: "tonesto7", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstProtect.groovy") {
 		//capability "Polling"
 		capability "Actuator"
 		capability "Sensor"

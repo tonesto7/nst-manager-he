@@ -2,7 +2,7 @@
  *  Nest Camera
  *	Copyright (C) 2018, 2019 Anthony S..
  *	Author: Anthony Santilli (@tonesto7)
- *  Modified: 02/11/2019
+ *  Modified: 04/07/2019
  */
 
 import java.text.SimpleDateFormat
@@ -10,10 +10,10 @@ import groovy.time.TimeCategory
 
 preferences { }
 
-def devVer() { return "2.0.1" }
+def devVer() { return "2.0.2" }
 
 metadata {
-	definition (name: "Nest Camera", author: "Anthony S.", namespace: "tonesto7") {
+	definition (name: "Nest Camera", author: "Anthony S.", namespace: "tonesto7", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstCamera.groovy") {
 		capability "Actuator"
 		capability "Sensor"
 		capability "Switch"
@@ -108,7 +108,7 @@ def stateRemove(key) {
 }
 
 def parse(String description) {
-	if (logEnable) { log.debug "parse: ${description}" }
+	if (txtEnable) { log.debug "parse: ${description}" }
 }
 
 void poll() {

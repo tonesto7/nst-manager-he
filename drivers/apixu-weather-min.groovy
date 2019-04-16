@@ -20,7 +20,7 @@
 *
 ***********************************************************************************************************************/
 
-public static String version()	{ return "v1.0.1" }
+public static String version()	{ return "v1.0.2" }
 
 /***********************************************************************************************************************
 *
@@ -30,7 +30,7 @@ public static String version()	{ return "v1.0.1" }
 import groovy.transform.Field
 
 metadata	{
-	definition (name: "ApiXU Weather Driver Min", namespace: "bangali", author: "bangali") {
+	definition (name: "ApiXU Weather Driver Min", namespace: "bangali", author: "bangali", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/apixu-weather-min.groovy") {
 		capability "Initialize"
 //		capability "Actuator"
 		capability "Sensor"

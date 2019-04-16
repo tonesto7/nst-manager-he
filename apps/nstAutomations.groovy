@@ -685,7 +685,7 @@ def initAutoApp() {
 }
 
 def logsOff() {
-	log.warn "debug logging disabled...}"
+	log.warn "debug logging disabled..."
 	settingUpdate("showDebug", "false",  "bool")
 	settingUpdate("advAppDebug", "false", "bool")
 }

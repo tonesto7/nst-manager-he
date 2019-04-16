@@ -2,15 +2,15 @@
  *  Nest Thermostat
  *	Copyright (C) 2018, 2019 Anthony Santilli.
  *	Author: Anthony Santilli (@tonesto7), Eric Schott (@imnotbob)
- *  Modified: 02/11/2019
+ *  Modified: 04/07/2019
  */
 
 import java.text.SimpleDateFormat
 import groovy.time.*
 
-def devVer() { return "2.0.0" }
+def devVer() { return "2.0.1" }
 metadata {
-	definition (name: "Nest Thermostat", namespace: "tonesto7", author: "Anthony S.") {
+	definition (name: "Nest Thermostat", namespace: "tonesto7", author: "Anthony S.", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstThermostat.groovy") {
 		capability "Actuator"
 		capability "Relative Humidity Measurement"
 		capability "Refresh"
@@ -160,7 +160,7 @@ def stateRemove(key) {
 }
 
 def parse(String description) {
-	if(logEnable) { "Parsing '${description}'"}
+	if(txtEnable) { Logger("Parsing '${description}'") }
 }
 
 void poll() {

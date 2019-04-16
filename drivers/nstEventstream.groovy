@@ -2,18 +2,17 @@
  *  Nest Eventstream
  *	Copyright (C) 2018, 2019 Anthony S..
  *	Author: Anthony Santilli (@tonesto7)
- *  Modified: 02/11/2019
- *  -Adjusted the event stream processing.
- *  						-Corey
+ *  Modified: 04/16/2019
  */
 
 import java.text.SimpleDateFormat
 import groovy.json.*
+import java.security.MessageDigest
 
-def devVer() { return "2.0.0" }
+def devVer() { return "2.0.1" }
 
 metadata {
-	definition (name: "Nest Eventstream", namespace: "tonesto7", author: "Anthony S.") {
+	definition (name: "Nest Eventstream", namespace: "tonesto7", author: "Anthony S.", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstEventstream.groovy") {
 		capability "Initialize" //Runs on hub startup
 		command "streamStart"
 		command "streamStop"
@@ -124,9 +123,11 @@ def streamStart() {
 		state.allEventCount = 0
 		state.eventCount = 0
 		state.sentForceNull = false
-		state.savedmymeta = [:]
-		state.savedmystruct = [:]
+		state.savedmymeta = null
+		state.savedmystruct = null
+		state.savedmythermostats = [:]
 		state.savedmythermostatsorig = [:]
+		state.savedmyprotects = [:]
 		state.savedmyprotectsorig = [:]
 		state.savedmycamerasorig = [:]
 		state.lastEventData = [:]
@@ -167,7 +168,14 @@ def parse(description) {
 				def somechg = false
 				if(state?.structure) {
 					//def mylastEventData = new JsonSlurper().parseText(description as String)
-					def mylastEventData = new JsonSlurper().parseText(JsonOutput.toJson(data))
+					//def mylastEventData = new JsonSlurper().parseText(JsonOutput.toJson(data))
+					def mylastEventData = [:] + data // make a copy
+					def newmylastEventData = [:]
+					newmylastEventData.path = mylastEventData?.path
+					newmylastEventData.data = [:]
+					newmylastEventData.data.metadata = [:]
+					newmylastEventData.data.devices = [:]
+					newmylastEventData.data.structures = [:]
 
 					def mydata = [:]
 					mydata = data?.data as Map
@@ -177,12 +185,16 @@ def parse(description) {
 					mymeta = mydata?.metadata
 
 					def chgFound = true
-					if(mymeta && state?.savedmymeta) {
-						chgFound = getChanges(mymeta, state?.savedmymeta, "/metatdata", "metadata")
+					def tchksum
+					if(mymeta) {
+						newmylastEventData.data.metadata = [:] + mylastEventData.data.metadata
+						tchksum = generateMD5_A(mymeta.toString())
+						if(tchksum == state?.savedmymeta) { chgFound = false }
+						//chgFound = getChanges(mymeta, state?.savedmymeta, "/metatdata", "metadata")
 					}
 					if(mymeta && ( !state?.savedmymeta || chgFound )) {
 						chgd = true
-						state.savedmymeta = mymeta
+						state.savedmymeta = tchksum
 						//Logger("mymeta changed", "info")
 						//Logger("chgFound ${chgFound}", "info")
 						//Logger("mymeta ${mymeta.toString()}", "info")
@@ -192,60 +204,84 @@ def parse(description) {
 					def mystruct = [:]
 					if(!mydata?.structures) { Logger("No Data in structures", "warn"); return }
 					mystruct = mydata?.structures?."${state.structure}"
+					newmylastEventData.data.structures."${state.structure}" = [:] + mystruct
 
+					tchksum = null
 					chgFound = true
-					def st0
-					st0 = mystruct
-					def st1 = state?.savedmystruct
-					if(mystruct && state?.savedmystruct) {
+					def st0 = [:] + mystruct
+					//def st1 = state?.savedmystruct
+					if(st0) {
 						st0.wheres = [:]
-						st1.wheres = [:]
-						state.savedmystruct = st0
-						chgFound = getChanges(st0, st1, "/structure", "structure")
+						tchksum = generateMD5_A(st0.toString())
+						if(tchksum == state?.savedmystruct) { chgFound = false }
+						//chgFound = getChanges(st0, st1, "/structure", "structure")
+					} else {
+						Logger("No Data in structures ${state?.structure}", "warn")
+						return
 					}
-					if(mystruct && ( !state?.savedmystruct || chgFound)) {
+					state.savedmystruct = tchksum
+
+					if(st0 && ( !state?.savedmystruct || chgFound)) {
 						chgd = true
 						//Logger("mystruct changed structure ${state.structure}", "info")
 						//Logger("mystruct chgFound ${chgFound}", "info")
 					}
 
 					if(mystruct?.thermostats) {
+						newmylastEventData.data.devices.thermostats = [:]
 						def tlen = mystruct.thermostats.size()
 						for (i = 0; i < tlen; i++) {
-							def t0 = [:]
 							def t1 = mystruct.thermostats[i]
 
 							if(!t1) { Logger("No Data in thermostat ${i}", "warn"); return }
 							def adjT1 = [:]
 							adjT1 = mydata.devices.thermostats[t1]
+							newmylastEventData.data.devices.thermostats."${t1}" = [:] + adjT1
+	
+							def t0 = [:]
 							def adjT2 = [:]
-							t0 = state?.savedmythermostatsorig
+							t0 = state?.savedmythermostatsorig ?: [:]
 							if(t0?."${t1}") { adjT2 = t0[t1] }
 							//Logger("thermostat ${i} ${t1} adjT1 ${adjT1}", "debug")
 							//Logger("thermostat ${i} ${t1} adjT2 ${adjT2}", "debug")
 
+							tchksum = null
 							chgFound = true
-							if(adjT1 && adjT2) {
-								chgFound = getChanges(adjT1, adjT2, "/thermostats", "tstat")
+							if(adjT1) {
+								tchksum = generateMD5_A(adjT1.toString())
+								if(tchksum == adjT2) { chgFound = false }
+								//chgFound = getChanges(adjT1, adjT2, "/thermostats", "tstat")
 							}
 							if(adjT1 && ( !adjT2 || chgFound )) {
-								t0 = state.savedmythermostatsorig
-								t0[t1] = adjT1
+								//t0 = state.savedmythermostatsorig
+								t0[t1] = tchksum
 								state.savedmythermostatsorig = t0
 								somechg = true
 							}
+
+							adjT2 = [:]
+							t0 = state?.savedmythermostats ?: [:]
+							if(t0?."${t1}") { adjT2 = t0[t1] }
+
+							tchksum = null
 							chgFound = true
-							if(adjT1 && adjT2) {
-								def at0 = new JsonSlurper().parseText(JsonOutput.toJson(adjT1))
+							if(adjT1) {
+								//def at0 = new JsonSlurper().parseText(JsonOutput.toJson(adjT1))
+								def at0 = [:] + adjT1 // make a copy
 								at0.last_connection = ""
 								//at0.where_id = ""
 
-								def at1 = new JsonSlurper().parseText(JsonOutput.toJson(adjT2))
-								at1.last_connection = ""
+								//def at1 = new JsonSlurper().parseText(JsonOutput.toJson(adjT2))
+								//def at1 = [:] + adjT2
+								//at1.last_connection = ""
 								//at1.where_id = ""
-								chgFound = getChanges(at0, at1, "/thermostats", "tstat")
+								tchksum = generateMD5_A(at0.toString())
+								if(tchksum == adjT2) { chgFound = false }
+								//chgFound = getChanges(at0, at1, "/thermostats", "tstat")
 							}
 							if(adjT1 && ( !adjT2 || chgFound)) {
+								t0[t1] = tchksum
+								state.savedmythermostats = t0
 								chgd = true
 								//Logger("thermostat changed ${t1}", "info")
 								//Logger("tstat chgFound ${chgFound}", "info")
@@ -253,39 +289,54 @@ def parse(description) {
 						}
 					}
 					if(mystruct?.smoke_co_alarms) {
+						newmylastEventData.data.devices.smoke_co_alarms = [:]
 						def tlen = mystruct.smoke_co_alarms.size()
 						for (i = 0; i < tlen; i++) {
-							def t0 = [:]
 							def t1 = mystruct.smoke_co_alarms[i]
-
 							if(!t1) { Logger("No Data in smoke_co_alarms ${i}", "warn"); return }
 							def adjT1 = [:]
 							adjT1 = mydata.devices.smoke_co_alarms[t1]
+							newmylastEventData.data.devices.smoke_co_alarms."${t1}" = [:] + adjT1
+
 							def adjT2 = [:]
-							t0 = state?.savedmyprotectsorig
+							def t0 = state?.savedmyprotectsorig ?: [:]
 							if(t0?."${t1}") { adjT2 = t0[t1] }
 
+							tchksum = null
 							chgFound = true
-							if(adjT1 && adjT2) {
-								chgFound = getChanges(adjT1, adjT2, "/protects", "prot")
+							if(adjT1) {
+								tchksum = generateMD5_A(adjT1.toString())
+								if(tchksum == adjT2) { chgFound = false }
+								//chgFound = getChanges(adjT1, adjT2, "/protects", "prot")
 							}
 							if(adjT1 && ( !adjT2 || chgFound)) {
-								t0 = state.savedmyprotectsorig
-								t0[t1] = adjT1
+								t0[t1] = tchksum
 								state.savedmyprotectsorig = t0
 								somechg = true
 							}
+
+							adjT2 = [:]
+							t0 = state?.savedmyprotects ?: [:]
+							if(t0?."${t1}") { adjT2 = t0[t1] }
+
+							tchksum = null
 							chgFound = true
-							if(adjT1 && adjT2) {
-								def at0 = new JsonSlurper().parseText(JsonOutput.toJson(adjT1))
+							if(adjT1) {
+								//def at0 = new JsonSlurper().parseText(JsonOutput.toJson(adjT1))
+								def at0 = [:] + adjT1 // make a copy
 								at0.last_connection = ""
 								//at0.where_id = ""
-								def at1 = new JsonSlurper().parseText(JsonOutput.toJson(adjT2))
-								at1.last_connection = ""
+								//def at1 = new JsonSlurper().parseText(JsonOutput.toJson(adjT2))
+								//def at1 = [:] + adjT2
+								//at1.last_connection = ""
 								//at1.where_id = ""
-								chgFound = getChanges(at0, at1, "/protects", "prot")
+								tchksum = generateMD5_A(at0.toString())
+								if(tchksum == adjT2) { chgFound = false }
+								//chgFound = getChanges(at0, at1, "/protects", "prot")
 							}
 							if(adjT1 && ( !adjT2 || chgFound)) {
+								t0[t1] = tchksum
+								state.savedmyprotects = t0
 								chgd = true
 								//Logger("protect changed ${t1}", "info")
 								//Logger("prot chgFound ${chgFound}", "info")
@@ -293,16 +344,17 @@ def parse(description) {
 						}
 					}
 					if(mystruct?.cameras) {
+						newmylastEventData.data.devices.cameras = [:]
 						def tlen = mystruct.cameras.size()
 						for (i = 0; i < tlen; i++) {
-							def t0 = [:]
 							def t1 = mystruct.cameras[i]
 
 							if(!t1) { Logger("No Data in cameras ${i}", "warn"); return }
 							def adjT1 = [:]
 							adjT1 = mydata.devices.cameras[t1]
+
+							def t0 = state?.savedmycamerasorig ?: [:]
 							def adjT2 = [:]
-							t0 = state?.savedmycamerasorig
 							if(t0?."${t1}") { adjT2 = t0[t1] }
 
 							def myisonline = adjT1?.is_online
@@ -316,40 +368,56 @@ def parse(description) {
 								adjT1.last_event.app_url = ""
 								adjT1.last_event.animated_image_url = ""
 							}
+							newmylastEventData.data.devices.cameras."${t1}" = [:] + adjT1
 
+							tchksum = null
 							chgFound = true
-							if(adjT1 && adjT2) {
-								chgFound = getChanges(adjT1, adjT2, "/cameras", "cam")
+							if(adjT1) {
+								tchksum = generateMD5_A(adjT1.toString())
+								if(tchksum == adjT2) { chgFound = false }
+								//chgFound = getChanges(adjT1, adjT2, "/cameras", "cam")
 							}
 							if(adjT1 && (!adjT2 || chgFound)) {     //adjT1.toString() != adjT2.toString()) {
-								t0 = state.savedmycamerasorig
-								t0[t1] = adjT1
+								t0[t1] = tchksum
 								state.savedmycamerasorig = t0
 								if(!myisonline || !myisstreaming) {
 									somechg = true
+									chgFound = false
 								}
 							}
 
-							chgFound = true
-							if(adjT1 && adjT2) {
-								def at0 = adjT1
 /*
+							t0 = state?.savedmycameras ?: [:]
+							adjT2 = [:]
+							if(t0?."${t1}") { adjT2 = t0[t1] }
+
+							tchksum = null
+							chgFound = true
+*/
+							if(adjT1) {
+/*
+								def at0 = [:] + adjT1
 								def at0 = new JsonSlurper().parseText(JsonOutput.toJson(adjT1))
 								at0.where_id = ""
 
 								def at1 = new JsonSlurper().parseText(JsonOutput.toJson(adjT2))
 								at1.where_id = ""
 */
-								def at1 = adjT2
-								chgFound = getChanges(at0, at1, "/cameras", "cam")
+								//def at1 = adjT2
+								//tchksum = generateMD5_A(at0.toString())
+								//if(tchksum == adjT2) { chgFound = false }
+								//chgFound = getChanges(at0, at1, "/cameras", "cam")
 							}
 							if(adjT1 && ( !adjT2 || chgFound)) {    //adjT1.toString() != adjT2.toString()) {
+								//t0[t1] = tchksum
+								//state.savedmycameras = t0
 								chgd = true
 								// Logger("camera changed ${t1}", "info")
 								// Logger("camera chgFound ${chgFound}", "info")
 							}
 
-							t0 = mylastEventData as Map
+							//t0 = mylastEventData as Map
+							t0 = newmylastEventData as Map
 							def mydata1 = t0?.data as Map
 							def mystruct1 = mydata1?.structures?."${state.structure}"
 //							Logger("camera mystruct1 ${mystruct}", "info")
@@ -362,11 +430,11 @@ def parse(description) {
 								t0.data.devices.cameras[t1].last_event.web_url = ""
 								t0.data.devices.cameras[t1].last_event.app_url = ""
 								t0.data.devices.cameras[t1].last_event.animated_image_url = ""
-								mylastEventData = t0
+								newmylastEventData = t0
 							}
 						}
 					}
-					state.lastEventData = mylastEventData
+					state.lastEventData = newmylastEventData
 				}
 				else {
 					Logger("no state.structure", "error")
@@ -377,7 +445,7 @@ def parse(description) {
 					if(!state?.runInSlowActive) {
 						state.runInSlowActive = true
 						Logger("scheduling event", "info")
-						runIn(60, "sendRecent", [overwrite: true])
+						runIn(95, "sendRecent", [overwrite: true])
 					}
 				}
 				if(chgd) {
@@ -391,9 +459,11 @@ def parse(description) {
 				}
 			}
 		} else {
-			state.savedmymeta = [:]
-			state.savedmystruct = [:]
+			state.savedmymeta = null
+			state.savedmystruct = null
+			state.savedmythermostats = [:]
 			state.savedmythermostatsorig = [:]
+			state.savedmyprotects = [:]
 			state.savedmyprotectsorig = [:]
 			state.savedmycamerasorig = [:]
 		}
@@ -403,6 +473,10 @@ def parse(description) {
 	}
 */
 	return
+}
+
+def generateMD5_A(String s){
+	MessageDigest.getInstance("MD5").digest(s.bytes).encodeHex().toString()
 }
 
 def getChanges(mapA, mapB, headstr, objType=null) {
