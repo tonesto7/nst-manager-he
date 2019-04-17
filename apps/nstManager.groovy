@@ -21,7 +21,7 @@ definition(
 	oauth: true
 )
 
-def appVer() { "2.0.1" }
+def appVer() { "2.0.2" }
 def namespace()  { "tonesto7" }
 def devCltNum() { 1 }
 def restEnabled(){ true } // Enables the Rest Stream Device
@@ -191,7 +191,6 @@ def devicesPage() {
 	def structs = getNestStructures()
 	def isInstalled = state?.isInstalled
 	def structDesc = !structs?.size() ? "No Locations Found" : "Found (${structs?.size()}) Locations"
-	//LogAction("${structDesc} (${structs})", "info", false)
 	if (state?.thermostats || state?.protects || state?.cameras || state?.presDevice ) {  // if devices are configured, you cannot change the structure until they are removed
 		section(sectionTitleStr("Nest Location:")) {
 			paragraph imgTitle(getAppImg("nest_structure_icon.png"), "${inputTitleStr("Name:")} ${structs[state?.structures]}${(structs.size() > 1) ? "\n(Remove All Devices to Change!)" : ""}")
@@ -584,7 +583,6 @@ def getLastRemDiagSentSec() { return getTimeSeconds("remDiagDataSentDt", 1000, "
 
 
 def getDevOpt() {
-//ERS
 	return true
 //	appSettings?.devOpt.toString() == "true" ? true : false
 }
@@ -638,14 +636,10 @@ def nestLoginPrefPage () {
 		return authPage()
 	} else {
 		return dynamicPage(name: "nestLoginPrefPage", title: "<h2>Nest Authorization Page</h2>", nextPage: getNestAuthToken() ? "" : "authPage", install: false) {
-			//def tf = new SimpleDateFormat("MMM d, yyyy - h:mm:ss a")
-			//if(getTimeZone()) { tf.setTimeZone(getTimeZone()) }
 			updTimestampMap("authTokenCreatedDt", (getTimestampVal("authTokenCreatedDt") ?: getDtNow()))
 			section() {
-				//paragraph "<b>Date Authorized:</b>\n• ${tf?.format(Date.parse("E MMM dd HH:mm:ss z yyyy", getTimestampVal("authTokenCreatedDt")))}", state: "complete"
 				paragraph "<b>Date Authorized:</b>\n• ${getTimestampVal("authTokenCreatedDt")}", state: "complete"
 				if(getTimestampVal("lastDevDataUpd")) {
-					//paragraph "<b>Last API Connection:</b>\n• ${tf?.format(Date.parse("E MMM dd HH:mm:ss z yyyy", getTimestampVal("lastDevDataUpd")))}"
 					paragraph "<b>Last API Connection:</b>\n• ${getTimestampVal("lastDevDataUpd")}"
 				}
 			}
@@ -670,7 +664,6 @@ def autoAppName()       { return "NST Automations" }
 
 def automationsPage() {
 	return dynamicPage(name: "automationsPage", title: "Installed Automations", nextPage: !parent ? "" : "automationsPage", install: false) {
-		//def autoApp = findChildAppByName( autoAppName() )
 		def autoApp = getChildApps()?.find { it?.name == autoAppName() || it?.name == "NST Graphs" || it?.name == "NST Diagnostics"}
 		def autoAppInst = isAutoAppInst()
 		if(autoApp) { /*Nothing to add here yet*/ }
@@ -680,7 +673,6 @@ def automationsPage() {
 			}
 		}
 		section("") {
-// ERS input(name: "useMyClientId", type: "bool", title: imgTitle(getAppImg("login_icon.png"), inputTitleStr("Enter your own ClientId?")), required: false, defaultValue: false, submitOnChange: true)
 			app(name: "autoApp", appName: autoAppName(), namespace: "tonesto7", multiple: true, title: imgTitle(getAppImg("nst_automations_5.png"), inputTitleStr("Create New Automation (NST)")))
 			app(name: "autoApp", appName: "NST Graphs", namespace: "tonesto7", multiple: false, title: imgTitle(getAppImg("graph_icon.png"), inputTitleStr("Create Charts Automation")))
 			app(name: "autoApp", appName: "NST Diagnostics", namespace: "tonesto7", multiple: false, title: imgTitle(getAppImg("diagnostic_icon.png"), inputTitleStr("Diagnostics Automation")))
@@ -704,7 +696,6 @@ def automationsPage() {
 				def prefDesc = (descStr != "") ? "${descStr}\n\nTap to modify" : "Tap to configure"
 				href "automationGlobalPrefsPage", title: "Global Automation Preferences", description: prefDesc, state: (descStr != "" ? "complete" : null), image: getAppImg("global_prefs_icon.png")
 */
-// ERS input(name: "useMyClientId", type: "bool", title: imgTitle(getAppImg("login_icon.png"), inputTitleStr("Enter your own ClientId?")), required: false, defaultValue: false, submitOnChange: true)
 				input "disableAllAutomations", "bool", title: "Disable All Automations?", required: false, defaultValue: false, submitOnChange: true, image: getAppImg("disable_icon2.png")
 				if(state?.disableAllAutomations == false && settings?.disableAllAutomations) {
 					toggleAllAutomations(true)
@@ -724,8 +715,6 @@ def automationSchedulePage() {
 		section() {
 			def str = ""
 			def tz = TimeZone.getTimeZone(location.timeZone.ID)
-			//def sunsetT = Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSX", location.currentValue('sunsetTime')).format('h:mm a', tz)
-			//def sunriseT = Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSX", location.currentValue('sunriseTime')).format('h:mm a', tz)
 			def sunTimes = app.getSunriseAndSunset()
 			def sunsetT = Date.parse("E MMM dd HH:mm:ss z yyyy", sunTimes.sunset.toString()).format('h:mm a', tz)
 			def sunriseT = Date.parse("E MMM dd HH:mm:ss z yyyy", sunTimes.sunrise.toString()).format('h:mm a', tz)
@@ -738,7 +727,6 @@ def automationSchedulePage() {
 		def schMap = []
 		def schSize = 0
 		getChildApps()?.each { capp ->
-			//if(capp?.getStateVal("newAutomationFile") == null) { return }
 			def schedActMap = [:]
 			def schInfo = capp?.getScheduleDesc()
 			if (schInfo?.size()) {
@@ -822,7 +810,6 @@ def getInstAutoTypesDesc() {
 					}
 					catch (Exception e) {
 						log.error "BAD Automation file ${a?.label?.toString()}, please RE-INSTALL automation file"
-						//appUpdateNotify(true, "automation")
 					}
 					if(ai) {
 						ai?.each { aut ->
@@ -961,8 +948,6 @@ def initialize_Part1() {
 	subscriber()
 	runIn(10, "finishUp", [overwrite: true])  // give time for devices to initialize
 
-	// app?.updateLabel("${app?.name} (v${appVer()})")
-	//startStopStream()
 }
 
 def finishUp() {
@@ -1019,7 +1004,7 @@ def initBuiltin(btype) {
 		case "initWatchdogApp":
 			def t0 = settings?.thermostats?.size()
 			def t1 = settings?.cameras?.size()
-			if(state?.isInstalled && (t0 || t1)) { // only need watchDog if we have thermostats or cameras
+			if(state?.isInstalled && (t0 || t1)) {
 				keepApp = true
 				createApp = true
 			}
@@ -1243,7 +1228,7 @@ def poll(force = false, type = null) {
 		}
 		def pollTime = DevPoll() as Integer
 		if(restEnabled() && state?.restStreamingOn) {
-			pollTime = 300 //60*5
+			pollTime = 300
 		}
 		def pollTimeout = pollTime*4 + 85
 		def lastCheckin = getLastHeardFromNestSec()
@@ -1508,7 +1493,6 @@ def checkRemapping() {
 				def newProtects_settings = []
 				def newCameras_settings = []
 				def oldPresId = getNestPresId()
-				//def oldWeatId = getNestWeatherId()
 
 				sData?.each { strucId ->
 					def t0 = strucId.key
@@ -2266,7 +2250,8 @@ def updateChildData(force = false) {
 					def data = tmp_data
 					def automationChildApp = getChildApps().find{ it.id == state?."vThermostatChildAppId${devId}" }
 					if(automationChildApp != null && !automationChildApp.getIsAutomationDisabled()) {
-						data = new JsonSlurper().parseText(JsonOutput.toJson(tmp_data))  // This is a deep clone as object is same reference
+						//data = new JsonSlurper().parseText(JsonOutput.toJson(tmp_data))  // This is a deep clone as object is same reference
+						data = [:] + tmp_data  // This is a deep clone as object is same reference
 						def tempC = 0.0
 						def tempF = 0.0
 						if(getTemperatureScale() == "C") {
@@ -2516,43 +2501,14 @@ def apiIssueEvent(issue, cmd = null) {
 }
 
 def ok2PollMetaData() {
-/*
-	if(!getNestAuthToken()) { return false }
-	if(state?.pollBlocked) { return false }
-	if(state?.needMetaPoll) { return true }
-	def pollTime = MetaPoll() as Integer
-	def val = pollTime / 3
-	if(val > 60) { val = 50 }
-	return ( ((getLastMetaPollSec() + val) > pollTime) ? true : false )
-*/
 	return pollOk("Meta")
 }
 
 def ok2PollDevice() {
-/*
-	if(!getNestAuthToken()) { return false }
-	if(state?.pollBlocked) { return false }
-	if(state?.needDevPoll) { return true }
-	def pollTime = DevPoll() as Integer
-	def val = pollTime / 3
-	val = Math.max(Math.min(val.toInteger(), 50),25)
-	//if(val > 60) { val = 50 }
-	return ( ((getLastDevPollSec() + val) > pollTime) ? true : false )
-*/
 	return pollOk("Dev")
 }
 
 def ok2PollStruct() {
-/*
-	if(!getNestAuthToken()) { return false }
-	if(state?.pollBlocked) { return false }
-	if(state?.needStrPoll) { return true }
-	def pollStrTime = StrPoll() as Integer
-	def val = pollStrTime / 3
-	val = Math.max(Math.min(val.toInteger(), 50),25)
-	//if(val > 60) { val = 50 }
-	return ( ((getLastStrPollSec() + val) > pollStrTime || !state?.structData) ? true : false )
-*/
 	return (pollOk("Str") || !state?.structData) ? true : false
 }
 
@@ -3018,7 +2974,7 @@ private getQueueNumber(cmdTypeId) {
 	qnum = cmdQueueList.indexOf(cmdTypeId)
 	if(qnum == -1 || qnum == null) { LogAction("getQueueNumber: NOT FOUND", "warn", true ) }
 	else {
-		if(getLastCmdSentSeconds(qnum) > 3600) { setRecentSendCmd(qnum, 3) } // if nothing sent in last hour, reset = 3 command limit
+		if(getLastCmdSentSeconds(qnum) > 3600) { setRecentSendCmd(qnum, cmdMaxVal()) } // if nothing sent in last hour, reset command limit
 	}
 	return qnum
 }
@@ -3045,10 +3001,12 @@ def getQueueToWork() {
 	}
 	// LogTrace("getQueueToWork queue: ${qnum}")
 	if(qnum != -1 && qnum != null) {
-		if(getLastCmdSentSeconds(qnum) > 3600) { setRecentSendCmd(qnum, 3) } // if nothing sent in last hour, reset = 3 command limit
+		if(getLastCmdSentSeconds(qnum) > 3600) { setRecentSendCmd(qnum, cmdMaxVal()) } // if nothing sent in last hour, reset command limit
 	}
 	return qnum
 }
+
+private cmdMaxVal() { return 2 }
 
 void schedNextWorkQ(useShort=false) {
 	def cmdDelay = getChildWaitVal()
@@ -3171,7 +3129,7 @@ void workQueue() {
 				atomicState?."cmdQ${qnum}" = cmdQueue
 				def cmdres
 
-				if(getLastCmdSentSeconds(qnum) > 3600) { setRecentSendCmd(qnum, 3) } // if nothing sent in last hour, reset 3 command limit
+				if(getLastCmdSentSeconds(qnum) > 3600) { setRecentSendCmd(qnum, cmdMaxVal()) } // if nothing sent in last hour, reset command limit
 
 				// storeLastCmdData(cmd, qnum)
 
@@ -3464,10 +3422,10 @@ def adjThrottle(qnum, redir) {
 			val -= 1
 		}
 		def t1 = getLastCmdSentSeconds(qnum)
-		if(t1 > 120 && t1 < 60*45 && val < 2) {
+		if(t1 > 120 && t1 < 60*45 && val < (cmdMaxVal()-1) ) {
 			val += 1
 		}
-		if(t1 > 60*30 && t1 < 60*45 && val < 2) {
+		if(t1 > 60*30 && t1 < 60*45 && val < cmdMaxVal() ) {
 			val += 1
 		}
 		LogTrace("adjThrottle orig recentSendCmd: ${t0} | new: ${val} | last seconds: ${t1} queue: ${qnum}")
