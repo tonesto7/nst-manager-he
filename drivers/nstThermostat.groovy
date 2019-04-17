@@ -2,13 +2,13 @@
  *  Nest Thermostat
  *	Copyright (C) 2018, 2019 Anthony Santilli.
  *	Author: Anthony Santilli (@tonesto7), Eric Schott (@imnotbob)
- *  Modified: 04/07/2019
+ *  Modified: 04/17/2019
  */
 
 import java.text.SimpleDateFormat
 import groovy.time.*
 
-def devVer() { return "2.0.1" }
+def devVer() { return "2.0.2" }
 metadata {
 	definition (name: "Nest Thermostat", namespace: "tonesto7", author: "Anthony S.", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstThermostat.groovy") {
 		capability "Actuator"
@@ -198,8 +198,10 @@ def generateEvent(eventData) {
 			hvacPreviousModeEvent(eventData?.data?.previous_hvac_mode.toString())
 			hasLeafEvent(eventData?.data?.has_leaf)
 			humidityEvent(eventData?.data?.humidity.toString())
-			operatingStateEvent(eventData?.data?.hvac_state.toString())  // in races, operatingState has precedence; unresolvable
+
+			nestoperatingStateEvent(eventData?.data?.hvac_state.toString())
 			fanModeEvent(eventData?.data?.fan_timer_active.toString())
+			operatingStateEvent(eventData?.data?.hvac_state.toString())
 
 			if(!eventData?.data?.last_connection) { lastCheckinEvent(null,null) }
 			else { lastCheckinEvent(eventData?.data?.last_connection, eventData?.data?.is_online.toString()) }
@@ -665,24 +667,28 @@ def fanModeEvent(fanActive) {
 	if(isStateChange(device, "thermostatFanMode", val.toString())) {
 		Logger("Fan Mode: (${val.toString().capitalize()}) | Previous State: (${fanMode.toString().capitalize()})")
 		sendEvent(name: "thermostatFanMode", value: val, descriptionText: "Fan Mode is: ${val}", displayed: true, isStateChange: true, state: val)
-		operatingStateEvent()	// try to resolve nasty race.  Race cannot be avoided due to three variables trying to show same status
 	}
 }
 
-def operatingStateEvent(opState=null) {
+def nestoperatingStateEvent(opState=null) {
 	def nesthvacState = device.currentState("nestThermostatOperatingState")?.value?.toString()
 	def operState = opState == null ? nesthvacState : opState
-	if(operState == null) { return }  // try to resolve nasty race.  Race cannot be avoided due to three variables trying to show same status
-	operState = (operState == "off") ? "idle" : operState
-	def newoperState = operState
-
-	def fanOn = device.currentState("thermostatFanMode")?.value?.toString() == "on" ? true : false
-	if (fanOn && operState == "idle") { newoperState = "fan only" }
-
+	if(operState == null) { return }
 	if(isStateChange(device, "nestThermostatOperatingState", operState.toString())) {
 		Logger("nestOperatingState is (${operState.toString().capitalize()}) | Previous State: (${nesthvacState.toString().capitalize()})")
 		sendEvent(name: 'nestThermostatOperatingState', value: operState, descriptionText: "Device is ${operState}")
 	}
+}
+
+def operatingStateEvent(opState=null) {
+	def operState = opState == null ? device.currentState("nestThermostatOperatingState")?.value?.toString() : opState
+	if(operState == null) { return }
+
+	operState = (operState == "off") ? "idle" : operState
+
+	def newoperState = operState
+	def fanOn = device.currentState("thermostatFanMode")?.value?.toString() == "on" ? true : false
+	if (fanOn && operState == "idle") { newoperState = "fan only" }
 
 	def hvacState = device.currentState("thermostatOperatingState")?.value?.toString()
 	if(isStateChange(device, "thermostatOperatingState", newoperState.toString())) {
@@ -1596,25 +1602,25 @@ void Logger(msg, logType = "debug") {
 		def theId = lastN(device.getId().toString(),5)
                 parent.saveLogtoRemDiagStore(smsg, logType, "Thermostat-${theId}")
         } else {
-	switch (logType) {
-		case "trace":
-			log.trace "${msg}"
-			break
-		case "debug":
-			log.debug "${msg}"
-			break
-		case "info":
-			log.info "${msg}"
-			break
-		case "warn":
-			log.warn "${msg}"
-			break
-		case "error":
-			log.error "${msg}"
-			break
-		default:
-			log.debug "${msg}"
-			break
-	}
+		switch (logType) {
+			case "trace":
+				log.trace "${msg}"
+				break
+			case "debug":
+				log.debug "${msg}"
+				break
+			case "info":
+				log.info "${msg}"
+				break
+			case "warn":
+				log.warn "${msg}"
+				break
+			case "error":
+				log.error "${msg}"
+				break
+			default:
+				log.debug "${msg}"
+				break
+		}
 	}
 }
