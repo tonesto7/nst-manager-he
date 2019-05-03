@@ -2,13 +2,13 @@
  *  Nest Thermostat
  *	Copyright (C) 2018, 2019 Anthony Santilli.
  *	Author: Anthony Santilli (@tonesto7), Eric Schott (@imnotbob)
- *  Modified: 04/17/2019
+ *  Modified: 05/01/2019
  */
 
 import java.text.SimpleDateFormat
 import groovy.time.*
 
-def devVer() { return "2.0.2" }
+def devVer() { return "2.0.3" }
 metadata {
 	definition (name: "Nest Thermostat", namespace: "tonesto7", author: "Anthony S.", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstThermostat.groovy") {
 		capability "Actuator"
@@ -68,6 +68,7 @@ metadata {
 		attribute "timeToTarget", "string"
 		attribute "pauseUpdates", "string"
 		attribute "nestType", "string"
+		attribute "usingEmergencyHeat", "string"
 
 		//attribute "coolingSetpoint", "string"
 		attribute "coolingSetpointMin", "string"
@@ -214,6 +215,7 @@ def generateEvent(eventData) {
 			// safetyTempsEvent(eventData?.safetyTemps)
 			// comfortHumidityEvent(eventData?.comfortHumidity)
 			// comfortDewpointEvent(eventData?.comfortDewpoint)
+			emergencyHeatEvent(eventData?.data?.is_using_emergency_heat)
 
 			def hvacMode = state?.nestHvac_mode
 			def tempUnit = state?.tempUnit
@@ -757,6 +759,16 @@ def apiStatusEvent(issueDesc) {
 	if(isStateChange(device, "apiStatus", newStat.toString())) {
 		Logger("API Status is: (${newStat.toString().capitalize()}) | Previous State: (${curStat.toString().capitalize()})")
 		sendEvent(name: "apiStatus", value: newStat, descriptionText: "API Status is: ${newStat}", displayed: true, isStateChange: true, state: newStat)
+	}
+}
+
+def emergencyHeatEvent(emerHeat) {
+	def curStat = device.currentState("usingEmergencyHeat")?.value
+	def newStat = emerHeat
+	if(isStateChange(device, "usingEmergencyHeat", newStat.toString())) {
+		state.is_using_emergency_heat = !!newStat
+		Logger("Using Emergency Heat is: (${newStat.toString().capitalize()}) | Previous State: (${curStat.toString().capitalize()})")
+		sendEvent(name: "usingEmergencyHeat", value: newStat, descriptionText: "Using Emergency Heat is: ${newStat}", displayed: true, isStateChange: true, state: newStat)
 	}
 }
 

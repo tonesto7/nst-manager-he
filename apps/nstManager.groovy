@@ -21,7 +21,7 @@ definition(
 	oauth: true
 )
 
-def appVer() { "2.0.2" }
+def appVer() { "2.0.3" }
 def namespace()  { "tonesto7" }
 def devCltNum() { 1 }
 def restEnabled(){ true } // Enables the Rest Stream Device
@@ -2321,7 +2321,7 @@ def updateChildData(force = false) {
 				return true
 			}
 			else {
-				LogAction("updateChildData() | Unclaimed Device Found: (${device?.displayName})", "warn", true)
+				LogAction("updateChildData() | Unclaimed Device Found (or device with no data available from Nest): (${it?.displayName}) $devId", "warn", true)
 				return true
 			}
 		}
@@ -3238,11 +3238,13 @@ def queueProcNestCmd(uri, typeId, type, obj, objVal, qnum, cmd, redir = false) {
 
 		adjThrottle(qnum, redir)
 
+		def t0 = objVal
+		if(t0 instanceof Map) { t0 = [:] + objVal }
 		def asyncargs = [
 			typeId: typeId,
 			type: type,
 			obj: obj,
-			objVal: objVal,
+			objVal: t0,
 			qnum: qnum,
 			cmd: cmd ]
 
@@ -3259,6 +3261,7 @@ def nestCmdResponse(resp, data) {
 	def type = data?.type
 	def obj = data?.obj
 	def objVal = data?.objVal
+	if(objVal instanceof Map) { objVal = [:] + data?.objVal }
 	def qnum = data?.qnum
 	def command = data?.cmd
 	def result = false
@@ -3335,10 +3338,10 @@ def nestCmdResponse(resp, data) {
 		state.remove("nestRedirectUrl")
 		cmdProcState(false)
 		if(resp?.hasError()) {
-			apiRespHandler((resp?.getStatus() ?: null), (resp?.getErrorJson() ?: null), "nestCmdResponse", "nestCmdResponse ${qnum} ($type{$obj:$objVal})", true)
+			apiRespHandler((resp?.getStatus() ?: null), (/*resp?.getErrorJson() ?:*/ null), "nestCmdResponse Exception", "nestCmdResponse ${qnum} ($type{$obj:$objVal})", true)
 		}
 		apiIssueEvent(true)
-		log.error "nestCmdResponse (command: $command) Exception:", ex
+		log.error "nestCmdResponse (command: $command) Exception:"//, ex
 	}
 }
 
@@ -3474,7 +3477,7 @@ def apiRespHandler(code, errJson, methodName, tstr=null, isCmd=false) {
 		if(notif || isCmd) {
 			failedCmdNotify(failData, tstr)
 		}
-		LogAction("$methodName error - (Status: $code - $result) - [ErrorLink: ${errJson?.type}]", "error", true)
+		LogAction("$methodName error - (Status: $code - $result) - [ErrorLink: ${errJson?.type}] ${errJson?.error} ${errJson?.details}", "error", true)
 	}
 }
 

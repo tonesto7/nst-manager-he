@@ -1,8 +1,9 @@
 /************************************************************************************************
 |	Application Name: NST Graphs								|
-|	Copyright (C) 2018, 2019									|
+|	Copyright (C) 2018, 2019								|
 |	Authors: Anthony S. (@tonesto7), Eric S. (@nh.schottfam)				|
 |												|
+|	Updated 5/3/2019									|
 |	License Info: https://github.com/tonesto7/nest-manager/blob/master/app_license.txt	|
 |************************************************************************************************/
 
@@ -25,7 +26,7 @@ definition(
 	oauth: true
 )
 
-def appVersion() { "2.0.0" }
+def appVersion() { "2.0.1" }
 
 preferences {
 	page(name: "startPage")
@@ -110,43 +111,51 @@ def mainAutoPage() {
 
 						if(tstats.size() > 1 || (tstats.size() > 0 && weather.size() > 0)) {
 							def myUrl = getAppEndpointUrl("deviceTiles")
-							def myStr = """ <a href="${myUrl}" target="_blank">All Devices</a> """
+							def myLUrl = getLocalEndpointUrl("deviceTiles")
+							def myStr = """ <a href="${myUrl}" target="_blank">All Devices</a>  <a href="${myLUrl}" target="_blank">(local)</a> """
 							paragraph imgTitle(getAppImg("graph_icon.png"), paraTitleStr(myStr))
 						}
 					}
 					if(tstats) {
 						if(tstats.size() > 1) {
 							def myUrl = getAppEndpointUrl("tstatTiles")
-							def myStr = """ <a href="${myUrl}" target="_blank">All Thermostats</a> """
+							def myLUrl = getLocalEndpointUrl("tstatTiles")
+							def myStr = """ <a href="${myUrl}" target="_blank">All Thermostats</a>  <a href="${myLUrl}" target="_blank">(local)</a> """
 							paragraph imgTitle(getAppImg("graph_icon.png"), paraTitleStr(myStr))
 						}
-						def sUrl = "${fullApiServerUrl("")}"
+						//def sUrl = "${fullApiServerUrl("")}"
 						def foundTstats = tstats?.collect { dni ->
 							def d1 = parent.getDevice(dni)
-							def myUrl = "${sUrl}" + "/getTile/${dni}" + "?access_token=${state.access_token}"
+							def myUrl = getAppEndpointUrl("getTile/${dni}")
+							def myLUrl = getLocalEndpointUrl("getTile/${dni}")
+							//def myUrl = "${sUrl}" + "/getTile/${dni}" + "?access_token=${state.access_token}"
 //Logger("mainAuto sUrl: ${sUrl}   myUrl: ${myUrl}")
-							def myStr = """ <a href="${myUrl}" target="_blank">${d1.label ?: d1.name}</a> """
+							def myStr = """ <a href="${myUrl}" target="_blank">${d1.label ?: d1.name}</a>  <a href="${myLUrl}" target="_blank">(local)</a> """
 							paragraph imgTitle(getAppImg("graph_icon.png"), paraTitleStr(myStr))
 						}
 					}
 					if(prots) {
 						if(prots.size() > 1) {
 							def myUrl = getAppEndpointUrl("protTiles")
-							def myStr = """ <a href="${myUrl}" target="_blank">All Protects</a> """
+							def myLUrl = getLocalEndpointUrl("protTiles")
+							def myStr = """ <a href="${myUrl}" target="_blank">All Protects</a>  <a href="${myLUrl}" target="_blank">(local)</a> """
 							paragraph imgTitle(getAppImg("graph_icon.png"), paraTitleStr(myStr))
 						}
-						def sUrl = "${fullApiServerUrl("")}"
+						//def sUrl = "${fullApiServerUrl("")}"
 						def foundTstats = prots?.collect { dni ->
 							def d1 = parent.getDevice(dni)
-							def myUrl = "${sUrl}" + "/getTile/${dni}" + "?access_token=${state.access_token}"
+							def myUrl = getAppEndpointUrl("getTile/${dni}")
+							def myLUrl = getLocalEndpointUrl("getTile/${dni}")
+							//def myUrl = "${sUrl}" + "/getTile/${dni}" + "?access_token=${state.access_token}"
 //Logger("mainAuto sUrl: ${sUrl}   myUrl: ${myUrl}")
-							def myStr = """ <a href="${myUrl}" target="_blank">${d1.label ?: d1.name}</a> """
+							def myStr = """ <a href="${myUrl}" target="_blank">${d1.label ?: d1.name}</a>  <a href="${myLUrl}" target="_blank">(local)</a> """
 							paragraph imgTitle(getAppImg("graph_icon.png"), paraTitleStr(myStr))
 						}
 					}
 					if(weather) {
 						def myUrl = getAppEndpointUrl("weatherTile")
-						def myStr = """ <a href="${myUrl}" target="_blank">${weather.label ?: weather..name}</a> """
+						def myLUrl = getLocalEndpointUrl("weatherTile")
+						def myStr = """ <a href="${myUrl}" target="_blank">${weather.label ?: weather..name}</a> <a href="${myLUrl}" target="_blank">(local)</a> """
 						paragraph imgTitle(getAppImg("graph_icon.png"), paraTitleStr(myStr))
 					}
 				}
@@ -761,11 +770,13 @@ def getIsAutomationDisabled() {
 }
 
 def getTstatTiles() {
+	//log.debug "${params} ${request.requestSource}"
 	return renderDeviceTiles("Nest Thermostat")
 }
 
 def getTile() {
 	LogTrace ("getTile()")
+	//log.debug "${params} ${request.requestSource}"
 	def responseMsg = ""
 
 	def dni = "${params?.dni}"
@@ -784,14 +795,17 @@ def getTile() {
 }
 
 def getWeatherTile() {
+	//log.debug "${params} ${request.requestSource}"
 	return renderDeviceTiles("ApiXU Weather Driver Min")
 }
 
 def getProtTiles() {
+	//log.debug "${params} ${request.requestSource}"
 	return renderDeviceTiles("Nest Protect")
 }
 
 def renderDeviceTiles(type=null, theDev=null) {
+	//log.debug "${params} ${request.requestSource}"
 //	try {
 		def devHtml = ""
 		def navHtml = ""
@@ -933,7 +947,7 @@ LogTrace("renderDeviceTiles: ${dev.id} ${dev.name} ${theDev?.name} ${dev.typeNam
 					\$("#goHomeBtn").click(function() {
 						closeNavMenu();
 						toggleMenuBtn();
-						window.location.replace('${getAppEndpointUrl("deviceTiles")}');
+						window.location.replace('${request?.requestSource == "local" ? getLocalEndpointUrl("deviceTiles") : getAppEndpointUrl("deviceTiles")}');
 					});
 				</script>
 			</body>
@@ -1428,8 +1442,8 @@ def getWebHeaderHtml(title, clipboard=true, vex=false, swiper=false, charts=fals
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/hamburgers/0.9.1/hamburgers.min.css">
 		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 		<script type="text/javascript">
-			const serverUrl = '${apiServerUrl('')}';
-			const cmdUrl = '${getAppEndpointUrl('deviceTiles')}';
+			const serverUrl = '${request?.requestSource == "local" ? getLocalApiServerUrl() : apiServerUrl()}';
+			const cmdUrl = '${request?.requestSource == "local" ? getLocalEndpointUrl('deviceTiles') : getAppEndpointUrl('deviceTiles')}';
 		</script>
 	"""
 	html += clipboard ? """<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js"></script>""" : ""
