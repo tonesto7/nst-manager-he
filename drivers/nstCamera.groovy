@@ -2,7 +2,7 @@
  *  Nest Camera
  *	Copyright (C) 2018, 2019 Anthony S..
  *	Author: Anthony Santilli (@tonesto7)
- *  Modified: 04/07/2019
+ *  Modified: 05/01/2019
  */
 
 import java.text.SimpleDateFormat
@@ -10,7 +10,7 @@ import groovy.time.TimeCategory
 
 preferences { }
 
-def devVer() { return "2.0.2" }
+def devVer() { return "2.0.3" }
 
 metadata {
 	definition (name: "Nest Camera", author: "Anthony S.", namespace: "tonesto7", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstCamera.groovy") {
@@ -316,7 +316,7 @@ def lastEventDataEvent(data, actZones) {
 	def evtZoneIds = data?.activity_zone_ids
 	def evtZoneNames = null
 
-	def evtType = !hasMotion ? "Sound Event" : "Motion Event${hasPerson ? " (Person)${hasSound ? " (Sound)" : ""}" : ""}"
+	def evtType = (!hasMotion ? "Sound Event" : "Motion Event") + "${hasPerson ? " (Person)" : ""}" + "${hasSound ? " (Sound)" : ""}"
 	if(actZones && evtZoneIds) {
 		state?.activityZones = actZones?.collect { it?.name }
 		evtZoneNames = actZones.findAll { it?.id.toString() in evtZoneIds }.collect { it?.name }
@@ -336,24 +336,26 @@ def lastEventDataEvent(data, actZones) {
 
 	def tryPic = false
 
-	if(!state?.lastCamEvtData || (curStartDt != newStartDt || curEndDt != newEndDt) && (hasPerson || hasMotion || hasSound) || isStateChange(device, "lastEventType", evtType.toString()) || isStateChange(device, "lastEventZones", evtZoneNames.toString())) {
-		sendEvent(name: 'lastEventStart', value: newStartDt, descriptionText: "Last Event Start is ${newStartDt}", displayed: false)
-		sendEvent(name: 'lastEventEnd', value: newEndDt, descriptionText: "Last Event End is ${newEndDt}", displayed: false)
-		sendEvent(name: 'lastEventType', value: evtType, descriptionText: "Last Event Type was ${evtType}", displayed: false)
-		sendEvent(name: 'lastEventZones', value: evtZoneNames.toString(), descriptionText: "Last Event Zones: ${evtZoneNames}", displayed: false)
-		state.lastCamEvtData = ["startDt":newStartDt, "endDt":newEndDt, "hasMotion":hasMotion, "hasSound":hasSound, "hasPerson":hasPerson, "motionOnPersonOnly":(settings?.motionOnPersonOnly == true), "actZones":(data?.activity_zone_ids ?: null)]
-		if(data?.start_time && GetTimeDiffSeconds(newStartDt) < 180) {
-			Logger("└────────────────────────────")
-			Logger("│	HasSound: (${hasSound})")
-			Logger("│	HasPerson: (${hasPerson})")
-			//Logger("│	Took Snapshot: (${tryPic})")
-			Logger("│	Zones: ${evtZoneNames ?: "None"}")
-			Logger("│	End Time: (${newEndDt})")
-			Logger("│	Start Time: (${newStartDt})")
-			Logger("│	Type: ${evtType}")
-			Logger("┌────────New Camera Event────────")
-		} else {
-			Logger("Start Time out of time range: (${newStartDt})")
+	if(!state?.lastCamEvtData || (curStartDt != newStartDt || curEndDt != newEndDt) || isStateChange(device, "lastEventType", evtType.toString()) || isStateChange(device, "lastEventZones", evtZoneNames.toString())) {
+		if(hasPerson || hasMotion || hasSound) {
+			sendEvent(name: 'lastEventStart', value: newStartDt, descriptionText: "Last Event Start is ${newStartDt}", displayed: false)
+			sendEvent(name: 'lastEventEnd', value: newEndDt, descriptionText: "Last Event End is ${newEndDt}", displayed: false)
+			sendEvent(name: 'lastEventType', value: evtType, descriptionText: "Last Event Type was ${evtType}", displayed: false)
+			sendEvent(name: 'lastEventZones', value: evtZoneNames.toString(), descriptionText: "Last Event Zones: ${evtZoneNames}", displayed: false)
+			state.lastCamEvtData = ["startDt":newStartDt, "endDt":newEndDt, "hasMotion":hasMotion, "hasSound":hasSound, "hasPerson":hasPerson, "motionOnPersonOnly":(settings?.motionOnPersonOnly == true), "actZones":(data?.activity_zone_ids ?: null)]
+			if(data?.start_time && GetTimeDiffSeconds(newStartDt) < 180) {
+				Logger("└────────────────────────────")
+				Logger("│	HasSound: (${hasSound})")
+				Logger("│	HasPerson: (${hasPerson})")
+				//Logger("│	Took Snapshot: (${tryPic})")
+				Logger("│	Zones: ${evtZoneNames ?: "None"}")
+				Logger("│	End Time: (${newEndDt})")
+				Logger("│	Start Time: (${newStartDt})")
+				Logger("│	Type: ${evtType}")
+				Logger("┌────────New Camera Event────────")
+			} else {
+				Logger("Start Time out of time range: (${newStartDt})")
+			}
 		}
 	}
 	motionSoundEvtHandler()
