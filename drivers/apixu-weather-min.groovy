@@ -20,7 +20,7 @@
 *
 ***********************************************************************************************************************/
 
-public static String version()	{ return "v1.0.2" }
+public static String version()	{ return "v1.0.3" }
 
 /***********************************************************************************************************************
 *
@@ -203,13 +203,19 @@ def wantMetric() {
 }
 
 def poll() {
-	log.debug ">>>>> apixu: Executing 'poll', location: ${state?.zipCode}"
-
-	def obs = getXUdata()
+	def obs = getXUdata() // this is not async call
 	if (!obs) {
 		log.warn "No response from ApiXU API"
 		return
 	}
+}
+
+def finishPoll(obs) {
+	if (!obs) {
+		log.warn "No response from ApiXU API"
+		return
+	}
+	log.debug ">>>>> apixu: Executing 'poll', location: ${state?.zipCode}"
 
 	def now = new Date().format('yyyy-MM-dd HH:mm', location.timeZone)
 //	sendEvent(name: "lastXUupdate", value: now, /* isStateChange: true, */ displayed: true)
@@ -353,27 +359,56 @@ def refresh()	 { poll() }
 def configure()	 { poll() }
 
 private getXUdata() {
-	def obs = [:]
+	//def obs = [:]
 	def myUri = "https://api.apixu.com/v1/forecast.json?key=${apixuKey}&q=${state?.zipCode}&days=7"
 	def params = [ uri: myUri ]
 	try {
+		asynchttpGet('ahttpRequestHandler', params, [tt: 'finishPoll'])
+/*
 		httpGet(params)	{ resp ->
 			if (resp?.data)	 obs << resp.data;
 			else log.error "http call for ApiXU weather api did not return data: $resp";
 		}
-	} catch (e) { log.error "http call failed for ApiXU weather api: $e" }
-//	log.debug "$obs"
+*/
+	} catch (e) {
+		log.error "http call failed for ApiXU weather api: $e"
+		return false
+	}
 	sendEvent(name: "apiXUquery", value: myUri, /* isStateChange: true, */ displayed: true)
-	return obs
+	return true
 }
 
-private getSunriseAndSunset(latitude, longitude, forDate)	{
+public ahttpRequestHandler(resp, callbackData) {
+	def json = [:]
+	def obs = [:]
+	def err
+	if ((resp.status == 200) && resp.data) {
+		try {
+			json = resp.getJson()
+		} catch (all) {
+			json = [:]
+			return
+		}
+	} else {
+		if(resp.hasError()) {
+			error "http Response Status: ${resp.status}   error Message: ${resp.getErrorMessage()}"
+			return
+		}
+		error "no data: ${resp.status}   resp.data: ${resp.data} resp.json: ${resp.json}"
+		return
+	}
+	obs = json
+	//log.debug "$obs"
+	def t0 = callbackData.tt
+	"${t0}"(obs)
+}
+
+private getSunriseAndSunset(latitude, longitude, forDate) {
 	def params = [ uri: "https://api.sunrise-sunset.org/json?lat=$latitude&lng=$longitude&date=$forDate&formatted=0" ]
 	def sunRiseAndSet = [:]
 	try {
 		httpGet(params)	{ resp -> sunRiseAndSet = resp.data }
 	} catch (e) { log.error "http call failed for sunrise and sunset api: $e" }
-
 	return sunRiseAndSet
 }
 
@@ -390,6 +425,7 @@ private estimateDewPoint(double rh,double t) {
 	ave = dp1
 	return ave.round(1)
 }
+
 def updateLux()	 {
 	if (!state.sunriseTime || !state.sunsetTime || !state.noonTime || !state.twilight_begin || !state.twilight_end || !state.tz_id)
 		return
