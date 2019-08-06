@@ -3,7 +3,7 @@
 |	Copyright (C) 2018, 2019								|
 |	Authors: Anthony S. (@tonesto7), Eric S. (@nh.schottfam)				|
 |												|
-|	Updated 5/3/2019									|
+|	Updated 8/3/2019									|
 |	License Info: https://github.com/tonesto7/nest-manager/blob/master/app_license.txt	|
 |************************************************************************************************/
 
@@ -26,7 +26,7 @@ definition(
 	oauth: true
 )
 
-def appVersion() { "2.0.1" }
+def appVersion() { "2.0.2" }
 
 preferences {
 	page(name: "startPage")
@@ -2963,9 +2963,9 @@ String getDataString(Integer seriesIndex, dev) {
 	return dataString
 }
 
-def historyGraphHtml(devNum="", dev) {
+String historyGraphHtml(String devNum="", dev) {
 //Logger("HistoryG 1")
-	def html = ""
+	String html = ""
 	if(true) {
 		if (state?."WtempTbl${dev.id}"?.size() > 0 && state?."WdewTbl${dev.id}"?.size() > 0) {
 			def tempStr = getTempUnitStr()
@@ -3146,7 +3146,7 @@ def getImg(imgName) {
 }
 
 
-def getProtDeviceTile(devNum, dev) {
+String getProtDeviceTile(devNum, dev) {
 //	try {
 		def battImg = (dev.currentState("batteryState")?.value == "replace") ? """<img class="battImg" src="${getImg("battery_low_h.png")}">""" : """<img class="battImg" src="${getImg("battery_ok_h.png")}">"""
 		//def battImg = (state?.battVal == "low") ? """<img class="battImg" src="${getImg("battery_low_h.png")}">""" : """<img class="battImg" src="${getImg("battery_ok_h.png")}">"""
@@ -3242,7 +3242,6 @@ def getProtDeviceTile(devNum, dev) {
 
 
 
-
 def getTimeZone() {
 	def tz = null
 	if(location?.timeZone) { tz = location?.timeZone }
@@ -3250,12 +3249,12 @@ def getTimeZone() {
 	return tz
 }
 
-def getDtNow() {
+String getDtNow() {
 	def now = new Date()
 	return formatDt(now)
 }
 
-def formatDt(dt) {
+String formatDt(dt) {
 	def tf = new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
 	if(getTimeZone()) { tf.setTimeZone(getTimeZone()) }
 	else {
@@ -3264,15 +3263,15 @@ def formatDt(dt) {
 	return tf.format(dt)
 }
 
-def GetTimeDiffSeconds(strtDate, stpDate=null, methName=null) {
+def GetTimeDiffSeconds(String strtDate, stpDate=null, methName=null) {
 	//LogTrace("[GetTimeDiffSeconds] StartDate: $strtDate | StopDate: ${stpDate ?: "Not Sent"} | MethodName: ${methName ?: "Not Sent"})")
 	if((strtDate && !stpDate) || (strtDate && stpDate)) {
 		//if(strtDate?.contains("dtNow")) { return 10000 }
 		def now = new Date()
 		def stopVal = stpDate ? stpDate.toString() : formatDt(now)
-		def start = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
-		def stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
-		def diff = (int) (long) (stop - start) / 1000
+		long start = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
+		long stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
+		long diff = (int) (long) (stop - start) / 1000
 		LogTrace("[GetTimeDiffSeconds] Results for '$methName': ($diff seconds)")
 		return diff
 	} else { return null }
@@ -3282,12 +3281,12 @@ def GetTimeDiffSeconds(strtDate, stpDate=null, methName=null) {
 /************************************************************************************************
 |									LOGGING AND Diagnostic									|
 *************************************************************************************************/
-def lastN(String input, n) {
+String lastN(String input, n) {
 	return n > input?.size() ? input : input[-n..-1]
 }
 
-def LogTrace(msg, logSrc=null) {
-	def trOn = (showDebug && advAppDebug) ? true : false
+void LogTrace(String msg, String logSrc=null) {
+	boolean trOn = (showDebug && advAppDebug) ? true : false
 	if(trOn) {
 		//def theId = lastN(app?.id.toString(),5)
 		//def theLogSrc = (logSrc == null) ? (parent ? "Automation-${theId}" : "NestManager") : logSrc
@@ -3295,23 +3294,23 @@ def LogTrace(msg, logSrc=null) {
 	}
 }
 
-def LogAction(msg, type="debug", showAlways=false, logSrc=null) {
-	def isDbg = showDebug ? true : false
+void LogAction(String msg, String type="debug", boolean showAlways=false, String logSrc=null) {
+	boolean isDbg = showDebug ? true : false
 //	def theId = lastN(app?.id.toString(),5)
 //	def theLogSrc = (logSrc == null) ? (parent ? "Automation-${theId}" : "NestManager") : logSrc
 	if(showAlways || (isDbg && !showAlways)) { Logger(msg, type, logSrc) }
 }
 
-def Logger(msg, type="debug", logSrc=null, noLog=false) {
+void Logger(String msg, String type="debug", String logSrc=null, boolean noLog=false) {
 	if(msg && type) {
-		def labelstr = ""
+		String labelstr = ""
 		if(state?.dbgAppndName == null) {
 			def tval = parent ? parent.getSettingVal("dbgAppndName") : settings?.dbgAppndName
 			state?.dbgAppndName = (tval || tval == null) ? true : false
 		}
-		def t0 = app.label
-		if(state?.dbgAppndName) { labelstr = "${app.label} | " }
-		def themsg = "${labelstr}${msg}"
+		String t0 = app.label
+		if(state?.dbgAppndName) { labelstr = "${t0} | " }
+		String themsg = "${labelstr}${msg}"
 		//log.debug "Logger remDiagTest: $msg | $type | $logSrc"
 
 		if(state?.enRemDiagLogging == null) {
@@ -3322,8 +3321,8 @@ def Logger(msg, type="debug", logSrc=null, noLog=false) {
 			//log.debug "set enRemDiagLogging to ${state?.enRemDiagLogging}"
 		}
 		if(state?.enRemDiagLogging) {
-			def theId = lastN(app?.id.toString(),5)
-			def theLogSrc = (logSrc == null) ? (parent ? "Automation-${theId}" : "NestManager") : logSrc
+			String theId = lastN(app?.id.toString(),5)
+			String theLogSrc = (logSrc == null) ? (parent ? "Automation-${theId}" : "NestManager") : logSrc
 			parent?.saveLogtoRemDiagStore(themsg, type, theLogSrc)
 		} else {
 			if(!noLog) {

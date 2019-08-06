@@ -10,7 +10,7 @@ import groovy.time.TimeCategory
 
 preferences { }
 
-def devVer() { return "2.0.3" }
+def devVer() { return "2.0.4" }
 
 metadata {
 	definition (name: "Nest Camera", author: "Anthony S.", namespace: "tonesto7", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstCamera.groovy") {
@@ -120,7 +120,7 @@ void refresh() {
 	poll()
 }
 
-def generateEvent(eventData) {
+void generateEvent(eventData) {
 	def dtNow = getDtNow()
 	//log.trace("processEvent Parsing data ${eventData}")
 	try {
@@ -164,7 +164,7 @@ def generateEvent(eventData) {
 			lastUpdatedEvent(false)
 			lastCheckinEvent(dtNow)
 		}
-		return null
+		return
 	}
 	catch (ex) {
 		log.error "generateEvent Exception: ${ex?.message}"

@@ -9,7 +9,7 @@ import java.text.SimpleDateFormat
 
 preferences { }
 
-def devVer() { return "2.0.1" }
+def devVer() { return "2.0.2" }
 
 metadata {
 	definition (name: "Nest Protect", author: "Anthony S.", namespace: "tonesto7", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstProtect.groovy") {
@@ -108,7 +108,7 @@ void refresh() {
 	poll()
 }
 
-def generateEvent(eventData) {
+void generateEvent(eventData) {
 	//log.trace("processEvent Parsing data ${eventData}")
 	try {
 		if(eventData) {
@@ -128,7 +128,7 @@ def generateEvent(eventData) {
 			determinePwrSrc()
 			lastUpdatedEvent(false)
 		}
-		return null
+		return
 	}
 	catch (ex) {
 		log.error "generateEvent Exception: ${ex?.message}"
@@ -145,7 +145,7 @@ def getSettingVal(var) {
 	return settings[var] ?: null
 }
 
-def formatDt(dt) {
+String formatDt(dt) {
 	def tf = new java.text.SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
 	if(getTimeZone()) { tf.setTimeZone(getTimeZone()) }
 	return tf.format(dt)
@@ -156,12 +156,10 @@ def getTimeDiffSeconds(strtDate, stpDate=null, methName=null) {
 	try {
 		if((strtDate && !stpDate) || (strtDate && stpDate)) {
 			def now = new Date()
-			def stopVal = stpDate ? stpDate.toString() : formatDt(now)
-			def startDt = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate)
-			def stopDt = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal)
-			def start = Date.parse("E MMM dd HH:mm:ss z yyyy", formatDt(startDt)).getTime()
-			def stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
-			def diff = (int) (long) (stop - start) / 1000
+			String stopVal = stpDate ? stpDate.toString() : formatDt(now)
+			long start = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
+			long stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
+			long diff = (stop - start) / 1000
 			return diff
 		} else { return null }
 	} catch (ex) {
@@ -189,22 +187,22 @@ def getTimeZone() {
 	return tz
 }
 
-def lastCheckinEvent(checkin, isOnline) {
+void lastCheckinEvent(checkin, isOnline) {
 	//Logger("checkin: ${checkin}, isOnline: ${isOnline}", "debug")
 	def tf = new java.text.SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
 	//def tf = new SimpleDateFormat("MMM d, yyyy - h:mm:ss a")
 	def regex1 = /Z/
-	def t0 = checkin.replaceAll(regex1, "-0000")
+	String t0 = checkin.replaceAll(regex1, "-0000")
 	tf.setTimeZone(getTimeZone())
 
 	def prevOnlineStat = device.currentState("onlineStatus")?.value
 
 	//def curConn = t0 ? "${tf.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0))}" : "Not Available"
-	def curConnFmt = t0 ? "${formatDt(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0))}" : "Not Available"
+	String curConnFmt = t0 ? "${formatDt(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0))}" : "Not Available"
 	//Logger("curConn: ${curConn}   curConnFmt: ${curConnFmt}  timeDiff: ${getTimeDiffSeconds(curConnFmt)}", "debug")
 	//def curConnSeconds = (t0 && curConnFmt != "Not Available") ? getTimeDiffSeconds(curConnFmt) : 3000
 
-	def onlineStat = isOnline.toString() == "true" ? "online" : "offline"
+	String onlineStat = isOnline.toString() == "true" ? "online" : "offline"
 
 	if(isStateChange(device, "lastConnection", curConnFmt.toString())) {
 		def lastChk = device.currentState("lastConnection")?.value
@@ -254,7 +252,7 @@ def determinePwrSrc() {
 	//log.debug "checkins: $checkins | Avg: $checkinAvg"
 }
 
-def powerTypeEvent(wired=false) {
+void powerTypeEvent(wired=false) {
 	def curVal = device.currentState("powerSourceNest")?.value
 	def newValSt = wired == true ? "wired" : "battery"
 	def newVal = wired == true ? "mains" : "battery"
@@ -265,20 +263,20 @@ def powerTypeEvent(wired=false) {
 	}
 }
 
-def lastTestedEvent(dt) {
+void lastTestedEvent(dt) {
 	def lastTstVal = device.currentState("lastTested")?.value
 	def tf = new SimpleDateFormat("MMM d, yyyy - h:mm:ss a")
 	tf.setTimeZone(getTimeZone())
 	def regex1 = /Z/
-	def t0 = dt ? dt.replaceAll(regex1, "-0000") : dt
-	def lastTest = !t0 ? "No Test Recorded" : "${tf?.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0))}"
+	String t0 = dt ? dt.replaceAll(regex1, "-0000") : dt
+	String lastTest = !t0 ? "No Test Recorded" : "${tf?.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0))}"
 	if(isStateChange(device, "lastTested", lastTest.toString())) {
 		Logger("Last Manual Test was: (${lastTest}) | Original State: (${lastTstVal})")
 		sendEvent(name: 'lastTested', value: lastTest, displayed: true, isStateChange: true)
 	}
 }
 
-def softwareVerEvent(ver) {
+void softwareVerEvent(ver) {
 	def verVal = device.currentState("softwareVer")?.value
 	if(isStateChange(device, "softwareVer", ver.toString())) {
 		Logger("Firmware Version: (${ver}) | Original State: (${verVal})")
@@ -286,7 +284,7 @@ def softwareVerEvent(ver) {
 	}
 }
 
-def apiStatusEvent(issueDesc) {
+void apiStatusEvent(issueDesc) {
 	def curStat = device.currentState("apiStatus")?.value
 	def newStat = issueDesc
 	if(isStateChange(device, "apiStatus", newStat.toString())) {
@@ -295,7 +293,7 @@ def apiStatusEvent(issueDesc) {
 	}
 }
 
-def lastUpdatedEvent(sendEvt=false) {
+void lastUpdatedEvent(sendEvt=false) {
 	//def now = new Date()
 	//def tf = new SimpleDateFormat("MMM d, yyyy - h:mm:ss a")
 	//tf.setTimeZone(getTimeZone())
@@ -309,7 +307,7 @@ def lastUpdatedEvent(sendEvt=false) {
 	}
 }
 
-def uiColorEvent(color) {
+void uiColorEvent(color) {
 	def colorVal = device.currentState("uiColor")?.value
 	if(isStateChange(device, "uiColor", color.toString())) {
 		Logger("UI Color is: (${color}) | Original State: (${colorVal})")
@@ -317,7 +315,7 @@ def uiColorEvent(color) {
 	}
 }
 
-def batteryStateEvent(batt) {
+void batteryStateEvent(batt) {
 	def stbattery = (batt == "replace") ? 5 : 100
 	def battVal = device.currentState("batteryState")?.value
 	def stbattVal = device.currentState("battery")?.value
@@ -328,7 +326,7 @@ def batteryStateEvent(batt) {
 	}
 }
 
-def testingStateEvent(test) {
+void testingStateEvent(test) {
 	def testVal = device.currentState("isTesting")?.value
 	if(isStateChange(device, "isTesting", test.toString())) {
 		Logger("Testing State: (${test}) | Original State: (${testVal})")
@@ -336,16 +334,16 @@ def testingStateEvent(test) {
 	}
 }
 
-def carbonSmokeStateEvent(coState, smokeState) {
+void carbonSmokeStateEvent(coState, smokeState) {
 	//values in Hubitat are tested, clear, detected
 	//values from nest are ok, warning, emergency
 	def carbonVal = device.currentState("nestCarbonMonoxide")?.value
 	def smokeVal = device.currentState("nestSmoke")?.value
 	def testVal = device.currentState("isTesting")?.value
 
-	def alarmStateHE = "ok"
-	def smokeValStr = "clear"
-	def carbonValStr = "clear"
+	String alarmStateHE = "ok"
+	String smokeValStr = "clear"
+	String carbonValStr = "clear"
 
 	if (smokeState == "emergency" || smokeState == "warning") {
 		alarmStateHE = smokeState == "emergency" ? "smoke-emergency" : "smoke-warning"
@@ -376,11 +374,11 @@ def carbonSmokeStateEvent(coState, smokeState) {
  |										LOGGING FUNCTIONS										|
  *************************************************************************************************/
 
-def lastN(String input, n) {
+String lastN(String input, n) {
 	return n > input?.size() ? input : input[-n..-1]
 }
 
-void Logger(msg, logType = "debug") {
+void Logger(String msg, String logType = "debug") {
 	if(!logEnable || !msg) { return }
 	def smsg = "${device.displayName} (v${devVer()}) | ${msg}"
 	if(state?.enRemDiagLogging == null) {

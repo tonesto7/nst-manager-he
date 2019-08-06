@@ -4395,7 +4395,7 @@ def GetTimeDiffSeconds(strtDate, stpDate=null, methName=null) {
 	} else { return null }
 }
 
-def daysOk(days) {
+boolean daysOk(days) {
 	if(days) {
 		def dayFmt = new SimpleDateFormat("EEEE")
 		if(getTimeZone()) { dayFmt.setTimeZone(getTimeZone()) }
@@ -4418,13 +4418,13 @@ def epochToTime(tm) {
 	return tf.format(tm)
 }
 
-def getDtNow() {
+String getDtNow() {
 	def now = new Date()
 	return formatDt(now)
 }
 
-def modesOk(modeEntry) {
-	def res = true
+boolean modesOk(modeEntry) {
+	boolean res = true
 	if(modeEntry) {
 		modeEntry?.each { m ->
 			if(m.toString() == location?.mode.toString()) { res = false }
@@ -4433,7 +4433,7 @@ def modesOk(modeEntry) {
 	return res
 }
 
-def isInMode(modeList) {
+boolean isInMode(modeList) {
 	if(modeList) {
 		//log.debug "mode (${location.mode}) in list: ${modeList} | result: (${location?.mode in modeList})"
 		return location.mode.toString() in modeList
@@ -4503,31 +4503,31 @@ def toQueryString(Map m) {
 |									LOGGING AND Diagnostic										|
 *************************************************************************************************/
 
-def lastN(String input, n) {
+String lastN(String input, n) {
 	return n > input?.size() ? input : input[-n..-1]
 }
 
-def LogTrace(msg, logSrc=null) {
-        def trOn = (showDebug && advAppDebug) ? true : false
-        if(trOn) {
-                Logger(msg, "trace", logSrc, state?.enRemDiagLogging)
-        }
+void LogTrace(String msg, String logSrc=null) {
+	boolean trOn = (showDebug && advAppDebug) ? true : false
+	if(trOn) {
+		Logger(msg, "trace", logSrc, state?.enRemDiagLogging)
+	}
 }
 
-def LogAction(msg, type="debug", showAlways=false, logSrc=null) {
-        def isDbg = showDebug ? true : false
-        if(showAlways || (isDbg && !showAlways)) { Logger(msg, type, logSrc) }
+void LogAction(String msg, String type="debug", boolean showAlways=false, String logSrc=null) {
+	boolean isDbg = showDebug ? true : false
+	if(showAlways || (isDbg && !showAlways)) { Logger(msg, type, logSrc) }
 }
 
-def Logger(msg, type="debug", logSrc=null, noSTlogger=false) {
+void Logger(String msg, String type="debug", String logSrc=null, boolean noSTlogger=false) {
 	if(msg && type) {
-		def labelstr = ""
+		String labelstr = ""
 		if(state?.dbgAppndName == null) {
 			def tval = parent ? parent.getSettingVal("dbgAppndName") : settings?.dbgAppndName
 			state?.dbgAppndName = (tval || tval == null) ? true : false
 		}
 		if(state?.dbgAppndName) { labelstr = "${app.label} | " }
-		def themsg = "${labelstr}${msg}"
+		String themsg = "${labelstr}${msg}"
 		//log.debug "Logger remDiagTest: $msg | $type | $logSrc"
 
 		if(state?.enRemDiagLogging == null) {
@@ -4542,8 +4542,8 @@ def Logger(msg, type="debug", logSrc=null, noSTlogger=false) {
 			//log.debug "set enRemDiagLogging to ${state?.enRemDiagLogging}"
 		}
 		if(state?.enRemDiagLogging) {
-			def theId = lastN(app?.id.toString(),5)
-			def theLogSrc = (logSrc == null) ? (parent ? "Automation-${theId}" : "NestManager") : logSrc
+			String theId = lastN(app?.id.toString(),5)
+			String theLogSrc = (logSrc == null) ? (parent ? "Automation-${theId}" : "NestManager") : logSrc
 			parent?.saveLogtoRemDiagStore(themsg, type, theLogSrc)
 		} else {
 		if(!noSTlogger) {
@@ -4578,11 +4578,11 @@ def Logger(msg, type="debug", logSrc=null, noSTlogger=false) {
 |				Application Help and License Info Variables					|
 *******************************************************************************/
 ///////////////////////////////////////////////////////////////////////////////
-def appName()		{ return "${appLabel()}" }
-def appLabel()		{ return "NST Diagnostics" }
-def gitRepo()		{ return "tonesto7/nest-manager"}
-def gitBranch()		{ return "master" }
-def gitPath()		{ return "${gitRepo()}/${gitBranch()}"}
+String appName()		{ return "${appLabel()}" }
+String appLabel()		{ return "NST Diagnostics" }
+String gitRepo()		{ return "tonesto7/nest-manager"}
+String gitBranch()		{ return "master" }
+String gitPath()		{ return "${gitRepo()}/${gitBranch()}"}
 //def betaMarker()	{ return false }
 //def appDevType()	{ return false }
 //def appDevName()	{ return "" }
