@@ -20,7 +20,7 @@
 *
 ***********************************************************************************************************************/
 
-public static String version()	{ return "v1.0.3" }
+public static String version()	{ return "v1.0.4" }
 
 /***********************************************************************************************************************
 *
@@ -297,9 +297,9 @@ def finishPoll(obs) {
 //	sendEvent(name: "feelslike_c", value: obs.current.feelslike_c, unit: "C", /* isStateChange: true, */ displayed: true)
 //	sendEvent(name: "feelslike_f", value: obs.current.feelslike_f, unit: "F", /* isStateChange: true, */ displayed: true)
 
-	def hum = obs.current.humidity?.toString().replaceAll("\\%", "") as Double
-	def Tc = Math.round(obs.current.feelslike_c as Double) as Double
-	def curDew = estimateDewPoint(hum,Tc)
+	double hum = obs.current.humidity?.toString().replaceAll("\\%", "") as Double
+	double Tc = Math.round(obs.current.feelslike_c as Double) as Double
+	float curDew = estimateDewPoint(hum,Tc)
 	if(obs.current.temp_c < curDew) { curDew = obs.current.temp_c }
 	curDew = !wantMetric() ? (curDew * 9/5 + 32).round(1) : curDew
 	sendEvent(name: "dewpoint", value: curDew, unit: "${(!wantMetric() ? 'F' : 'C')}", /* isStateChange: true, */ displayed: true)
@@ -381,7 +381,6 @@ private getXUdata() {
 public ahttpRequestHandler(resp, callbackData) {
 	def json = [:]
 	def obs = [:]
-	def err
 	if ((resp.status == 200) && resp.data) {
 		try {
 			json = resp.getJson()
@@ -391,10 +390,10 @@ public ahttpRequestHandler(resp, callbackData) {
 		}
 	} else {
 		if(resp.hasError()) {
-			error "http Response Status: ${resp.status}   error Message: ${resp.getErrorMessage()}"
+			log.error "http Response Status: ${resp.status}   error Message: ${resp.getErrorMessage()}"
 			return
 		}
-		error "no data: ${resp.status}   resp.data: ${resp.data} resp.json: ${resp.json}"
+		log.error "no data: ${resp.status}   resp.data: ${resp.data} resp.json: ${resp.json}"
 		return
 	}
 	obs = json
@@ -413,14 +412,14 @@ private getSunriseAndSunset(latitude, longitude, forDate) {
 }
 
 private estimateDewPoint(double rh,double t) {
-	def L = Math.log(rh/100)
-	def M = 17.27 * t
-	def N = 237.3 + t
-	def B = (L + (M/N)) / 17.27
-	def dp = (237.3 * B) / (1 - B)
+	double L = Math.log(rh/100)
+	double M = 17.27 * t
+	double N = 237.3 + t
+	double B = (L + (M/N)) / 17.27
+	double dp = (237.3 * B) / (1 - B)
 
-	def dp1 = 243.04 * ( Math.log(rh / 100) + ( (17.625 * t) / (243.04 + t) ) ) / (17.625 - Math.log(rh / 100) - ( (17.625 * t) / (243.04 + t) ) )
-	def ave = (dp + dp1)/2
+	double dp1 = 243.04 * ( Math.log(rh / 100) + ( (17.625 * t) / (243.04 + t) ) ) / (17.625 - Math.log(rh / 100) - ( (17.625 * t) / (243.04 + t) ) )
+	double ave = (dp + dp1)/2
 	//log.debug "dp: ${dp.round(1)} dp1: ${dp1.round(1)} ave: ${ave.round(1)}"
 	ave = dp1
 	return ave.round(1)
@@ -449,9 +448,9 @@ private estimateLux(localTime, sunriseTime, sunsetTime, noonTime, twilight_begin
 //	log.debug "localTime: $localTime | sunriseTime: $sunriseTime | noonTime: $noonTime | sunsetTime: $sunsetTime"
 
 	def tZ = TimeZone.getTimeZone(tz_id)
-	def lux = 0l
-	def aFCC = true
-	def l
+	long lux = 0l
+	boolean aFCC = true
+	float l
 
 	if (timeOfDayIsBetween(sunriseTime, noonTime, localTime, tZ))	  {
 		//log.debug "between sunrise and noon"
@@ -479,9 +478,9 @@ private estimateLux(localTime, sunriseTime, sunsetTime, noonTime, twilight_begin
 		aFCC = false
 	}
 
-	def cC = condition_code.toInteger()
-	def cCT = ''
-	def cCF
+	int cC = condition_code.toInteger()
+	String cCT = ''
+	float cCF
 	if (aFCC)
 		if (conditionFactor[cC])	{
 			cCF = conditionFactor[cC][1]

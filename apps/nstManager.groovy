@@ -7,6 +7,7 @@
 import groovy.json.*
 import java.text.SimpleDateFormat
 import java.security.MessageDigest
+import groovy.transform.Field
 
 definition(
 	name: "NST Manager",
@@ -21,15 +22,15 @@ definition(
 	oauth: true
 )
 
-def appVer() { "2.0.3" }
-def namespace()  { "tonesto7" }
-def devCltNum() { 1 }
-def restEnabled(){ true } // Enables the Rest Stream Device
-def DevPoll() { 60 } // 1 minute poll time (when rest is not active)
-def StrPoll() { 120 } // 2 minute poll time (when rest is not active)
-def MetaPoll() { 3600*4 } // 4 hrs poll time (when rest is not active)
-def refreshWait() { 10 } // Restricts Manual Refreshes to every every 10 seconds
-def tempChgWaitVal() { 3 } // This is the wait time after manually changing temp before sending the command.  It allows successive changes and avoids exceeding nest command limits
+String appVer() { "2.0.4" }
+String namespace()  { "tonesto7" }
+int devCltNum() { 1 }
+boolean restEnabled(){ true } // Enables the Rest Stream Device
+int DevPoll() { 60 } // 1 minute poll time (when rest is not active)
+int StrPoll() { 120 } // 2 minute poll time (when rest is not active)
+int MetaPoll() { 3600*4 } // 4 hrs poll time (when rest is not active)
+int refreshWait() { 10 } // Restricts Manual Refreshes to every every 10 seconds
+int tempChgWaitVal() { 3 } // This is the wait time after manually changing temp before sending the command.  It allows successive changes and avoids exceeding nest command limits
 
 preferences {
 	page(name: "authPage")
@@ -57,7 +58,7 @@ mappings {
  *******************************************************************************/
 def appInfoSect()	{
 	section() {
-		def str = """
+		String str = """
 		<div class="appInfoSect" style="width: 300px; height: 70px; display: inline-table;">
 			<ul style=" margin: 0 auto; padding: 0; list-style-type: none;">
 			<img style="float: left; padding: 10px;" src="https://pbs.twimg.com/profile_images/519883786020847617/TqhjjrE__400x400.png" width="60px"/>
@@ -73,8 +74,8 @@ def appInfoSect()	{
 
 def authPage() {
 	//LogTrace("authPage()")
-	def description
-	def oauthTokenProvided = false
+	String description
+	boolean oauthTokenProvided = false
 
 	if(getNestAuthToken()) {
 		description = "<i>You are connected.</i>"
@@ -84,12 +85,12 @@ def authPage() {
 		description = "<i>Tap to enter Nest Login Credentials</i>"
 		if(!state?.access_token) { getAccessToken() }
 		if(!state?.access_token) { enableOauth(); getAccessToken() }
-		def ok4Main = (state?.access_token && nestDevAccountCheckOk())
+		boolean ok4Main = (state?.access_token && nestDevAccountCheckOk())
 		return dynamicPage(name: "authPage", title: "", nextPage: ok4Main ? "mainPage" : "", install: false, uninstall: false) {
 			if(!ok4Main) {
 				section () {
-					def title = ""
-					def desc = ""
+					String title = ""
+					String desc = ""
 					if(!state?.access_token) {
 						title = "OAuth Error"
 						desc = "OAuth is not Enabled for ${app?.name} application.  Please click remove and review the installation directions again"
@@ -114,10 +115,10 @@ def authPage() {
 				}
 			}
 			if(ok4Main && !getNestAuthToken()) {
-				def redirectUrl = getOauthInitUrl()
+				String redirectUrl = getOauthInitUrl()
 				LogTrace("AuthToken not found: Directing to Login Page")
 				section(sectionTitleStr("Nest Authorization Page")) {
-					def txt = '<ul style="padding-left: 15px; text-align: left;">'
+					String txt = '<ul style="padding-left: 15px; text-align: left;">'
 					txt += "<li>Tap <b><i><u>Login to Nest</u></i></b> below to authorize Hubitat to access your Nest Account.</li>"
 					txt += "<li>You will be taken to the <u>Works with Nest</u> login page.</li>"
 					txt += "<li>Read the permission descriptions and if you Agree press the <b>Accept</b> button.</li>"
@@ -134,46 +135,46 @@ def authPage() {
 
 def mainPage() {
 	//LogTrace("mainPage")
-	def isInstalled = state?.isInstalled
-	def setupComplete = (isInstalled == true)
+	boolean isInstalled = state?.isInstalled
+	boolean setupComplete = (isInstalled == true)
 	return dynamicPage(name: "mainPage", title: "", nextPage: (!setupComplete ? "reviewSetupPage" : null), install: true, uninstall: isInstalled) {
 		appInfoSect()
-		def ttm_str = "Tap to modify"
-		def ttc_str = "Tap to configure"
+		String ttm_str = "Tap to modify"
+		String ttc_str = "Tap to configure"
 		if(isInstalled) {
 			if(settings?.structures && !state?.structures) { state?.structures = settings?.structures }
 			section(sectionTitleStr("Nest Location Mode:")) {
-				def pres = getLocationPresence()
-				def color = (pres == "away") ? "orange" : (pres == "home" ? "#00c9ff" : null)
+				String pres = getLocationPresence()
+				String color = (pres == "away") ? "orange" : (pres == "home" ? "#00c9ff" : null)
 				paragraph imgTitle(getAppImg("home_icon.png"), "${strCapitalize(pres ?: "Not Available Yet!")}", color), state: "complete"
 			}
 			section(sectionTitleStr("Devices & Location:")) {
-				def t1 = getDevicesDesc(false)
-				def devDesc = t1 ? "${t1}\n\n<i>${ttm_str}</i>" : "<i>${ttc_str}</i>"
+				String t1 = getDevicesDesc(false)
+				String devDesc = t1 ? "${t1}\n\n<i>${ttm_str}</i>" : "<i>${ttc_str}</i>"
 				href "deviceSelectPage", title: inputTitleStr("Manage/View Devices"), description: devDesc, state: "complete"
 			}
 		}
 		if(!isInstalled) { devicesPage() }
 		if(isInstalled) {
 			if(state?.structures && (state?.thermostats || state?.protects || state?.cameras)) {
-				def t1 = getInstAutoTypesDesc()
-				def autoDesc = t1 ? "${t1}\n\n<i>${ttm_str}</i>" : "<i>${ttc_str}</i>"
+				String t1 = getInstAutoTypesDesc()
+				String autoDesc = t1 ? "${t1}\n\n<i>${ttm_str}</i>" : "<i>${ttc_str}</i>"
 				section("Manage Automations:") {
 					href "automationsPage", title: imgTitle(getAppImg("nst_automations_5.png"), inputTitleStr("Automations")), description: autoDesc, state: (t1 ? "complete" : null)
 				}
 
 			}
 			section("Notifications Options:") {
-				def t1 = getAppNotifConfDesc()
+				String t1 = getAppNotifConfDesc()
 				href "notifPrefPage", title: imgTitle(getAppImg("notification_icon2.png"), inputTitleStr("Notifications")), description: (t1 ? "${t1}<i>\n\n${ttm_str}</i>" : "<i>${ttc_str}</i>"), state: (t1 ? "complete" : null)
 			}
 			section(sectionTitleStr("Nest Authentication:")) {
-				def t1 = getNestAuthToken() ? "Nest Authorized\n<b>Last API Connection:</b>\n• ${getTimestampVal("lastDevDataUpd")}" : ""
-				def authDesc = t1 ? "${t1}\n\n<i>${ttm_str}</i>" : "<i>${ttc_str}</i>"
+				String t1 = getNestAuthToken() ? "Nest Authorized\n<b>Last API Connection:</b>\n• ${getTimestampVal("lastDevDataUpd")}" : ""
+				String authDesc = t1 ? "${t1}\n\n<i>${ttm_str}</i>" : "<i>${ttc_str}</i>"
 				href "nestLoginPrefPage", title: imgTitle(getAppImg("login_icon.png"), inputTitleStr("Manage Login")), description: authDesc, state: (t1 ? "complete" : null)
 			}
 			section(sectionTitleStr("App Logging:")) {
-				def t1 = getAppDebugDesc()
+				String t1 = getAppDebugDesc()
 				href "debugPrefPage", title: imgTitle(getAppImg("log.png"), inputTitleStr("Configure Logging")), description: (t1 ? "${t1 ?: ""}\n\n<i>${ttm_str}</i>" : "<i>${ttc_str}</i>"), state: (t1) ? "complete" : null
 			}
 		}
@@ -181,7 +182,7 @@ def mainPage() {
 }
 
 def deviceSelectPage() {
-	def isInstalled = state?.isInstalled
+	boolean isInstalled = state?.isInstalled
 	return dynamicPage(name: "deviceSelectPage", title: pageTitleStr("Device Selection"), nextPage: (!isInstalled ? "mainPage" : null), install: true, uninstall: false) {
 		devicesPage()
 	}
@@ -189,8 +190,8 @@ def deviceSelectPage() {
 
 def devicesPage() {
 	def structs = getNestStructures()
-	def isInstalled = state?.isInstalled
-	def structDesc = !structs?.size() ? "No Locations Found" : "Found (${structs?.size()}) Locations"
+	boolean isInstalled = state?.isInstalled
+	String structDesc = !structs?.size() ? "No Locations Found" : "Found (${structs?.size()}) Locations"
 	if (state?.thermostats || state?.protects || state?.cameras || state?.presDevice ) {  // if devices are configured, you cannot change the structure until they are removed
 		section(sectionTitleStr("Nest Location:")) {
 			paragraph imgTitle(getAppImg("nest_structure_icon.png"), "${inputTitleStr("Name:")} ${structs[state?.structures]}${(structs.size() > 1) ? "\n(Remove All Devices to Change!)" : ""}")
@@ -201,9 +202,9 @@ def devicesPage() {
 		}
 	}
 	if (settings?.structures) {
-		state?.structures = settings?.structures
-		def newStrucName = structs && structs?."${state?.structures}" ? "${structs[state?.structures]}" : null
-		state?.structureName = newStrucName ?: state?.structureName
+		state.structures = settings?.structures
+		String newStrucName = structs && structs?."${state?.structures}" ? "${structs[state?.structures]}" : null
+		state.structureName = newStrucName ?: state?.structureName
 
 		def stats = getNestThermostats()
 		def coSmokes = getNestProtects()
@@ -214,25 +215,25 @@ def devicesPage() {
 			if(stats?.size() > 0) {
 				input(name: "thermostats", title: imgTitle(getAppImg("thermostat_icon.png"), """<u>Nest Thermostats</u><small style="color: blue !important;"> (${stats?.size()} found)</small>"""), type: "enum", required: false, multiple: true, submitOnChange: true, options:stats)
 			}
-			state?.thermostats = settings?.thermostats ? statState(settings?.thermostats) : null
+			state.thermostats = settings?.thermostats ? statState(settings?.thermostats) : null
 			if(coSmokes.size() > 0) {
 				input(name: "protects", title: imgTitle(getAppImg("protect_icon.png"), """<u>Nest Protects</u><small style="color: blue !important;"> (${coSmokes?.size()} found)</small>"""), type: "enum", required: false, multiple: true, submitOnChange: true, options: coSmokes)
 			}
-			state?.protects = settings?.protects ? coState(settings?.protects) : null
+			state.protects = settings?.protects ? coState(settings?.protects) : null
 			if(cams.size() > 0) {
 				input(name: "cameras", title: imgTitle(getAppImg("camera_icon.png"), """<u>Nest Cameras</u><small style="color: blue !important;"> (${cams?.size()} found)</small>"""), type: "enum", required: false, multiple: true, submitOnChange: true, options: cams)
 			}
-			state?.cameras = settings?.cameras ? camState(settings?.cameras) : null
+			state.cameras = settings?.cameras ? camState(settings?.cameras) : null
 			input(name: "presDevice", title: imgTitle(getAppImg("presence_icon.png"), inputTitleStr("Add Presence Device?")), type: "bool", defaultValue: false, required: false, submitOnChange: true)
-			state?.presDevice = settings?.presDevice ?: null
+			state.presDevice = settings?.presDevice ?: null
 
 			input "weatherDevice", "capability.relativeHumidityMeasurement", title: imgTitle(getAppImg("temperature_icon.png"), inputTitleStr("External Weather Devices?")), required: false, multiple: false, submitOnChange: true
 		}
 
-		def devSelected = (state?.structures && (state?.thermostats || state?.protects || state?.cameras || state?.presDevice))
+		boolean devSelected = (state?.structures && (state?.thermostats || state?.protects || state?.cameras || state?.presDevice))
 		if(isInstalled && devSelected) {
 			section("<h3>Customize Device Names:</h3>") {
-				def descStr
+				String descStr
 				if(state?.devNameOverride) {
 					if(state?.custLabelUsed) {
 						descStr = "• Custom Labels Are Active"
@@ -241,7 +242,7 @@ def devicesPage() {
 						descStr = "• Using Location Name as Prefix is Active"
 					}
 				}
-				def devDesc = (descStr) ? "\n ${descStr}\n\n<i>Tap to modify</i>" : "<i>Tap to configure</i>"
+				String devDesc = (descStr) ? "\n ${descStr}\n\n<i>Tap to modify</i>" : "<i>Tap to configure</i>"
 				href "devNamePage", title: imgTitle(getAppImg("device_name_icon.png"), inputTitleStr("Device Names")), description: devDesc, state:(!state?.devNameOverride || (state.devNameOverride && (state?.custLabelUsed || state?.useAltNames))) ? "complete" : ""
 			}
 		}
@@ -251,24 +252,24 @@ def devicesPage() {
 def reviewSetupPage() {
 	return dynamicPage(name: "reviewSetupPage", title: "", install: true, uninstall: state?.isInstalled) {
 		section(sectionTitleStr("Device Setup Summary:")) {
-			def t0 = getDevicesDesc()
-			def str = t0 ?: ""
+			String t0 = getDevicesDesc()
+			String str = t0 ?: ""
 			paragraph title: (!state?.isInstalled ? "Devices Pending Install:" : "Installed Devices:"), "${str}"
 			paragraph '<p style="color: blue;">Tap <b>Done</b> to complete the install and create the devices selected</p>', state: "complete"
 		}
 	}
 }
 
- def devNamePage() {
-	def pagelbl = state?.isInstalled ? "Device Labels" : "Custom Device Labels"
+def devNamePage() {
+	String pagelbl = state?.isInstalled ? "Device Labels" : "Custom Device Labels"
 	dynamicPage(name: "devNamePage", title: pageLbl, nextPage: "", install: false) {
 		if(settings?.devNameOverride == null || state?.devNameOverride == null) {
-			state?.devNameOverride = true;
+			state.devNameOverride = true;
 			settingUpdate("devNameOverride","true","bool")
 		}
-		def overrideName = (state?.devNameOverride == true)
-		def altName = (state?.useAltNames == true)
-		def custName = (state?.custLabelUsed == true)
+		boolean overrideName = (state?.devNameOverride == true)
+		boolean altName = (state?.useAltNames == true)
+		boolean custName = (state?.custLabelUsed == true)
 		section(sectionTitleStr("Device Name Settings")) {
 			input (name: "devNameOverride", type: "bool", title: inputTitleStr("App Overwrites Device Names?"), required: false, defaultValue: overrideName, submitOnChange: true )
 			if(devNameOverride && !useCustDevNames) {
@@ -278,13 +279,13 @@ def reviewSetupPage() {
 				input (name: "useCustDevNames", type: "bool", title: inputTitleStr("Assign Custom Names?"), required: false, defaultValue: custName, submitOnChange: true, image: "" )
 			}
 
-			state?.devNameOverride = settings?.devNameOverride ? true : false
-			if(state?.devNameOverride) {
-				state?.useAltNames = settings?.useAltNames ? true : false
-				state?.custLabelUsed = settings?.useCustDevNames ? true : false
+			state.devNameOverride = settings?.devNameOverride ? true : false
+			if(state.devNameOverride) {
+				state.useAltNames = settings?.useAltNames ? true : false
+				state.custLabelUsed = settings?.useCustDevNames ? true : false
 			} else {
-				state?.useAltNames = false
-				state?.custLabelUsed = false
+				state.useAltNames = false
+				state.custLabelUsed = false
 			}
 /*
 			if(state?.custLabelUsed) {
@@ -297,10 +298,10 @@ def reviewSetupPage() {
 			//paragraph "Current Device Handler Names", image: ""
 		}
 
-		def found = false
+		boolean found = false
 		if(state?.thermostats) {
 			section (sectionTitleStr("Thermostat Device(s):")) {
-				state?.thermostats?.each { t ->
+				state.thermostats?.each { t ->
 					found = true
 					def d = getChildDevice(getNestTstatDni(t))
 					deviceNameFunc(d, getNestTstatLabel(t.value, t.key), "tstat_${t?.key}_lbl", "thermostat")
@@ -333,8 +334,8 @@ def reviewSetupPage() {
 		if(state?.presDevice) {
 			section (sectionTitleStr("Presence Device Name:")) {
 				found = true
-				def pLbl = getNestPresLabel()
-				def dni = getNestPresId()
+				String pLbl = getNestPresLabel()
+				String dni = getNestPresId()
 				def d = getChildDevice(dni)
 				deviceNameFunc(d, pLbl, "presDev_lbl", "presence")
 			}
@@ -342,22 +343,22 @@ def reviewSetupPage() {
 		if(!found) {
 			paragraph "<h3>No Devices Selected</h3>"
 		}
-		state?.forceChildUpd = true
+		state.forceChildUpd = true
 	}
  }
 
- def deviceNameFunc(dev, label, inputStr, devType) {
-	def dstr = ""
+def deviceNameFunc(dev, String label, String inputStr, String devType) {
+	String dstr = ""
 	if(dev) {
 		dstr += "<u>Found:</u> ${dev.displayName}"
 		if(dev.displayName != label) {
-			def str1 = "\n\n<b>Name is not set to default.\nDefault name is:</b>"
+			String str1 = "\n\n<b>Name is not set to default.\nDefault name is:</b>"
 			dstr += "$str1\n${label}"
 		}
 	} else {
 		dstr += "<b>New Name:</b>\n${label}"
 	}
-	def dtyp =  state?.custLabelUsed ? "blank" : devType
+	String dtyp =  state?.custLabelUsed ? "blank" : devType
 	paragraph imgTitle(getAppImg("${dtyp}_icon.png"), "${dstr}", color), state: "complete"
 	//paragraph "${dstr}", state: "complete", image: (state?.custLabelUsed) ? " " : getAppImg("${devType}_icon.png")
 	if(state?.custLabelUsed) {
@@ -365,14 +366,14 @@ def reviewSetupPage() {
 	}
  }
 
-def getAppNotifConfDesc() {
-	def str = ""
+String getAppNotifConfDesc() {
+	String str = ""
 	if(settings?.phone || (settings?.pushoverEnabled && settings?.pushoverDevices)) {
 		str += (settings?.pushoverEnabled) ? "${str != "" ? "\n" : ""}Pushover: (Enabled)" : ""
 		str += (settings?.phone) ? "${str != "" ? "\n" : ""}Sending via: (SMS)" : ""
 
 		if(str != "") {
-			def t0 = ""
+			String t0 = ""
 			t0 += settings?.appApiIssuesMsg != false ? "\n • API CMD Failures" : ""
 			t0 += settings?.locPresChangeMsg != false ? "\n • Nest Home/Away Status Changes" : ""
 			t0 += settings?.camStreamNotifMsg != false ? "\n • Camera Stream Alerts" : ""
@@ -383,7 +384,7 @@ def getAppNotifConfDesc() {
 			}
 		}
 	}
-	return str != "" ? str : null
+	return str != "" ? str : (String)null
 }
 
 def notifPrefPage() {
@@ -425,10 +426,10 @@ def notifPrefPage() {
 	}
 }
 
-def sendMsg(String msgType, String msg, lvl, pushoverDev=null, sms=null) {
-	def newMsg = "${msgType}: ${msg}" as String
+boolean sendMsg(String msgType, String msg, int lvl, pushoverDev=null, sms=null) {
+	String newMsg = "${msgType}: ${msg}"
 	LogTrace("sendMsg $lvl $newMsg")
-	def retVal = false
+	boolean retVal = false
 	if(lvl == 1 && settings?.appApiIssuesMsg == false) { return }
 	if(lvl == 2 && settings?.locPresChangeMsg == false) { return }
 	if(lvl == 3 && settings?.camStreamNotifMsg == false) { return }
@@ -438,11 +439,11 @@ def sendMsg(String msgType, String msg, lvl, pushoverDev=null, sms=null) {
 		retVal = true
 		notifDev*.deviceNotification(newMsg)
 	}
-	def thephone = sms ? sms.toString() : settings?.phone ? settings?.phone?.toString() : ""
+	String thephone = sms ? sms.toString() : settings?.phone ? settings?.phone?.toString() : ""
 	if(thephone) {
 		retVal = true
-		def t0 = newMsg.take(140)
-		sendSms(thephone as String, t0 as String)
+		String t0 = newMsg.take(140)
+		sendSms(thephone, t0)
 	}
 	return retVal
 }
@@ -466,7 +467,7 @@ def debugPrefPage() {
 		if(settings?.appDebug) {
 			if(getTimestampVal("debugEnableDt") == null) { updTimestampMap("debugEnableDt", getDtNow()) }
 		} else { updTimestampMap("debugEnableDt", null) }
-		state?.needChildUpd = true
+		state.needChildUpd = true
 
 		section("App Info") {
 			paragraph imgTitle(getAppImg("progress_bar.png"), "Current State Usage:\n${getStateSizePerc()}% (${getStateSize()} bytes)"), required: true, state: (getStateSizePerc() <= 70 ? "complete" : null)
@@ -522,26 +523,26 @@ def getRemDiagApp() {
 	return null
 }
 
-private diagLogProcChange(setOn) {
+private void diagLogProcChange(setOn) {
 	log.trace "diagLogProcChange($setOn)"
-	def doInit = false
-	def msg = "Remote Diagnostic Logs "
+	boolean doInit = false
+	String msg = "Remote Diagnostic Logs "
 
-	def mysetOn = (settings?.enDiagWebPage && settings?.enRemDiagLogging) ? true : false
+	boolean  mysetOn = (settings?.enDiagWebPage && settings?.enRemDiagLogging) ? true : false
 	//log.trace "state: ${state?.enRemDiagLogging}   time:  ${getTimestampVal("remDiagLogActivatedDt")}"
 	if(mysetOn) {
 		if(!state?.enRemDiagLogging && getTimestampVal("remDiagLogActivatedDt") == null) {
 			msg += "activated"
 			doInit = true
 			updTimestampMap("remDiagLogActivatedDt", getDtNow())
-			state?.enRemDiagLogging = true
+			state.enRemDiagLogging = true
 			updTimestampMap("remDiagDataSentDt", getDtNow()) // allow us some time for child to start
 		}
 	} else {
 		if(getTimestampVal("remDiagLogActivatedDt") != null || state?.enRemDiagLogging) {
 			msg += "deactivated"
 			settingUpdate("enRemDiagLogging", "false","bool")
-			state?.enRemDiagLogging = false
+			state.enRemDiagLogging = false
 			updTimestampMap("remDiagLogActivatedDt", null)
 			atomicState?.remDiagLogDataStore = []
 			doInit = true
@@ -578,11 +579,11 @@ private diagLogProcChange(setOn) {
 	}
 }
 
-def getRemDiagActSec() { return getTimeSeconds("remDiagLogActivatedDt", 100000, "getRemDiagActSec").toInteger() }
-def getLastRemDiagSentSec() { return getTimeSeconds("remDiagDataSentDt", 1000, "getLastRemDiagSentSec").toInteger() }
+int getRemDiagActSec() { return getTimeSeconds("remDiagLogActivatedDt", 100000, "getRemDiagActSec") }
+int getLastRemDiagSentSec() { return getTimeSeconds("remDiagDataSentDt", 1000, "getLastRemDiagSentSec") }
 
 
-def getDevOpt() {
+boolean getDevOpt() {
 	return true
 //	appSettings?.devOpt.toString() == "true" ? true : false
 }
@@ -590,10 +591,10 @@ def getDevOpt() {
 /******************************************************************************
  |						PAGE TEXT DESCRIPTION METHODS						|
  *******************************************************************************/
-def getDevicesDesc(startNewLine=true) {
-	def pDev = settings?.thermostats || settings?.protects || settings?.cameras
-	def vDev = settings?.vThermostats || settings?.presDevice
-	def str = ""
+String getDevicesDesc(boolean startNewLine=true) {
+	boolean pDev = settings?.thermostats || settings?.protects || settings?.cameras
+	boolean vDev = settings?.vThermostats || settings?.presDevice
+	String str = ""
 	str += pDev ? "${startNewLine ? "\n" : ""}<b>Physical Devices:</b>" : ""
 	str += settings?.thermostats ? "\n • <i>[${settings?.thermostats?.size()}] Thermostat${(settings?.thermostats?.size() > 1) ? "s" : ""}</i>" : ""
 	str += settings?.protects ? "\n • <i>[${settings?.protects?.size()}] Protect${(settings?.protects?.size() > 1) ? "s" : ""}</i>" : ""
@@ -607,8 +608,8 @@ def getDevicesDesc(startNewLine=true) {
 	return (str != "") ? str : null
 }
 
-def getAppDebugDesc() {
-	def str = ""
+String getAppDebugDesc() {
+	String str = ""
 	str += isAppDebug() ? "App Debug: (${debugStatus()})${advAppDebug ? "(Trace)" : ""}" : ""
 	str += settings?.showDataChgdLogs ? "${str ? "\n" : ""}Log API Changes: (${settings?.showDataChgdLogs ? "True" : "False"})" : ""
 	str += getRemDiagDesc() ? "${str ? "\n" : ""}${getRemDiagDesc()}" : ""
@@ -616,8 +617,8 @@ def getAppDebugDesc() {
 }
 
 
-def getRemDiagDesc() {
-	def str = ""
+String getRemDiagDesc() {
+	String str = ""
 	str += settings?.enDiagWebPage ? "Web Page: (${settings.enDiagWebPage})" : ""
 	if(settings?.enRemDiagLogging) {
 		str += "\nLog Collection: (${settings.enRemDiagLogging})"
@@ -660,12 +661,12 @@ def nestTokenResetPage() {
 	}
 }
 
-def autoAppName()       { return "NST Automations" }
+String autoAppName()       { return "NST Automations" }
 
 def automationsPage() {
 	return dynamicPage(name: "automationsPage", title: "Installed Automations", nextPage: !parent ? "" : "automationsPage", install: false) {
 		def autoApp = getChildApps()?.find { it?.name == autoAppName() || it?.name == "NST Graphs" || it?.name == "NST Diagnostics"}
-		def autoAppInst = isAutoAppInst()
+		boolean autoAppInst = isAutoAppInst()
 		if(autoApp) { /*Nothing to add here yet*/ }
 		else {
 			section("") {
@@ -703,7 +704,7 @@ def automationsPage() {
 				} else if (state?.disableAllAutomations && !settings?.disableAllAutomations) {
 					toggleAllAutomations(true)
 				}
-				state?.disableAllAutomations = settings?.disableAllAutomations == true ? true : false
+				state.disableAllAutomations = settings?.disableAllAutomations == true ? true : false
 			}
 		}
 		state.ok2InstallAutoFlag = true
@@ -713,7 +714,7 @@ def automationsPage() {
 def automationSchedulePage() {
 	dynamicPage(name: "automationSchedulePage", title: "View Schedule Data..", uninstall: false) {
 		section() {
-			def str = ""
+			String str = ""
 			def tz = TimeZone.getTimeZone(location.timeZone.ID)
 			def sunTimes = app.getSunriseAndSunset()
 			def sunsetT = Date.parse("E MMM dd HH:mm:ss z yyyy", sunTimes.sunset.toString()).format('h:mm a', tz)
@@ -725,7 +726,7 @@ def automationSchedulePage() {
 			paragraph sectionTitleStr("$str"), state: "complete"
 		}
 		def schMap = []
-		def schSize = 0
+		int schSize = 0
 		getChildApps()?.each { capp ->
 			def schedActMap = [:]
 			def schInfo = capp?.getScheduleDesc()
@@ -735,8 +736,8 @@ def automationSchedulePage() {
 				schInfo?.each { schItem ->
 					section("${capp?.label}") {
 						def schNum = schItem?.key
-						def schDesc = schItem?.value
-						def schInUse = (curSch?.toInteger() == schNum?.toInteger()) ? true : false
+						String schDesc = schItem?.value
+						boolean schInUse = (curSch?.toInteger() == schNum?.toInteger()) ? true : false
 						if(schNum && schDesc) {
 							paragraph "${schDesc}", state: schInUse ? "complete" : ""
 						}
@@ -752,10 +753,10 @@ def automationSchedulePage() {
 	}
 }
 
-def toggleAllAutomations(upd = false) {
-	def t0 = settings?.disableAllAutomations == true ? true : false
-	state?.disableAllAutomations = t0
-	def disStr = !t0 ? "Returning control to" : "Disabling"
+private void toggleAllAutomations(boolean upd = false) {
+	boolean t0 = settings?.disableAllAutomations == true ? true : false
+	state.disableAllAutomations = t0
+	String disStr = !t0 ? "Returning control to" : "Disabling"
 	def cApps = getChildApps()
 	cApps.each { ca ->
 		LogAction("toggleAllAutomations: ${disStr} automation ${ca?.label}", "info", true)
@@ -764,21 +765,21 @@ def toggleAllAutomations(upd = false) {
 }
 
 
-def isAutoAppInst() {
-	def chldCnt = 0
+boolean isAutoAppInst() {
+	int chldCnt = 0
 	childApps?.each { cApp ->
 		chldCnt = chldCnt + 1
 	}
 	return (chldCnt > 0) ? true : false
 }
 
-def getInstAutoTypesDesc() {
+String getInstAutoTypesDesc() {
 	def dat = ["nestMode":0, "watchDog":0, "chart": 0, "remDiag":0, "disabled":0, "schMot":["tSched":0, "remSen":0, "fanCtrl":0, "fanCirc":0, "conWat":0, "extTmp":0, "leakWat":0, "humCtrl":0 ]]
 	def disItems = []
 	def nItems = [:]
 	def schMotItems = []
 	childApps?.each { a ->
-		def type
+		String type
 		def ver
 		def dis
 		try {
@@ -795,8 +796,8 @@ def getInstAutoTypesDesc() {
 			disItems.push(a?.label.toString())
 			dat["disabled"] = dat["disabled"] ? dat["disabled"]+1 : 1
 		} else {
-			def tt1 = ""
-			def clean = false
+			String tt1 = ""
+			boolean clean = false
 			switch(type) {
 				case "nMode":
 					tt1 = "nestMode"
@@ -853,9 +854,9 @@ def getInstAutoTypesDesc() {
 			}
 		}
 	}
-	state?.installedAutomations = dat
+	state.installedAutomations = dat
 
-	def str = ""
+	String str = ""
 	str += (dat?.watchDog > 0 || dat?.chart > 0 || dat?.nestMode > 0 || dat?.schMot || dat?.remDiag || dat?.disabled > 0) ? "Installed Automations:" : ""
 	str += (dat?.watchDog > 0) ? "\n• Watchdog (Active)" : ""
 	str += (dat?.chart > 0) ? "\n• Chart (Active)" : ""
@@ -863,7 +864,7 @@ def getInstAutoTypesDesc() {
 	str += (dat?.nestMode > 0) ? ((dat?.nestMode > 1) ? "\n• Nest Home/Away (${dat?.nestMode})" : "\n• Nest Home/Away (Active)") : ""
 	def sch = dat?.schMot.findAll { it?.value > 0}
 	str += (sch?.size()) ? "\n• Thermostat (${sch?.size()})" : ""
-	def scii = 1
+	int scii = 1
 	def newList = schMotItems?.unique()
 	newList?.sort()?.each { sci ->
 		str += "${scii == newList?.size() ? "\n  └" : "\n  ├"} $sci"
@@ -876,22 +877,22 @@ def getInstAutoTypesDesc() {
 /******************************************************************************
  *#########################	NATIVE APP METHODS ############################*
  ******************************************************************************/
-def installed() {
+void installed() {
 	LogAction("Installed with settings: ${settings}", "debug", true)
 	initialize()
 }
 
-def updated() {
+void updated() {
 	LogAction("${app.label} Updated...with settings: ${settings}", "debug", true)
 	if(state?.needToFinalize == true) { LogAction("Skipping updated() as auth change in-progress", "warn", true); return }
 	initialize()
-	state?.lastUpdatedDt = getDtNow()
+	state.lastUpdatedDt = getDtNow()
 }
 
-def uninstalled() {
+void uninstalled() {
 	LogTrace("uninstalled")
 	try {
-		state?.access_token = null
+		state.access_token = null
 		//Revokes Nest Auth Token
 		revokeNestToken()
 		addRemoveDevices(true)
@@ -900,17 +901,17 @@ def uninstalled() {
 	}
 }
 
-def initialize() {
+void initialize() {
 	LogAction("initialize", "debug", true)
 	restStreamHandler(true, "initialize()", false)
 	unschedule()
 	unsubscribe()
-	state?.pollingOn = false
-	state?.restStreamingOn = false
-	state?.streamPolling = false
-	atomicState?.diagRunInOn = false
-	atomicState?.workQrunInActive = false
-	state?.pollBlocked = false
+	state.pollingOn = false
+	state.restStreamingOn = false
+	state.streamPolling = false
+	atomicState.diagRunInOn = false
+	atomicState.workQrunInActive = false
+	state.pollBlocked = false
 	state.remove("pollBlockedReason")
 	stateCleanup()
 
@@ -930,27 +931,27 @@ def initialize() {
 	if(settings?.structures && state?.structures && !state?.structureName) {
 		def structs = getNestStructures()
 		if(structs && structs["${state?.structures}"]) {
-			state?.structureName = structs[state?.structures]?.toString()
+			state.structureName = structs[state?.structures]?.toString()
 		}
 	}
 	reInitBuiltins() // get watchDog to release devices
 	runIn(4, "initialize_Part1", [overwrite: true])  // give time for child apps to run
 }
 
-def initialize_Part1() {
+void initialize_Part1() {
 	LogTrace("initialize_Part1")
 	if(!addRemoveDevices()) {
-		atomicState?.cmdQlist = []
+		atomicState.cmdQlist = []
 	}
 	if(settings?.thermostats || settings?.protects || settings?.cameras || settings?.presDevice) {
-		state?.isInstalled = true
+		state.isInstalled = true
 	} else { state?.isInstalled = false }
 	subscriber()
 	runIn(10, "finishUp", [overwrite: true])  // give time for devices to initialize
 
 }
 
-def finishUp() {
+void finishUp() {
 	LogTrace("finishUp")
 	if(state?.isInstalled) { createSavedNest() }
 	getChildApps()?.sort()?.each { chld ->
@@ -959,7 +960,7 @@ def finishUp() {
 	setPollingState()
 }
 
-def logsOff() {
+void logsOff() {
 	log.warn "${app.label} debug logging disabled...${getDebugLogsOnSec()}"
 	settingUpdate("appDebug", "false",  "bool")
 	settingUpdate("advAppDebug", "false", "bool")
@@ -967,33 +968,33 @@ def logsOff() {
 	updTimestampMap("debugEnableDt", null)
 }
 
-def getDebugLogsOnSec() { return getTimeSeconds("debugEnableDt", 0, "getDebugLogsOnSec").toInteger() }
+int getDebugLogsOnSec() { return getTimeSeconds("debugEnableDt", 0, "getDebugLogsOnSec") }
 
-def reInitBuiltins() {
+void reInitBuiltins() {
 	initWatchdogApp()
 	initNestModeApp() // this just removes extras
 	initBuiltin("initChart") // this just removes extras and lets it release device subscriptions
 	initRemDiagApp()
 }
 
-def initNestModeApp() {
+void initNestModeApp() {
 	initBuiltin("initNestModeApp")
 }
 
-def initWatchdogApp() {
+void initWatchdogApp() {
 	initBuiltin("initWatchdogApp")
 }
 
-def initRemDiagApp() {
+void initRemDiagApp() {
 	log.trace "initRemDiagApp"
 	initBuiltin("initRemDiagApp")
 }
 
-def initBuiltin(btype) {
+void initBuiltin(String btype) {
 	LogTrace("initBuiltin(${btype})")
-	def keepApp = false
-	def createApp = false
-	def autoStr = ""
+	boolean keepApp = false
+	boolean createApp = false
+	String autoStr = ""
 	switch (btype) {
 		case "initNestModeApp":
 			if(automationNestModeEnabled()) {
@@ -1002,8 +1003,8 @@ def initBuiltin(btype) {
 			}
 			break
 		case "initWatchdogApp":
-			def t0 = settings?.thermostats?.size()
-			def t1 = settings?.cameras?.size()
+			int t0 = settings?.thermostats?.size()
+			int t1 = settings?.cameras?.size()
 			if(state?.isInstalled && (t0 || t1)) {
 				keepApp = true
 				createApp = true
@@ -1018,7 +1019,7 @@ def initBuiltin(btype) {
 			} else {
 				settingUpdate("enRemDiagLogging", "false","bool")
 				remDiagAppAvail(false)
-				state?.enRemDiagLogging = false
+				state.enRemDiagLogging = false
 				updTimestampMap("remDiagLogActivatedDt", null)
 			}
 			autoStr = "remDiag"
@@ -1049,13 +1050,13 @@ def initBuiltin(btype) {
 				//appUpdateNotify(true, "automation")
 			}
 		} else if(mynestApp?.size() >= 1) {
-			def cnt = 1
+			int cnt = 1
 			mynestApp?.each { chld ->
 				if(keepApp && cnt == 1) {
 					LogTrace("initBuiltin: Running Update Command on ${autoStr}")
 					chld.updated()
 				} else if(!keepApp || cnt > 1) {
-					def slbl = keepApp ? "warn" : "info"
+					String slbl = keepApp ? "warn" : "info"
 					LogAction("initBuiltin: Deleting ${keepApp ? "Extra " : ""}${autoStr} (${chld?.id})", slbl, true)
 					deleteChildApp(chld.id)
 					updTimestampMap("lastAnalyticUpdDt", null)
@@ -1066,8 +1067,8 @@ def initBuiltin(btype) {
 	}
 }
 
-def getWatDogAppChildLabel()    { return "${location.name} Watchdog" }
-def getRemDiagAppChildLabel()   { return "NST Location ${location.name} Diagnostics" }
+private String getWatDogAppChildLabel()    { return "${location.name} Watchdog" }
+private String getRemDiagAppChildLabel()   { return "NST Location ${location.name} Diagnostics" }
 
 def subscriber() { }
 
@@ -1082,37 +1083,37 @@ private adj_temp(tempF) {
 	}
 }
 
-def setPollingState() {
+void setPollingState() {
 	if(!state?.thermostats && !state?.protects && !state?.cameras && !state?.presDevice) {
 		LogAction("No Devices are Installed | Polling is DISABLED", "info", true)
 		unschedule("poll")
-		state?.pollingOn = false
-		state?.streamPolling = false
+		state.pollingOn = false
+		state.streamPolling = false
 	} else {
 		if(!getNestAuthToken()) {
 			state.pollingOn = false
 		}
 		if(!state?.pollingOn && getNestAuthToken()) {
 			//LogAction("Polling is ACTIVE", "info", true)
-			state?.pollingOn = true
-			def pollTime = DevPoll() as Integer
-			def pollStrTime = StrPoll() as Integer
-			def theMax = 60
+			state.pollingOn = true
+			int pollTime = DevPoll() as Integer
+			int pollStrTime = StrPoll() as Integer
+			int theMax = 60
 			if(restEnabled() && state?.restStreamingOn) {
 				theMax = 300   // 5 minute poll checks
-				state?.streamPolling = true
+				state.streamPolling = true
 			}
 			pollTime = Math.max(pollTime, theMax)
 			pollStrTime = Math.max(pollStrTime, theMax)
-			def timgcd = gcd([pollTime, pollStrTime])
+			int timgcd = gcd([pollTime, pollStrTime])
 			def random = new Random()
-			def random_int = random.nextInt(60)
+			int random_int = random.nextInt(60)
 			timgcd = (timgcd.toInteger() / 60) < 1 ? 1 : timgcd.toInteger() / 60
-			def random_dint = random.nextInt(timgcd.toInteger())
+			int random_dint = random.nextInt(timgcd.toInteger())
 			LogTrace("Next POLL scheduled (${random_int} ${random_dint}/${timgcd} * * * ?)")
 			// this runs every timgcd minutes
 			schedule("${random_int} ${random_dint}/${timgcd} * * * ?", poll)
-			def timChk = state?.streamPolling ? 1200 : 240
+			int timChk = state?.streamPolling ? 1200 : 240
 			if(!getTimestampVal("lastDevDataUpd") || getLastDevPollSec() > timChk) {
 				poll(true)
 			} else {
@@ -1122,7 +1123,7 @@ def setPollingState() {
 	}
 }
 
-def startStopStream() {
+void startStopStream() {
 	// log.trace "startStopStream"
 	if((!restEnabled()) && !state?.restStreamingOn) {
 		return
@@ -1141,15 +1142,15 @@ def getStreamDevice() {
 	return getChildDevice(getEventDeviceDni())
 }
 
-def restStreamHandler(close = false, src, resetPoll=true) {
+void restStreamHandler(boolean close = false, String src, boolean resetPoll=true) {
 	LogAction("restStreamHandler(close: ${close}, src: ${src}), resetPoll: ${resetPoll}", "trace", true)
 	def dev = getStreamDevice()
 	if(!dev) {
-		state?.restStreamingOn = false;
+		state.restStreamingOn = false;
 		return
 	} else {
-		if(close == true) {
-			state?.restStreamingOn = false;
+		if(close) {
+			state.restStreamingOn = false;
 			dev?.streamStop()
 			if(state?.streamPolling && resetPoll) {
 				resetPolling()
@@ -1157,7 +1158,7 @@ def restStreamHandler(close = false, src, resetPoll=true) {
 		} else {
 			if(!getNestAuthToken()) {
 				LogTrace("restStreamHandler: No authToken")
-				state?.restStreamingOn = false
+				state.restStreamingOn = false
 				return
 			}
 			dev?.blockStreaming(!restEnabled())
@@ -1170,17 +1171,17 @@ def restStreamHandler(close = false, src, resetPoll=true) {
 def setRestActive(val) {
 	// LogAction("setRestActive($val)", "trace", true)
 	if(val == false) {
-		state?.restStreamingOn = false
+		state.restStreamingOn = false
 		resetPolling()
 	}
 }
 */
 
-def restStreamCheck() {
+void restStreamCheck() {
 	LogTrace("restStreamCheck")
 	def streamDev = getStreamDevice()
 	if(!streamDev) {
-		state?.restStreamingOn = false
+		state.restStreamingOn = false
 		resetPolling()
 		return
 	}
@@ -1217,21 +1218,21 @@ def refresh(child = null) {
  |								API/Device Polling Methods										|
  *************************************************************************************************/
 
-def pollFollow() { poll() }
+void pollFollow() { poll() }
 
-def poll(force = false, type = null) {
+void poll(boolean force = false, String type = null) {
 	if(isPollAllowed()) {
 		if(force == true) {
 			forcedPoll(type)
 			finishPoll()
 			return
 		}
-		def pollTime = DevPoll() as Integer
+		int pollTime = DevPoll() as Integer
 		if(restEnabled() && state?.restStreamingOn) {
 			pollTime = 300
 		}
-		def pollTimeout = pollTime*4 + 85
-		def lastCheckin = getLastHeardFromNestSec()
+		int pollTimeout = pollTime*4 + 85
+		int lastCheckin = getLastHeardFromNestSec()
 		if(lastCheckin > pollTimeout) {
 			if(restEnabled() && state?.restStreamingOn) {
 				if(lastCheckin < 10000) {
@@ -1258,17 +1259,17 @@ def poll(force = false, type = null) {
 		}
 		runIn(5,"startStopStream", [overwrite: true])
 
-		def okStruct = ok2PollStruct()
-		def okDevice = ok2PollDevice()
-		def okMeta = ok2PollMetaData()
-		def meta = false
-		def dev = false
-		def str = false
+		boolean okStruct = ok2PollStruct()
+		boolean okDevice = ok2PollDevice()
+		boolean okMeta = ok2PollMetaData()
+		boolean meta = false
+		boolean dev = false
+		boolean str = false
 		if(!okDevice && !okStruct && !(getLastHeardFromNestSec() > pollTimeout*3)) {
 			LogAction("Skipping Poll - Devices Data Updated: (${getLastDevPollSec()}sec) ago | Structure Data Updated: (${getLastStrPollSec()}sec) ago", "info", true)
 		}
 		else {
-			def sstr = ""
+			String sstr = ""
 			if(okStruct) {
 				sstr += "Structure Data (Last Updated: ${getLastStrPollSec()} seconds ago)"
 				str = getApiData("str")
@@ -1289,10 +1290,10 @@ def poll(force = false, type = null) {
 	}
 }
 
-def finishPoll(str=null, dev=null) {
+void finishPoll(boolean str=false, boolean dev=false) {
 	//LogTrace("finishPoll($str, $dev) received")
-	if(state?.pollBlocked) {
-		LogAction("Polling BLOCKED | Reason: (${state?.pollBlockedReason})", "trace", true);
+	if(state.pollBlocked) {
+		LogAction("Polling BLOCKED | Reason: (${state.pollBlockedReason})", "trace", true);
 		if(getLastAnyCmdSentSeconds() > 75) { // if poll is blocked and we have not sent a command recently, try to kick the queues
 			schedNextWorkQ();
 		}
@@ -1301,16 +1302,16 @@ def finishPoll(str=null, dev=null) {
 	if(getLastChildForceUpdSec() > (15*60)-2) { // if nest goes silent (no changes coming back); force all devices to get an update so they can check health
 		state.forceChildUpd = true
 	}
-	if(dev || str || state?.forceChildUpd || state?.needChildUpd) { updateChildData() }
+	if(dev || str || state.forceChildUpd || state.needChildUpd) { updateChildData() }
 	apiIssueNotify()
 	if(state?.enRemDiagLogging && settings?.enRemDiagLogging) {
 		saveLogtoRemDiagStore("", "", "", true) // force flush of remote logs
 	}
 }
 
-def resetPolling() {
-	state?.pollingOn = false
-	state?.streamPolling = false
+void resetPolling() {
+	state.pollingOn = false
+	state.streamPolling = false
 	unschedule("poll")
 	unschedule("finishPoll")
 	unschedule("postCmd")
@@ -1318,26 +1319,26 @@ def resetPolling() {
 	setPollingState()		// will call poll
 }
 
-def schedFinishPoll(devChg) {
+void schedFinishPoll(boolean devChg) {
 	finishPoll(false, devChg)
 	return
 }
 
-def forcedPoll(type = null) {
+void forcedPoll(String type = null) {
 	LogTrace("forcedPoll($type) received")
-	def lastFrcdPoll = getLastForcedPollSec()
-	def pollWaitVal = refreshWait()
+	int lastFrcdPoll = getLastForcedPollSec()
+	int pollWaitVal = refreshWait()
 	pollWaitVal = Math.max(pollWaitVal, 10)
 
 	if(lastFrcdPoll > pollWaitVal) { // This limits manual forces to 10 seconds or more
 		updTimestampMap("lastForcePoll", getDtNow())
-		atomicState?.workQrunInActive = false
-		state?.pollBlocked = false
+		atomicState.workQrunInActive = false
+		state.pollBlocked = false
 		state.remove("pollBlockedReason")
 		cmdProcState(false)
 
 		LogAction("Last Forced Poll was (${lastFrcdPoll} seconds) ago.", "info", true)
-		def str = "Gathering Latest Nest "
+		String str = "Gathering Latest Nest "
 		if(type == "dev" || !type) {
 			LogAction("${str}Device Data (forcedPoll)", "info", true)
 			getApiData("dev")
@@ -1354,37 +1355,37 @@ def forcedPoll(type = null) {
 		schedNextWorkQ()
 	} else {
 		LogAction("Too Soon for Gathering New Data | Elapsed Wait (${lastFrcdPoll}sec.) seconds | Minimum Wait (${refreshWait()}sec.)", "debug", true)
-		state?.needStrPoll = true
-		state?.needDevPoll = true
+		state.needStrPoll = true
+		state.needDevPoll = true
 	}
-	state?.forceChildUpd = true
+	state.forceChildUpd = true
 	updateChildData()
 }
 
-def postCmd() {
+void postCmd() {
 	//LogTrace("postCmd()")
 	poll()
 }
 
-def remDiagAppAvail(available) {
-	state?.remDiagAppAvailable = (available == true)
+void remDiagAppAvail(boolean available) {
+	state.remDiagAppAvailable = (available == true)
 }
 
-def createSavedNest() {
-	def str = "createSavedNest"
+void createSavedNest() {
+	String str = "createSavedNest"
 	LogTrace("${str}")
 	if(state?.isInstalled) {
 		def bbb = [:]
-		def bad = false
+		boolean bad = false
 		if(settings?.structures && state?.structures) {
 			def structs = getNestStructures()
-			def newStrucName = structs && structs?."${state?.structures}" ? "${structs[state?.structures]}" : null
+			String newStrucName = structs && structs?."${state?.structures}" ? "${structs[state?.structures]}" : null
 			if(newStrucName) {
 				bbb.a_structures_setting = settings.structures
 				bbb.a_structures_as = state.structures
 				bbb.a_structure_name_as = state?.structureName
 
-				def dData = state?.deviceData
+				def dData = deviceDataFLD
 				def t0 = [:]
 
 				t0 = dData?.thermostats?.findAll { it?.key?.toString() in settings?.thermostats }
@@ -1396,12 +1397,12 @@ def createSavedNest() {
 						t1?."${devItem.key.toString()}" = devItem?.value?.name
 					}
 				}
-				def t3 = settings?.thermostats?.size() ?: 0
+				int t3 = settings?.thermostats?.size() ?: 0
 				if(t1?.size() != t3) { LogAction("Thermostat Counts Wrong! | Current: (${t1?.size()}) | Expected: (${t3})", "error", true); bad = true }
 				bbb?.b_thermostats_as = settings?.thermostats && dData && state?.thermostats ? t1 : [:]
 				bbb?.b_thermostats_setting = settings?.thermostats ?: []
 
-				dData = state?.deviceData
+				dData = deviceDataFLD
 				t0 = [:]
 				t0 = dData?.smoke_co_alarms?.findAll { it?.key?.toString() in settings?.protects }
 				LogAction("${str} | Protects(${t0?.size()}): ${settings?.protects}", "info", true)
@@ -1417,7 +1418,7 @@ def createSavedNest() {
 				bbb.c_protects_as = settings?.protects && dData && state?.protects ? t1 : [:]
 				bbb.c_protects_settings = settings?.protects ?: []
 
-				dData = state?.deviceData
+				dData = deviceDataFLD
 				t0 = [:]
 				t0 = dData?.cameras?.findAll { it?.key?.toString() in settings?.cameras }
 				LogAction("${str} | Cameras(${t0?.size()}): ${settings?.cameras}", "info", true)
@@ -1435,8 +1436,8 @@ def createSavedNest() {
 			} else { LogAction("${str}: No Structures Found!!!", "warn", true) }
 
 			def t0 = state?.savedNestSettings ?: null
-			def t1 = t0 ? new groovy.json.JsonOutput().toJson(t0) : null
-			def t2 = bbb != [:] ? new groovy.json.JsonOutput().toJson(bbb) : null
+			String t1 = t0 ? new groovy.json.JsonOutput().toJson(t0) : null
+			String t2 = bbb != [:] ? new groovy.json.JsonOutput().toJson(bbb) : null
 			if(bad) {
 				state.savedNestSettingsprev = state?.savedNestSettings
 				state.savedNestSettingslastbuild = bbb
@@ -1446,14 +1447,14 @@ def createSavedNest() {
 				state.savedNestSettings = bbb
 				state.remove("savedNestSettingsprev")
 				state.remove("savedNestSettingslastbuild")
-				return true
+				return //true
 			}
 		} else { LogAction("${str}: No Structure Settings", "warn", true) }
 	} else { LogAction("${str}: NOT Installed!!!", "warn", true) }
-	return false
+	return //false
 }
 
-def mySettingUpdate(name, value, type=null) {
+void mySettingUpdate(String name, value, String type=null) {
 	if(getDevOpt()) {
 		LogAction("Setting $name set to type:($type) $value", "warn", true)
 		if(!state?.ReallyChanged) { return }
@@ -1463,18 +1464,18 @@ def mySettingUpdate(name, value, type=null) {
 	}
 }
 
-def checkRemapping() {
-	def str = "checkRemapping"
+void checkRemapping() {
+	String str = "checkRemapping"
 	LogTrace(str)
-	def astr = ""
+	String astr = ""
 	state.ReallyChanged = false
-	def myRC = state.ReallyChanged
+	boolean myRC = state.ReallyChanged
 	if(state?.isInstalled && settings?.structures) {
-		def aastr = getApiData("str")
-		def aadev = getApiData("dev")
+		boolean aastr = getApiData("str")
+		boolean aadev = getApiData("dev")
 		//def aameta = getApiData("meta")
-		def sData = state?.structData
-		def dData = state?.deviceData
+		def sData = state.structData
+		def dData = deviceDataFLD
 		//def mData = state?.metaData
 		def savedNest = state?.savedNestSettings
 		if(sData && dData /* && mData */ && savedNest) {
@@ -1484,15 +1485,15 @@ def checkRemapping() {
 				return
 			} else {
 				astr += "${str}: found the mess..cleaning up ${structs}"
-				state?.pollBlocked = true
-				state?.pollBlockedReason = "Remapping"
+				state.pollBlocked = true
+				state.pollBlockedReason = "Remapping"
 
 				def newStructures_settings = ""
 				def newThermostats_settings = []
 				def newvThermostats = [:]
 				def newProtects_settings = []
 				def newCameras_settings = []
-				def oldPresId = getNestPresId()
+				String oldPresId = getNestPresId()
 
 				sData?.each { strucId ->
 					def t0 = strucId.key
@@ -1527,7 +1528,7 @@ def checkRemapping() {
 						def dev = getChildDevice(t0)
 						if(dev) {
 	//						LogAction("${str}: myRC : ${myRC}  found dev oldId: ${t0}", "info", true)
-							def gotIt = false
+							boolean gotIt = false
 							dData?.thermostats?.each { devItem ->
 								def t21 = devItem.key
 								def t22 = devItem.value
@@ -1535,14 +1536,14 @@ def checkRemapping() {
 								if(!gotIt && t22 && newDevStructId && newDevStructId == newStructures_settings && dni.value == t22?.name) {
 									def t6 = [t22?.device_id].join('.')
 									def t7 = [ "${t6}":dni.value ]
-									def newDevId
+									String newDevId
 									t7.collect { ba ->
 										newDevId = getNestTstatDni(ba)
 									}
 									newThermostats_settings << newDevId
 									gotIt = true
 
-									def rstr = "found newDevId ${newDevId} to replace oldId: ${t0} ${t22?.name} |"
+									String rstr = "found newDevId ${newDevId} to replace oldId: ${t0} ${t22?.name} |"
 /*
 									if(settings?."${t0}_safety_temp_min") {
 										mySettingUpdate("${newDevId}_safety_temp_min", settings?."${t0}_safety_temp_min", "decimal")
@@ -1593,8 +1594,8 @@ def checkRemapping() {
 												newvThermostats."${t5}" = t1."v${t0}"
 												if(myRC) {
 													state."vThermostat${t5}" = state?."vThermostatv${t0}"
-													state?."vThermostatMirrorId${t5}" = newDevId
-													state?."vThermostatChildAppId${t5}" = state?."vThermostatChildAppIdv${t0}"
+													state."vThermostatMirrorId${t5}" = newDevId
+													state."vThermostatChildAppId${t5}" = state?."vThermostatChildAppIdv${t0}"
 												}
 
 												def automationChildApp = getChildApps().find{ it.id == state?."vThermostatChildAppIdv${t0}" }
@@ -1667,7 +1668,7 @@ def checkRemapping() {
 						def t0 = dni.key
 						def dev = getChildDevice(t0)
 						if(dev) {
-							def gotIt = false
+							boolean gotIt = false
 							dData?.smoke_co_alarms?.each { devItem ->
 								astr = ""
 								def t21 = devItem.key
@@ -1677,7 +1678,7 @@ def checkRemapping() {
 									//def newDevId = [t22?.device_id].join('.')
 									def t6 = [t22?.device_id].join('.')
 									def t7 = [ "${t6}":dni.value ]
-									def newDevId
+									String newDevId
 									t7.collect { ba ->
 										newDevId = getNestProtDni(ba)
 									}
@@ -1720,7 +1721,7 @@ def checkRemapping() {
 						def t0 = dni.key
 						def dev = getChildDevice(t0)
 						if(dev) {
-							def gotIt = false
+							boolean gotIt = false
 							dData?.cameras?.each { devItem ->
 								astr = ""
 								def t21 = devItem.key
@@ -1730,7 +1731,7 @@ def checkRemapping() {
 									//def newDevId = [t22?.device_id].join('.')
 									def t6 = [t22?.device_id].join('.')
 									def t7 = [ "${t6}":dni.value ]
-									def newDevId
+									String newDevId
 									t7.collect { ba ->
 										newDevId = getNestCamDni(ba)
 									}
@@ -1779,7 +1780,7 @@ def checkRemapping() {
 					if(settings?.presDevice) {
 						if(oldPresId) {
 							def dev = getChildDevice(oldPresId)
-							def newId = getNestPresId()
+							String newId = getNestPresId()
 							def ndev = getChildDevice(newId)
 							astr += "| DEV ${dev?.deviceNetworkId} | NEWID $newId |  NDEV: ${ndev?.deviceNetworkId} "
 							def t10 = "oldPresData${dev?.deviceNetworkId}"
@@ -1817,15 +1818,15 @@ def checkRemapping() {
 
 				} else { LogAction("no changes or no data a:${settings?.structures} b: ${newStructures_settings}", "info", true) }
 
-				state?.pollBlocked = false
-				state?.pollBlockedReason = ""
+				state.pollBlocked = false
+				state.pollBlockedReason = ""
 				return
 			}
 		} else { LogAction("don't have our data", "warn", true) }
 	} else { LogAction("not installed, no structure", "warn", true) }
 }
 
-def fixDevAS() {
+void fixDevAS() {
 	LogTrace("fixDevAS")
 	if(settings?.thermostats && !state?.thermostats) { state.thermostats = settings?.thermostats ? statState(settings?.thermostats) : null }
 	if(settings?.protects && !state?.protects) { state.protects = settings?.protects ? coState(settings?.protects) : null }
@@ -1834,9 +1835,9 @@ def fixDevAS() {
 	//state.weatherDevice = settings?.weatherDevice ?: null
 }
 
-def getApiData(type = null) {
+private boolean getApiData(String type = (String)null) {
 	//LogTrace("getApiData($type)")
-	def result = false
+	boolean result = false
 	if(!type || !getNestAuthToken()) { return result }
 
 	switch(type) {
@@ -1847,7 +1848,7 @@ def getApiData(type = null) {
 		default:
 			return result
 	}
-	def tPath = (type == "str") ? "/structures" : ((type == "dev") ? "/devices" : "/")
+	String tPath = (type == "str") ? "/structures" : ((type == "dev") ? "/devices" : "/")
 	def params = [
 			uri: getNestApiUrl(),
 			path: "$tPath",
@@ -1864,36 +1865,36 @@ def getApiData(type = null) {
 				if(type == "str") {
 					def t0 = resp?.data
 					//LogTrace("API Structure Resp.Data: ${t0}")
-					if(state?.structData == null) { state?.structData = t0 }
-					def chg = didChange(state?.structData, t0, "str", "poll")
+					if(state.structData == null) { state.structData = t0 }
+					boolean chg = didChange(state.structData, t0, "str", "poll")
 					if(chg) {
 						result = true
-						def newStrucName = state?.structData?.size() && state?.structures ? state?.structData[state?.structures]?.name : null
-						state?.structureName = newStrucName ?: state?.structureName
+						String newStrucName = state?.structData?.size() && state?.structures ? state?.structData[state?.structures]?.name : null
+						state.structureName = newStrucName ?: state.structureName
 					}
 				}
 				else if(type == "dev") {
 					def t0 = resp?.data
 					//LogTrace("API Device Resp.Data: ${t0}")
-					def chg = didChange(state?.deviceData, t0, "dev", "poll")
+					boolean chg = didChange(deviceDataFLD, t0, "dev", "poll")
 					if(chg) { result = true }
 				}
 				else if(type == "meta") {
 					//LogTrace("API Metadata Resp.Data: ${resp?.data}")
 					def nresp = resp?.data?.metadata
-					def chg = didChange(state?.metaData, nresp, "meta", "poll")
+					boolean chg = didChange(state?.metaData, nresp, "meta", "poll")
 					if(chg) { result = true }
 				}
 			} else {
 				LogAction("getApiData - ${type} Received: Resp (${resp?.status})", "error", true)
 				apiRespHandler(resp?.status, resp?.data, "getApiData(${type})", "${type} Poll")
 				apiIssueEvent(true)
-				state?.forceChildUpd = true
+				state.forceChildUpd = true
 			}
 		}
 	} catch (ex) {
 		//state?.apiRateLimited = false
-		state?.forceChildUpd = true
+		state.forceChildUpd = true
 		if(ex instanceof groovyx.net.http.HttpResponseException && ex?.response) {
 			apiRespHandler(ex?.response?.status, ex?.response?.data, "getApiData(ex catch)", "${type} Poll")
 		} else {
@@ -1911,21 +1912,23 @@ def streamDeviceInstalled(val) { state?.streamDevice = val }
 
 def eventStreamActive(Boolean val) { state?.eventStreamActive = val }
 
-def receiveEventData(evtData) {
+@Field static Map deviceDataFLD
+
+void receiveEventData(evtData) {
 	def status = [:]
 //	try {
 		// LogAction("evtData: $evtData", "trace", true)
-		def devChgd = false
-		def gotSomething = false
+		boolean devChgd = false
+		boolean gotSomething = false
 		if(evtData && evtData?.data && restEnabled()) {
 			if(!state?.restStreamingOn) {
-				state?.restStreamingOn = true
+				state.restStreamingOn = true
 			//	apiIssueEvent(false)
 			}
 			if(evtData?.data?.devices) {
 				//LogTrace("API Device Resp.Data: ${evtData?.data?.devices}")
 				gotSomething = true
-				def chg = didChange(state?.deviceData, evtData?.data?.devices, "dev", "stream")
+				boolean chg = didChange(deviceDataFLD, evtData?.data?.devices, "dev", "stream")
 				if(chg) {
 					devChgd = true
 				} //else { LogTrace("got deviceData") }
@@ -1933,16 +1936,16 @@ def receiveEventData(evtData) {
 			if(evtData?.data?.structures) {
 				//LogTrace("API Structure Resp.Data: ${evtData?.data?.structures}")
 				gotSomething = true
-				def chg = didChange(state?.structData, evtData?.data?.structures, "str", "stream")
+				boolean chg = didChange(state.structData, evtData?.data?.structures, "str", "stream")
 				if(chg) {
-					def newStrucName = state?.structData && state?.structures ? state?.structData[state?.structures]?.name : null
-					state?.structureName = newStrucName ?: state?.structureName
+					String newStrucName = state.structData && state?.structures ? state?.structData[state?.structures]?.name : null
+					state.structureName = newStrucName ?: state.structureName
 				} //else { LogTrace("got structData") }
 			}
 			if(evtData?.data?.metadata) {
 				//LogTrace("API Metadata Resp.Data: ${evtData?.data?.metadata}")
 				gotSomething = true
-				def chg = didChange(state?.metaData, evtData?.data?.metadata, "meta", "stream")
+				boolean chg = didChange(state?.metaData, evtData?.data?.metadata, "meta", "stream")
 				//if(!chg) { LogTrace("got metaData") }
 			}
 		} else {
@@ -1952,7 +1955,7 @@ def receiveEventData(evtData) {
 //			if(state?.restStreamingOn) {
 //				restStreamHandler(true, "receiveEventData(no data)")
 //			}
-//			state?.restStreamingOn = false
+//			state.restStreamingOn = false
 			runIn(6, "pollFollow", [overwrite: true])
 		}
 		if(gotSomething) {
@@ -1961,7 +1964,7 @@ def receiveEventData(evtData) {
 			//state?.apiRateLimited = false
 			//state?.apiCmdFailData = null
 		}
-		if(state?.forceChildUpd || state?.needChildUpd || devChgd) {
+		if(state.forceChildUpd || state.needChildUpd || devChgd) {
 			schedFinishPoll(devChgd)
 		}
 		status = ["data":"status received...ok", "code":200]
@@ -1973,14 +1976,14 @@ def receiveEventData(evtData) {
 //	render contentType: 'text/html', data: status?.data, status: status?.code
 }
 
-def didChange(old, newer, String type, String src) {
+boolean didChange(old, newer, String type, String src) {
 	//LogTrace("didChange: type: $type  src: $src")
-	def result = false
-	def srcStr = src.toUpperCase()
+	boolean result = false
+	String srcStr = src.toUpperCase()
 	if(newer != null) {
 		if(type == "str") {
 			updTimestampMap("lastStrDataUpd", getDtNow())
-			state?.needStrPoll = false
+			state.needStrPoll = false
 			newer.each {   // reduce stored state size
 				if(it?.value) {
 					def myId = it?.value?.structure_id
@@ -1992,7 +1995,7 @@ def didChange(old, newer, String type, String src) {
 		}
 		if(type == "dev") {
 			updTimestampMap("lastDevDataUpd", getDtNow())
-			state?.needDevPoll = false
+			state.needDevPoll = false
 			newer.each { t ->		// This reduces stored state size
 				def dtyp = t.key
 				t.value.each {
@@ -2016,18 +2019,18 @@ def didChange(old, newer, String type, String src) {
 		}
 		if(type == "meta") {
 			updTimestampMap("lastMetaDataUpd", getDtNow())
-			state?.needMetaPoll = false
+			state.needMetaPoll = false
 		}
 		if(old != newer) {
 			if(type == "str") {
-				def tt0 = state?.structData?.size() ? state?.structData : null
+				def tt0 = state?.structData?.size() ? state.structData : null
 				// Null safe does not work on array references that miss
 				def t0 = tt0 && state?.structures && tt0?."${state?.structures}" ?  tt0[state?.structures] : null
 				def t1 = newer && state?.structures && newer?."${state?.structures}" ? newer[state?.structures] : null
 
 				if(t1 && t0 != t1) {
 					result = true
-					state?.forceChildUpd = true
+					state.forceChildUpd = true
 					if(settings?.showDataChgdLogs == true && state?.enRemDiagLogging != true) {
 						def chgs = getChanges(t0, t1, "/structures", "structure")
 						if(chgs) { LogAction("STRUCTURE Data Changed ($srcStr): ${chgs}", "info", false) }
@@ -2035,17 +2038,17 @@ def didChange(old, newer, String type, String src) {
 						LogAction("Nest Structure Data HAS Changed ($srcStr)", "info", false)
 					}
 				}
-				state?.structData = newer
+				state.structData = newer
 			}
 			else if(type == "dev") {
-				def devChg = false
+				boolean devChg = false
 				def tstats = state?.thermostats.collect { dni ->
 					def t1 = dni.key
 					if(t1 && old && old?.thermostats && newer?.thermostats && old?.thermostats[t1] && newer?.thermostats[t1] && old?.thermostats[t1] == newer?.thermostats[t1]) {
 						//Nothing to Do
 					} else {
 						result = true
-						state?.needChildUpd = true
+						state.needChildUpd = true
 						if(t1 && old && old?.thermostats && newer?.thermostats && old?.thermostats[t1] && newer?.thermostats[t1]) {
 							if(settings?.showDataChgdLogs == true && state?.enRemDiagLogging != true) {
 								def chgs = getChanges(old?.thermostats[t1], newer?.thermostats[t1], "/devices/thermostats/${t1}", "thermostat")
@@ -2061,7 +2064,7 @@ def didChange(old, newer, String type, String src) {
 						//Nothing to Do
 					} else {
 						result = true
-						state?.needChildUpd = true
+						state.needChildUpd = true
 						if(t1 && old && old?.smoke_co_alarms && newer?.smoke_co_alarms && old?.smoke_co_alarms[t1] && newer?.smoke_co_alarms[t1]) {
 							if(settings?.showDataChgdLogs == true && state?.enRemDiagLogging != true) {
 								def chgs = getChanges(old?.smoke_co_alarms[t1], newer?.smoke_co_alarms[t1], "/devices/smoke_co_alarms/${t1}", "protect")
@@ -2077,7 +2080,7 @@ def didChange(old, newer, String type, String src) {
 						//Nothing to Do
 					} else {
 						result = true
-						state?.needChildUpd = true
+						state.needChildUpd = true
 						if(t1 && old && old?.cameras && newer?.cameras && old?.cameras[t1] && newer?.cameras[t1]) {
 							if(settings?.showDataChgdLogs == true && state?.enRemDiagLogging != true) {
 								def chgs = getChanges(old?.cameras[t1], newer?.cameras[t1], "/devices/cameras/${t1}", "camera")
@@ -2087,12 +2090,12 @@ def didChange(old, newer, String type, String src) {
 					}
 				}
 				if(devChg && (settings?.showDataChgdLogs != true)) { LogAction("Nest Device Data HAS Changed ($srcStr)", "info", false) }
-				state?.deviceData = newer
+				deviceDataFLD = newer
 			}
 			else if(type == "meta") {
 				result = true
-				state?.needChildUpd = true
-				state?.metaData = newer
+				state.needChildUpd = true
+				state.metaData = newer
 /*
 				if(settings?.showDataChgdLogs != true) {
 					LogAction("Nest MetaData HAS Changed ($srcStr)", "info", false)
@@ -2110,7 +2113,7 @@ def didChange(old, newer, String type, String src) {
 	return result
 }
 
-def getChanges(mapA, mapB, headstr, objType=null) {
+def getChanges(mapA, mapB, String headstr, String objType=null) {
 	def t0 = mapA
 	def t1 = mapB
 	def left = t0
@@ -2139,59 +2142,59 @@ def getChanges(mapA, mapB, headstr, objType=null) {
 	return null
 }
 
-def generateMD5_A(String s){
+private String generateMD5_A(String s){
 	MessageDigest.getInstance("MD5").digest(s.bytes).encodeHex().toString()
 }
 
-def updateChildData(force = false) {
-	LogTrace("updateChildData(force: $force) | forceChildUpd: ${state?.forceChildUpd} | needChildUpd: ${state?.needChildUpd} | pollBlocked: ${state?.pollBlocked}")
-	if(state?.pollBlocked) { return }
-	def nforce = state?.forceChildUpd
-	state?.forceChildUpd = true
+void updateChildData(boolean force = false) {
+	LogTrace("updateChildData(force: $force) | forceChildUpd: ${state.forceChildUpd} | needChildUpd: ${state.needChildUpd} | pollBlocked: ${state.pollBlocked}")
+	if(state.pollBlocked) { return }
+	boolean nforce = state?.forceChildUpd
+	//state.forceChildUpd = true
 	try {
 		updTimestampMap("lastChildUpdDt", getDtNow())
 		if(force || nforce) {
 			updTimestampMap("lastChildForceUpdDt", getDtNow())
 		}
-		def nestTz = getNestTimeZone()?.toString()
-		def api = apiIssueDesc()
-		def locPresence = getLocationPresence()
-		def locSecurityState = getSecurityState()
-		def locEtaBegin = getEtaBegin()
-		def locPeakStart = getPeakStart()
-		def locPeakEnd = getPeakEnd()
-		def restStreamingEn = restEnabled() != false
+		String nestTz = getNestTimeZone()?.toString()
+		String api = apiIssueDesc()
+		String locPresence = getLocationPresence()
+		String locSecurityState = getSecurityState()
+		String locEtaBegin = getEtaBegin()
+		String locPeakStart = getPeakStart()
+		String locPeakEnd = getPeakEnd()
+		boolean restStreamingEn = restEnabled() != false
 		if(settings?.devNameOverride == null /* || state?.useAltNames == null || state?.custLabelUsed == null */ ) { // Install / Upgrade force to on
-			state?.devNameOverride = true;
+			state.devNameOverride = true;
 			settingUpdate("devNameOverride", "true", "bool")
-			state?.useAltNames = true
+			state.useAltNames = true
 			settingUpdate("useAltNames", "true", "bool")
-			state?.custLabelUsed = false
+			state.custLabelUsed = false
 			settingUpdate("useCustDevNames", "false", "bool")
 		} else {
-			state?.devNameOverride = settings?.devNameOverride ? true : false
+			state.devNameOverride = settings?.devNameOverride ? true : false
 			if(state?.useAltNames == null || state?.custLabelUsed == null) {
 				if(state?.devNameOverride) {
-					state?.useAltNames = settings?.useAltNames ? true : false
-					state?.custLabelUsed = settings?.useCustDevNames ? true : false
+					state.useAltNames = settings?.useAltNames ? true : false
+					state.custLabelUsed = settings?.useCustDevNames ? true : false
 				} else {
-					state?.useAltNames = false
-					state?.custLabelUsed = false
+					state.useAltNames = false
+					state.custLabelUsed = false
 				}
 			}
 		}
 
-		def overRideNames = (state?.devNameOverride) ? true : false
+		boolean overRideNames = (state?.devNameOverride) ? true : false
 		def devices = getChildDevices()
 		devices?.each {
-			if(state?.pollBlocked) { return true }
-			def devId = it?.deviceNetworkId
-			if(devId && settings?.thermostats && state?.deviceData?.thermostats && state?.deviceData?.thermostats[devId]) {
-				def tData = [data: state?.deviceData?.thermostats[devId], tz: nestTz, apiIssues: api, pres: locPresence, childWaitVal: getChildWaitVal().toInteger(), etaBegin: locEtaBegin]
+			if(state.pollBlocked) { return true }
+			String devId = it?.deviceNetworkId
+			if(devId && settings?.thermostats && deviceDataFLD?.thermostats && deviceDataFLD?.thermostats[devId]) {
+				def tData = [data: deviceDataFLD?.thermostats[devId], tz: nestTz, apiIssues: api, pres: locPresence, childWaitVal: getChildWaitVal().toInteger(), etaBegin: locEtaBegin]
 
-				def oldTstatData = state?."oldTstatData${devId}"
-				def tDataChecksum = generateMD5_A(tData.toString())
-				state?."oldTstatData${devId}" = tDataChecksum
+				String oldTstatData = state?."oldTstatData${devId}"
+				String tDataChecksum = generateMD5_A(tData.toString())
+				state."oldTstatData${devId}" = tDataChecksum
 				tDataChecksum = state?."oldTstatData${devId}"
 
 				if(tData && (force || nforce || oldTstatData != tDataChecksum)) {
@@ -2200,10 +2203,10 @@ def updateChildData(force = false) {
 				} else { /* LogTrace("tstat ${devId} did not change") */ }
 				return true
 			}
-			else if(devId && settings?.protects && state?.deviceData?.smoke_co_alarms && state?.deviceData?.smoke_co_alarms[devId]) {
-				def pData = [data: state?.deviceData?.smoke_co_alarms[devId], showProtActEvts: (!showProtActEvts ? false : true), tz: nestTz, apiIssues: api ]
-				def oldProtData = state?."oldProtData${devId}"
-				def pDataChecksum = generateMD5_A(pData.toString())
+			else if(devId && settings?.protects && deviceDataFLD?.smoke_co_alarms && deviceDataFLD?.smoke_co_alarms[devId]) {
+				def pData = [data: deviceDataFLD?.smoke_co_alarms[devId], showProtActEvts: (!showProtActEvts ? false : true), tz: nestTz, apiIssues: api ]
+				String oldProtData = state?."oldProtData${devId}"
+				String pDataChecksum = generateMD5_A(pData.toString())
 				state?."oldProtData${devId}" = pDataChecksum
 				pDataChecksum = state?."oldProtData${devId}"
 
@@ -2213,10 +2216,10 @@ def updateChildData(force = false) {
 				} else { /* LogTrace("prot ${devId} did not change") */ }
 				return true
 			}
-			else if(devId && settings?.cameras && state?.deviceData?.cameras && state?.deviceData?.cameras[devId]) {
-				def camData = [data: state?.deviceData?.cameras[devId], tz: nestTz, apiIssues: api, motionSndChgWaitVal: motionSndChgWaitVal, secState: locSecurityState ]
-				def oldCamData = state?."oldCamData${devId}"
-				def cDataChecksum = generateMD5_A(camData.toString())
+			else if(devId && settings?.cameras && deviceDataFLD?.cameras && deviceDataFLD?.cameras[devId]) {
+				def camData = [data: deviceDataFLD?.cameras[devId], tz: nestTz, apiIssues: api, motionSndChgWaitVal: motionSndChgWaitVal, secState: locSecurityState ]
+				String oldCamData = state?."oldCamData${devId}"
+				String cDataChecksum = generateMD5_A(camData.toString())
 				state?."oldCamData${devId}" = cDataChecksum
 				cDataChecksum = state?."oldCamData${devId}"
 
@@ -2228,8 +2231,8 @@ def updateChildData(force = false) {
 			}
 			else if(devId && settings?.presDevice && devId == getNestPresId()) {
 				def pData = [tz:nestTz, pres: locPresence, apiIssues: api, etaBegin: locEtaBegin, secState: locSecurityState, peakStart: locPeakStart, peakEnd: locPeakEnd ]
-				def oldPresData = state?."oldPresData${devId}"
-				def pDataChecksum = generateMD5_A(pData.toString())
+				String oldPresData = state?."oldPresData${devId}"
+				String pDataChecksum = generateMD5_A(pData.toString())
 				state?."oldPresData${devId}" = pDataChecksum
 				pDataChecksum = state?."oldPresData${devId}"
 
@@ -2245,8 +2248,8 @@ def updateChildData(force = false) {
 
 			else if(devId && state?.vThermostats && state?."vThermostat${devId}") {
 				def physdevId = state?."vThermostatMirrorId${devId}"
-				if(physdevId && settings?.thermostats && state?.deviceData?.thermostats && state?.deviceData?.thermostats[physdevId]) {
-					def tmp_data = state?.deviceData?.thermostats[physdevId]
+				if(physdevId && settings?.thermostats && deviceDataFLD?.thermostats && deviceDataFLD?.thermostats[physdevId]) {
+					def tmp_data = deviceDataFLD?.thermostats[physdevId]
 					def data = tmp_data
 					def automationChildApp = getChildApps().find{ it.id == state?."vThermostatChildAppId${devId}" }
 					if(automationChildApp != null && !automationChildApp.getIsAutomationDisabled()) {
@@ -2301,8 +2304,8 @@ def updateChildData(force = false) {
 
 					def tData = [data: data, tz: nestTz, apiIssues: api, pres: locPresence, childWaitVal: getChildWaitVal().toInteger(), etaBegin: locEtaBegin, virt: true]
 
-					def oldTstatData = state?."oldvstatData${devId}"
-					def tDataChecksum = generateMD5_A(tData.toString())
+					String oldTstatData = state?."oldvstatData${devId}"
+					String tDataChecksum = generateMD5_A(tData.toString())
 					state?."oldvstatData${devId}" = tDataChecksum
 					tDataChecksum = state?."oldvstatData${devId}"
 
@@ -2331,33 +2334,33 @@ def updateChildData(force = false) {
 		updTimestampMap("lastChildUpdDt", null)
 		return
 	}
-	if(state?.pollBlocked) { return }
-	state?.forceChildUpd = false
-	state?.needChildUpd = false
+	if(state.pollBlocked) { return }
+	if(state.forceChildUpd) state.forceChildUpd = false
+	if(state.needChildUpd)  state.needChildUpd = false
 }
 
-def tUnitStr() {
+String tUnitStr() {
 	return "\u00b0${getTemperatureScale()}"
 }
 
-def setDeviceLabel(devId, labelStr) {
+private void setDeviceLabel(devId, labelStr) {
 	def dev = getChildDevice(devId)
 	if(labelStr) { dev.label = labelStr.toString() }
 }
 
-void physDevLblHandler(devType, devId, devLbl, devStateName, apiName, abrevStr, ovrRideNames) {
-	def nameIsDefault = false
-	def deflbl
-	def deflblval
+private void physDevLblHandler(String devType, devId, String devLbl, String devStateName, String apiName, String abrevStr, boolean ovrRideNames) {
+	boolean nameIsDefault = false
+	String deflbl
+	String deflblval
 	state?."${devStateName}"?.each { t ->
 		if(t.key == devId) {
 			deflblval = t.value
 			deflbl = getDefaultLabel("${devType}", t.value)
 		}
 	}
-	def curlbl = devLbl?.toString()
+	String  curlbl = devLbl?.toString()
 	if(deflbl && deflbl == curlbl) { nameIsDefault = true }
-	def newlbl = "getNest${abrevStr.capitalize()}Label"(apiName, devId)
+	String newlbl = "getNest${abrevStr.capitalize()}Label"(apiName, devId)
 	//LogTrace("physDevLblHandler | deflbl: ${deflbl} | curlbl: ${curlbl} | newlbl: ${newlbl} | deflblval: ${deflblval} || devId: ${devId}")
 	if(ovrRideNames || (nameIsDefault && curlbl != newlbl)) {		// label change from nest
 		if(curlbl != newlbl) {
@@ -2378,9 +2381,9 @@ void physDevLblHandler(devType, devId, devLbl, devStateName, apiName, abrevStr, 
 
 }
 
-void virtDevLblHandler(devId, devLbl, devMethAbrev, abrevStr, ovrRideNames) {
-	def curlbl = devLbl?.toString()
-	def newlbl = "getNest${devMethAbrev.capitalize()}Label"()
+private void virtDevLblHandler(devId, String devLbl, String devMethAbrev, String abrevStr, boolean ovrRideNames) {
+	String curlbl = devLbl
+	String newlbl = "getNest${devMethAbrev.capitalize()}Label"()
 	//LogTrace("virtDevLblHandler | curlbl: ${curlbl} | newlbl: ${newlbl} || devId: ${devId}")
 	if(ovrRideNames && curlbl != newlbl) {
 		LogAction("Changing Name of Device from ${curlbl} to ${newlbl}", "info", true)
@@ -2407,8 +2410,8 @@ def apiIssues() {
 	return result
 }
 
-def apiIssueDesc() {
-	def res = "Good"
+String apiIssueDesc() {
+	String res = "Good"
 	//this looks at the last 3 items added and determines whether issue is sporadic or outage
 	def t0 = []
 	t0 = state?.apiIssuesList ?: [false, false, false, false, false, false, false]
@@ -2421,12 +2424,12 @@ def apiIssueDesc() {
 	return res
 }
 
-def issueListSize() { return 7 }
+int issueListSize() { return 7 }
 
-def getApiIssueSec() { return getTimeSeconds("apiIssueDt", 100000, "getApiIssueSec").toInteger() }
-def getLastApiIssueMsgSec() { return getTimeSeconds("lastApiIssueMsgDt", 100000, "getLastApiIssueMsgSec").toInteger() }
+int getApiIssueSec() { return getTimeSeconds("apiIssueDt", 100000, "getApiIssueSec") }
+int getLastApiIssueMsgSec() { return getTimeSeconds("lastApiIssueMsgDt", 100000, "getLastApiIssueMsgSec") }
 
-def apiIssueNotify() {
+private void apiIssueNotify() {
 	if( (getApiIssueSec() > 600) && (getLastAnyCmdSentSeconds() > 600)) {
 		updTimestampMap("apiIssueDt", null)
 		state.apiIssuesList = []
@@ -2437,10 +2440,10 @@ def apiIssueNotify() {
 	}
 
 	if( !(getLastApiIssueMsgSec() > 900)) { return }
-	def rateLimit = (state?.apiRateLimited) ? true : false
-	def apiIssue = apiIssues() ? true : false // any recent API issues
+	boolean rateLimit = (state?.apiRateLimited) ? true : false
+	boolean apiIssue = apiIssues() ? true : false // any recent API issues
 	if(apiIssue || rateLimit) {
-		def msg = ""
+		String msg = ""
 		msg += apiIssue ? "\nThe Nest API appears to be having issues. This will effect the updating of device and location data.\nThe issues started at (${getTimestampVal("apiIssueDt")})" : ""
 		msg += rateLimit ? "${apiIssue ? "\n\n" : "\n"}Your API connection is currently being Rate-limited for excessive commands." : ""
 		if(sendMsg("${app?.label} API Issue Warning", msg, 1)) {
@@ -2449,13 +2452,13 @@ def apiIssueNotify() {
 	}
 }
 
-def getLastFailedCmdMsgSec() { return getTimeSeconds("lastFailedCmdMsgDt", 100000, "getLastFailedCmdMsgSec").toInteger() }
+int getLastFailedCmdMsgSec() { return getTimeSeconds("lastFailedCmdMsgDt", 100000, "getLastFailedCmdMsgSec") }
 
-def failedCmdNotify(failData, tstr) {
+private void failedCmdNotify(failData, tstr) {
 	if(!(getLastFailedCmdMsgSec() > 300)) { return }
-	def cmdFail = (failData?.msg != null) ? true : false
-	def cmdstr = tstr ?: state?.lastCmdSent
-	def msg = "\nThe (${cmdstr}) CMD sent to the API has failed.\nStatus Code: ${failData?.code}\nErrorMsg: ${failData?.msg}\nDT: ${failData?.dt}"
+	boolean cmdFail = (failData?.msg != null) ? true : false
+	String cmdstr = tstr ?: state?.lastCmdSent
+	String msg = "\nThe (${cmdstr}) CMD sent to the API has failed.\nStatus Code: ${failData?.code}\nErrorMsg: ${failData?.msg}\nDT: ${failData?.dt}"
 	if(cmdFail) {
 		if(sendMsg("${app?.label} API CMD Failed", msg, 1)) {
 			updTimestampMap("lastFailedCmdMsgDt", getDtNow())
@@ -2464,14 +2467,14 @@ def failedCmdNotify(failData, tstr) {
 	LogAction(msg, (cmdFail ? "error" : "warn"), true)
 }
 
-def apiIssueEvent(issue, cmd = null) {
+private void apiIssueEvent(issue, cmd = null) {
 	def list = state?.apiIssuesList ?: [false, false, false, false, false, false, false]
-	def listSize = issueListSize()
+	int listSize = issueListSize()
 	if(list?.size() < listSize) {
 		list.push(issue)
 	}
 	else if(list?.size() > listSize) {
-		def nSz = (list?.size()-listSize) + 1
+		int nSz = (list?.size()-listSize) + 1
 		def nList = list?.drop(nSz)
 		nList?.push(issue)
 		list = nList
@@ -2488,9 +2491,9 @@ def apiIssueEvent(issue, cmd = null) {
 		}
 	} else {
 		def result = list[3..-1].every { it == false }
-		def rateLimit = (state?.apiRateLimited) ? true : false
+		boolean rateLimit = (state?.apiRateLimited) ? true : false
 		if(rateLimit) {
-			def t0 = state?.apiCmdFailData?.dt ? GetTimeDiffSeconds(state?.apiCmdFailData?.dt, null, "apiIssueEvent").toInteger() : 200
+			int t0 = state?.apiCmdFailData?.dt ? GetTimeDiffSeconds(state?.apiCmdFailData?.dt, null, "apiIssueEvent").toInteger() : 200
 			if((t0 > 120 && result) || t0 > 500) {
 				state?.apiRateLimited = false
 				rateLimit = false
@@ -2500,40 +2503,40 @@ def apiIssueEvent(issue, cmd = null) {
 	}
 }
 
-def ok2PollMetaData() {
+private boolean ok2PollMetaData() {
 	return pollOk("Meta")
 }
 
-def ok2PollDevice() {
+private boolean ok2PollDevice() {
 	return pollOk("Dev")
 }
 
-def ok2PollStruct() {
-	return (pollOk("Str") || !state?.structData) ? true : false
+private boolean ok2PollStruct() {
+	return (pollOk("Str") || !state.structData) ? true : false
 }
 
-def pollOk(typ) {
+private boolean pollOk(String typ) {
 	if(!getNestAuthToken()) { return false }
-	if(state?.pollBlocked) { return false }
-	if(state?."need${typ}Poll") { return true }
-	def pollTime = "${typ}Poll"() as Integer
-	def val = pollTime / 3
+	if(state.pollBlocked) { return false }
+	if(state."need${typ}Poll") { return true }
+	int pollTime = "${typ}Poll"() as Integer
+	int val = pollTime / 3
 	val = Math.max(Math.min(val.toInteger(), 50),25)
 	return ( (("getLast${typ}PollSec"() + val) > pollTime) ? true : false )
 }
 
 
-def isPollAllowed() {
-	return (state?.pollingOn && getNestAuthToken() && (settings?.thermostats || settings?.protects || settings?.cameras || settings?.presDevice)) ? true : false
+private boolean isPollAllowed() {
+	return (state.pollingOn && getNestAuthToken() && (settings.thermostats || settings.protects || settings.cameras || settings.presDevice)) ? true : false
 }
 
-def getLastMetaPollSec() { return getTimeSeconds("lastMetaDataUpd", 100000, "getLastMetaPollSec").toInteger() }
-def getLastDevPollSec() { return getTimeSeconds("lastDevDataUpd", 840, "getLastDevPollSec").toInteger() }
-def getLastStrPollSec() { return getTimeSeconds("lastStrDataUpd", 1000, "getLastStrPollSec").toInteger() }
-def getLastForcedPollSec() { return getTimeSeconds("lastForcePoll", 1000, "getLastForcedPollSec").toInteger() }
-def getLastChildUpdSec() { return getTimeSeconds("lastChildUpdDt", 100000, "getLastChildUpdSec").toInteger() }
-def getLastChildForceUpdSec() { return getTimeSeconds("lastChildForceUpdDt", 100000, "getLastChildForceUpdSec").toInteger() }
-def getLastHeardFromNestSec() { return getTimeSeconds("lastHeardFromNestDt", 100000, "getLastHeardFromNestSec").toInteger() }
+int getLastMetaPollSec() { return getTimeSeconds("lastMetaDataUpd", 100000, "getLastMetaPollSec") }
+int getLastDevPollSec() { return getTimeSeconds("lastDevDataUpd", 840, "getLastDevPollSec") }
+int getLastStrPollSec() { return getTimeSeconds("lastStrDataUpd", 1000, "getLastStrPollSec") }
+int getLastForcedPollSec() { return getTimeSeconds("lastForcePoll", 1000, "getLastForcedPollSec") }
+int getLastChildUpdSec() { return getTimeSeconds("lastChildUpdDt", 100000, "getLastChildUpdSec") }
+int getLastChildForceUpdSec() { return getTimeSeconds("lastChildForceUpdDt", 100000, "getLastChildForceUpdSec") }
+int getLastHeardFromNestSec() { return getTimeSeconds("lastHeardFromNestDt", 100000, "getLastHeardFromNestSec") }
 
 /************************************************************************************************
  |										Nest API Commands										|
@@ -2541,7 +2544,7 @@ def getLastHeardFromNestSec() { return getTimeSeconds("lastHeardFromNestDt", 100
 
 private cmdProcState(Boolean value) { atomicState?.cmdIsProc = value }
 private cmdIsProc() { return (!atomicState?.cmdIsProc) ? false : true }
-private getLastProcSeconds() { return getTimeSeconds("cmdLastProcDt", 0, "getLastProcSeconds") }
+private int getLastProcSeconds() { return getTimeSeconds("cmdLastProcDt", 0, "getLastProcSeconds") }
 
 def apiVar() {
 	def api = [
@@ -2656,19 +2659,19 @@ def setStructureAway(child, value, virtual=false) {
 		if(val) {
 			def ret = sendNestCmd(state?.structures, apiVar().rootTypes.struct, apiVar().cmdObjs.away, "away", devId)
 			// Below is to ensure automations read updated value even if queued
-			if(ret && state?.structData && state?.structures && state?.structData[state?.structures]?.away) {
-				def t0 = state?.structData
+			if(ret && state.structData && state?.structures && state?.structData[state?.structures]?.away) {
+				def t0 = state.structData
 				t0[state?.structures].away = "away"
-				state?.structData = t0
+				state.structData = t0
 			}
 			return ret
 		}
 		else {
 			def ret = sendNestCmd(state?.structures, apiVar().rootTypes.struct, apiVar().cmdObjs.away, "home", devId)
-			if(ret && state?.structData && state?.structures && state?.structData[state?.structures]?.away) {
-				def t0 = state?.structData
+			if(ret && state.structData && state?.structures && state?.structData[state?.structures]?.away) {
+				def t0 = state.structData
 				t0[state?.structures].away = "home"
-				state?.structData = t0
+				state.structData = t0
 			}
 			return ret
 		}
@@ -2892,8 +2895,8 @@ def sendNestCmd(cmdTypeId, cmdType, cmdObj, cmdObjVal, childId) {
 			def qnum = getQueueNumber(cmdTypeId)
 			if(qnum == -1 ) { return false }
 
-			state?.pollBlocked = true
-			state?.pollBlockedReason = "Sending Cmd"
+			state.pollBlocked = true
+			state.pollBlockedReason = "Sending Cmd"
 			def now = new Date()
 			def cmdData = [cmdTypeId?.toString(), cmdType?.toString(), cmdObj?.toString(), cmdObjVal, now]
 
@@ -2960,13 +2963,13 @@ def sendNestCmd(cmdTypeId, cmdType, cmdObj, cmdObjVal, childId) {
  * Each queue has it own "free" command counts, then commands are limited to 1 per minute.
  */
 private getQueueNumber(cmdTypeId) {
-	if(!atomicState?.cmdQlist) { atomicState?.cmdQlist = [] }
-	def cmdQueueList = atomicState?.cmdQlist
+	if(!atomicState.cmdQlist) { atomicState.cmdQlist = [] }
+	def cmdQueueList = atomicState.cmdQlist
 	def qnum = cmdQueueList.indexOf(cmdTypeId)
 	if(qnum == -1) {
-		cmdQueueList = atomicState?.cmdQlist
+		cmdQueueList = atomicState.cmdQlist
 		cmdQueueList << cmdTypeId
-		atomicState?.cmdQlist = cmdQueueList
+		atomicState.cmdQlist = cmdQueueList
 		qnum = cmdQueueList.indexOf(cmdTypeId)
 		atomicState?."cmdQ${qnum}" = null
 		setLastCmdSentSeconds(qnum, null)
@@ -2986,8 +2989,8 @@ private getQueueNumber(cmdTypeId) {
 def getQueueToWork() {
 	def qnum
 	def savedtim
-	if(!atomicState?.cmdQlist) { atomicState?.cmdQlist = [] }
-	def cmdQueueList = atomicState?.cmdQlist
+	if(!atomicState.cmdQlist) { atomicState.cmdQlist = [] }
+	def cmdQueueList = atomicState.cmdQlist
 	cmdQueueList.eachWithIndex { val, idx ->
 		def cmdQueue = atomicState?."cmdQ${idx}"
 		if(cmdQueue?.size() > 0) {
@@ -3009,7 +3012,7 @@ def getQueueToWork() {
 private cmdMaxVal() { return 2 }
 
 void schedNextWorkQ(useShort=false) {
-	def cmdDelay = getChildWaitVal()
+	int cmdDelay = getChildWaitVal()
 	if(useShort) { cmdDelay = 0 }
 	//
 	// This is throttling the rate of commands to the Nest service for this access token.
@@ -3020,10 +3023,10 @@ void schedNextWorkQ(useShort=false) {
 	//
 
 	def qnum = getQueueToWork()
-	def timeVal = cmdDelay
-	def str = ""
-	def queueItemsAvail
-	def lastCommandSent
+	int timeVal = cmdDelay
+	String str = ""
+	int queueItemsAvail = 0
+	int lastCommandSent = 0
 	if(qnum != null) {
 		queueItemsAvail = getRecentSendCmd(qnum)
 		lastCommandSent = getLastCmdSentSeconds(qnum)
@@ -3035,14 +3038,14 @@ void schedNextWorkQ(useShort=false) {
 			if(queueItemsAvail > 0) { timeVal = 0 }
 		}
 		str = timeVal > cmdDelay || state?.apiRateLimited ? "*RATE LIMITING ON* " : ""
-		//LogAction("schedNextWorkQ │ ${str}queue: ${qnum} │ schedTime: ${timeVal} │ recentSendCmd: ${queueItemsAvail} │ last seconds: ${lastCommandSent} │ cmdDelay: ${cmdDelay} | runInActive: ${atomicState?.workQrunInActive} | Api Limited: ${state?.apiRateLimited}", "info", true)
+		//LogAction("schedNextWorkQ │ ${str}queue: ${qnum} │ schedTime: ${timeVal} │ recentSendCmd: ${queueItemsAvail} │ last seconds: ${lastCommandSent} │ cmdDelay: ${cmdDelay} | runInActive: ${atomicState.workQrunInActive} | Api Limited: ${state?.apiRateLimited}", "info", true)
 	} else {
 		return //timeVal = 0
 	}
-	def actStr = "ALREADY PENDING "
+	String actStr = "ALREADY PENDING "
 	if(cmdIsProc()) { actStr = "COMMAND RUNNING " }
-	if(!atomicState?.workQrunInActive && !cmdIsProc() ) {
-		atomicState?.workQrunInActive = true
+	if(!atomicState.workQrunInActive && !cmdIsProc() ) {
+		atomicState.workQrunInActive = true
 		if(timeVal != 0) {
 			actStr = "RUNIN "
 			runIn(timeVal.toInteger(), "workQueue", [overwrite: true])
@@ -3051,14 +3054,14 @@ void schedNextWorkQ(useShort=false) {
 			workQueue()
 		}
 	}
-	LogAction("schedNextWorkQ ${actStr} │ ${str}queue: ${qnum} │ schedTime: ${timeVal} │ recentSendCmd: ${queueItemsAvail} │ last seconds: ${lastCommandSent} │ cmdDelay: ${cmdDelay} | runInActive: ${atomicState?.workQrunInActive} | command proc: ${cmdIsProc()} | Api Limited: ${state?.apiRateLimited}", "info", true)
+	LogAction("schedNextWorkQ ${actStr} │ ${str}queue: ${qnum} │ schedTime: ${timeVal} │ recentSendCmd: ${queueItemsAvail} │ last seconds: ${lastCommandSent} │ cmdDelay: ${cmdDelay} | runInActive: ${atomicState.workQrunInActive} | command proc: ${cmdIsProc()} | Api Limited: ${state?.apiRateLimited}", "info", true)
 }
 
-private getRecentSendCmd(qnum) {
+private int getRecentSendCmd(qnum) {
 	return atomicState?."recentSendCmd${qnum}"
 }
 
-private setRecentSendCmd(qnum, val) {
+private void setRecentSendCmd(qnum, val) {
 	atomicState?."recentSendCmd${qnum}" = val
 	return
 }
@@ -3069,25 +3072,26 @@ def sendEcoActionDescToDevice(dev, desc) {
 	}
 }
 
-private getLastAnyCmdSentSeconds() { return getTimeSeconds("lastCmdSentDt", 3601, "getLastAnyCmdSentSeconds") }
-private getLastCmdSentSeconds(qnum) { return getTimeSeconds("lastCmdSentDt${qnum}", 3601, "getLastCmdSentSeconds") }
+private int getLastAnyCmdSentSeconds() { return getTimeSeconds("lastCmdSentDt", 3601, "getLastAnyCmdSentSeconds") }
+private int getLastCmdSentSeconds(qnum) { return getTimeSeconds("lastCmdSentDt${qnum}", 3601, "getLastCmdSentSeconds") }
 
-private setLastCmdSentSeconds(qnum, val) {
+private void setLastCmdSentSeconds(qnum, val) {
 	updTimestampMap("lastCmdSentDt${qnum}", val)
 	updTimestampMap("lastCmdSentDt", val)
 }
 
-def storeLastCmdData(cmd, qnum) {
+/*
+void storeLastCmdData(cmd, qnum) {
 	if(cmd) {
 		def newVal = ["qnum":qnum, "obj":cmd[2], "value":cmd[3], "date":getDtNow()]
 
 		def list = state?.cmdDetailHistory ?: []
-		def listSize = 30
+		int listSize = 30
 		if(list?.size() < listSize) {
 			list.push(newVal)
 		}
 		else if(list?.size() > listSize) {
-			def nSz = (list?.size()-listSize) + 1
+			int nSz = (list?.size()-listSize) + 1
 			def nList = list?.drop(nSz)
 			nList?.push(newVal)
 			list = nList
@@ -3100,13 +3104,14 @@ def storeLastCmdData(cmd, qnum) {
 		if(list) { state?.cmdDetailHistory = list }
 	}
 }
+*/
 
 void workQueue() {
 	LogTrace("workQueue")
-	atomicState?.workQrunInActive = false
+	atomicState.workQrunInActive = false
 	//def cmdDelay = getChildWaitVal()
-	if(!atomicState?.cmdQlist) { atomicState?.cmdQlist = [] }
-	def cmdQueueList = atomicState?.cmdQlist
+	if(!atomicState.cmdQlist) { atomicState.cmdQlist = [] }
+	def cmdQueueList = atomicState.cmdQlist
 
 	def qnum = getQueueToWork()
 	if(qnum == null) { qnum = 0 }
@@ -3119,8 +3124,8 @@ void workQueue() {
 			runIn(90, "workQueue", [overwrite: true])  //lost schedule catchall
 			if(!cmdIsProc()) {
 				cmdProcState(true)
-				state?.pollBlocked = true
-				state?.pollBlockedReason = "Processing Queue"
+				state.pollBlocked = true
+				state.pollBlockedReason = "Processing Queue"
 				cmdQueue = atomicState?."cmdQ${qnum}"
 				// log.trace "cmdQueue(workqueue): $cmdQueue"
 				def cmd = cmdQueue?.remove(0)
@@ -3145,17 +3150,17 @@ void workQueue() {
 				}
 				finishWorkQ(cmd, cmdres)
 			} else { LogAction("workQueue: busy processing command", "warn", true) }
-		} else { state?.pollBlocked = false; state.remove("pollBlockedReason"); cmdProcState(false); }
+		} else { state.pollBlocked = false; state.remove("pollBlockedReason"); cmdProcState(false); }
 	}
 	catch (ex) {
 		log.error "workQueue Exception Error: ${ex?.message}"
 		cmdProcState(false)
-		state?.needDevPoll = true
-		state?.needStrPoll = true
-		state?.forceChildUpd = true
-		state?.pollBlocked = false
+		state.needDevPoll = true
+		state.needStrPoll = true
+		state.forceChildUpd = true
+		state.pollBlocked = false
 		state.remove("pollBlockedReason")
-		atomicState?.workQrunInActive = true
+		atomicState.workQrunInActive = true
 		runIn(60, "workQueue", [overwrite: true])
 		runIn(64, "postCmd", [overwrite: true])
 		return
@@ -3164,11 +3169,11 @@ void workQueue() {
 
 def finishWorkQ(cmd, result) {
 	LogTrace("finishWorkQ cmd: $cmd  result: $result")
-	def cmdDelay = getChildWaitVal()
+	int cmdDelay = getChildWaitVal()
 
 	if( !result ) {
-		state?.forceChildUpd = true
-		state?.pollBlocked = false
+		state.forceChildUpd = true
+		state.pollBlocked = false
 		state.remove("pollBlockedReason")
 		runIn((cmdDelay * 3).toInteger(), "postCmd", [overwrite: true])
 	}
@@ -3188,9 +3193,9 @@ def finishWorkQ(cmd, result) {
 
 	def cmdQueue = atomicState?."cmdQ${qnum}"
 	if(cmdQueue?.size() == 0) {
-		state?.pollBlocked = false
+		state.pollBlocked = false
 		state.remove("pollBlockedReason")
-		state?.needChildUpd = true
+		state.needChildUpd = true
 		runIn(cmdDelay.toInteger(), "postCmd", [overwrite: true])
 	}
 	else { schedNextWorkQ(true) }
@@ -3203,10 +3208,10 @@ def finishWorkQ(cmd, result) {
 }
 
 def queueProcNestCmd(uri, typeId, type, obj, objVal, qnum, cmd, redir = false) {
-	def myStr = "queueProcNestCmd"
+	String myStr = "queueProcNestCmd"
 	LogTrace("${myStr}: typeId: ${typeId}, type: ${type}, obj: ${obj}, objVal: ${objVal}, qnum: ${qnum}, isRedirUri: ${redir}")
 
-	def result = false
+	boolean result = false
 	if(!getNestAuthToken()) { return result }
 
 	try {
@@ -3417,14 +3422,14 @@ def procNestCmd(uri, typeId, type, objKey, objVal, qnum, redir = false) {
 }
 */
 
-def adjThrottle(qnum, redir) {
+void adjThrottle(qnum, redir) {
 	if(!redir) {
-		def t0 = getRecentSendCmd(qnum)
-		def val = t0
+		int t0 = getRecentSendCmd(qnum)
+		int val = t0
 		if(t0 > 0 /* && (getLastCmdSentSeconds(qnum) < 60) */ ) {
 			val -= 1
 		}
-		def t1 = getLastCmdSentSeconds(qnum)
+		int t1 = getLastCmdSentSeconds(qnum)
 		if(t1 > 120 && t1 < 60*45 && val < (cmdMaxVal()-1) ) {
 			val += 1
 		}
@@ -3437,11 +3442,11 @@ def adjThrottle(qnum, redir) {
 	setLastCmdSentSeconds(qnum, getDtNow())
 }
 
-def apiRespHandler(code, errJson, methodName, tstr=null, isCmd=false) {
+void apiRespHandler(code, errJson, methodName, tstr=null, isCmd=false) {
 	// LogAction("[$methodName] | Status: (${code}) | Error Message: ${errJson}", "warn", true)
 	if (!(code?.toInteger() in [200, 307])) {
-		def result = ""
-		def notif = true
+		String result = ""
+		boolean notif = true
 		def errMsg = errJson?.message != null ? errJson?.message : null
 		switch(code) {
 			case 400:
@@ -3482,60 +3487,60 @@ def apiRespHandler(code, errJson, methodName, tstr=null, isCmd=false) {
 }
 
 
-def getNestZipCode() {
-	def tt = getStrucVal("postal_code")
+String getNestZipCode() {
+	String tt = getStrucVal("postal_code")
 	return tt ?: ""
 }
 
-def getNestTimeZone() {
+String getNestTimeZone() {
 	return getStrucVal("time_zone")
 }
 
-def getEtaBegin() {
+String getEtaBegin() {
 	return getStrucVal("eta_begin")
 }
 
-def getPeakStart() {
+String getPeakStart() {
 	return getStrucVal("peak_period_start_time")
 }
 
-def getPeakEnd() {
+String getPeakEnd() {
 	return getStrucVal("peak_period_end_time")
 }
 
-def getSecurityState() {
+String getSecurityState() {
 	return getStrucVal("wwn_security_state")
 }
 
-def getLocationPresence() {
+String getLocationPresence() {
 	return getStrucVal("away")
 }
 
-def getStrucVal(svariable) {
-	def sData = state?.structData
+String getStrucVal(svariable) {
+	def sData = state.structData
 	def sKey = state?.structures
 	def asStruc = sData && sKey && sData[sKey] ? sData[sKey] : null
 	def retVal = asStruc ? asStruc[svariable] ?: null : null
 	return (retVal != null) ? retVal as String : null
 }
 
-def getStZipCode() { return location?.zipCode?.toString() }
+String getStZipCode() { return location?.zipCode?.toString() }
 
-def getChildWaitVal() { return tempChgWaitVal() }
+int getChildWaitVal() { return tempChgWaitVal() }
 
 /************************************************************************************
  |	This Section Discovers all structures and devices on your Nest Account.			|
  |	It also Adds Removes Devices from Hubitat										|
  ************************************************************************************/
 
-def getNestStructures() {
+private Map getNestStructures() {
 	//LogTrace("Getting Nest Structures")
 	def struct = [:]
 	def thisstruct = [:]
 	try {
 		if(ok2PollStruct()) { getApiData("str") }
-		if(state?.structData) {
-			def structs = state?.structData
+		if(state.structData) {
+			def structs = state.structData
 			structs?.eachWithIndex { struc, index ->
 				def strucId = struc?.key
 				def strucData = struc?.value
@@ -3561,7 +3566,7 @@ def getNestStructures() {
 				struct = thisstruct
 			}
 			if(ok2PollDevice()) { getApiData("dev") }
-		} else { LogAction("Missing: structData  ${state?.structData}", "warn", true) }
+		} else { LogAction("Missing: structData  ${state.structData}", "warn", true) }
 
 	} catch (ex) {
 		log.error "getNestStructures Exception: ${ex?.message}"
@@ -3569,10 +3574,10 @@ def getNestStructures() {
 	return struct
 }
 
-def getNestThermostats() {
+private Map getNestThermostats() {
 	//LogTrace("Getting Thermostat list")
 	def stats = [:]
-	def tstats = state?.deviceData?.thermostats
+	def tstats = deviceDataFLD?.thermostats
 	//LogTrace("Found ${tstats?.size()} Thermostats")
 	tstats.each { stat ->
 		def statId = stat?.key
@@ -3586,10 +3591,10 @@ def getNestThermostats() {
 	return stats
 }
 
-def getNestProtects() {
+private Map getNestProtects() {
 	//LogTrace("Getting Nest Protect List")
 	def protects = [:]
-	def nProtects = state?.deviceData?.smoke_co_alarms
+	def nProtects = deviceDataFLD?.smoke_co_alarms
 	//LogTrace("Found ${nProtects?.size()} Nest Protects")
 	nProtects.each { dev ->
 		def devId = dev?.key
@@ -3603,10 +3608,10 @@ def getNestProtects() {
 	return protects
 }
 
-def getNestCameras() {
+private Map getNestCameras() {
 	//LogTrace("Getting Nest Camera List")
 	def cameras = [:]
-	def nCameras = state?.deviceData?.cameras
+	def nCameras = deviceDataFLD?.cameras
 	//LogTrace("Found ${nCameras?.size()} Nest Cameras")
 	nCameras.each { dev ->
 		def devId = dev?.key
@@ -3620,7 +3625,7 @@ def getNestCameras() {
 	return cameras
 }
 
-def statState(val) {
+private Map statState(val) {
 	def stats = [:]
 	def tstats = getNestThermostats()
 	tstats.each { stat ->
@@ -3636,7 +3641,7 @@ def statState(val) {
 	return stats
 }
 
-def coState(val) {
+private Map coState(val) {
 	def protects = [:]
 	def nProtects = getNestProtects()
 	nProtects.each { dev ->
@@ -3650,7 +3655,7 @@ def coState(val) {
 	return protects
 }
 
-def camState(val) {
+private Map camState(val) {
 	def cams = [:]
 	def nCameras = getNestCameras()
 	nCameras.each { dev ->
@@ -3664,27 +3669,27 @@ def camState(val) {
 	return cams
 }
 
-def getThermostatDisplayName(stat) {
+String getThermostatDisplayName(stat) {
 	if(stat?.name) { return stat.name.toString() }
 	else if(stat?.name_long) { return stat?.name_long.toString() }
 	else { return "Thermostatnamenotfound" }
 }
 
-def getProtectDisplayName(prot) {
+String getProtectDisplayName(prot) {
 	if(prot?.name) { return prot.name.toString() }
 	else if(prot?.name_long) { return prot?.name_long.toString() }
 	else { return "Protectnamenotfound" }
 }
 
-def getCameraDisplayName(cam) {
+String getCameraDisplayName(cam) {
 	if(cam?.name) { return cam.name.toString() }
 	else if(cam?.name_long) { return cam?.name_long.toString() }
 	else { return "Cameranamenotfound" }
 }
 
-def getNestDeviceDni(dni, type) {
+String getNestDeviceDni(dni, type) {
 	//LogTrace("getNestDeviceDni: $dni | $type")
-	def retVal = ""
+	String retVal = ""
 	def d1 = getChildDevice(dni?.key.toString())
 	if(d1) { retVal = dni?.key.toString() }
 	else {
@@ -3696,16 +3701,16 @@ def getNestDeviceDni(dni, type) {
 	return retVal
 }
 
-def getNestTstatDni(dni) { return getNestDeviceDni(dni, "Thermostat") }
+String getNestTstatDni(dni) { return getNestDeviceDni(dni, "Thermostat") }
 
-def getNestvStatDni(dni) { return getNestDeviceDni(dni, "vThermostat") }
+String getNestvStatDni(dni) { return getNestDeviceDni(dni, "vThermostat") }
 
-def getNestProtDni(dni) { return getNestDeviceDni(dni, "Protect") }
+String getNestProtDni(dni) { return getNestDeviceDni(dni, "Protect") }
 
-def getNestCamDni(dni) { return getNestDeviceDni(dni, "Cam") }
+String getNestCamDni(dni) { return getNestDeviceDni(dni, "Cam") }
 
-def getNestPresId() {
-	def dni = "Nest Presence Device" // old name 1
+String getNestPresId() {
+	String dni = "Nest Presence Device" // old name 1
 	def d3 = getChildDevice(dni)
 	if(d3) { return dni }
 	else {
@@ -3714,7 +3719,7 @@ def getNestPresId() {
 			d3 = getChildDevice(dni)
 			if(d3) { return dni }
 		}
-		def retVal = ""
+		String retVal = ""
 		if(state?.structures) { retVal = "NestPres | ${state?.structures}" }
 		else if(settings?.structures) { retVal = "NestPres | ${settings?.structures}" }
 		else {
@@ -3725,13 +3730,13 @@ def getNestPresId() {
 	}
 }
 
-def getDefaultLabel(ttype, name) {
+String getDefaultLabel(String ttype, String name) {
 	//LogTrace("getDefaultLabel: ${ttype} ${name}")
 	if(name == null || name == "") {
 		LogAction("BAD CALL getDefaultLabel: ${ttype}, ${name}", "error", true)
 		return ""
 	}
-	def defName
+	String defName
 	switch (ttype) {
 		case "thermostat":
 			defName = "Nest Thermostat - ${name}"
@@ -3761,58 +3766,48 @@ def getDefaultLabel(ttype, name) {
 	return defName
 }
 
-def getNestTstatLabel(name, key) {
+String getNestTstatLabel(name, key) {
 	//LogTrace("getNestTstatLabel: ${name}")
-	def defName = getDefaultLabel("thermostat", name)
-
+	String defName = getDefaultLabel("thermostat", name)
 	if(state?.devNameOverride && state?.custLabelUsed) {
 		return settings?."tstat_${key}_lbl" ?: defName
 	}
-
 	return defName
 }
 
-def getNestProtLabel(name, key) {
-	def defName = getDefaultLabel("protect", name)
-
+String getNestProtLabel(name, key) {
+	String defName = getDefaultLabel("protect", name)
 	if(state?.devNameOverride && state?.custLabelUsed) {
 		return settings?."prot_${key}_lbl" ?: defName
 	}
-
 	return defName
 }
 
-def getNestCamLabel(name, key) {
-	def defName = getDefaultLabel("camera", name)
-
+String getNestCamLabel(name, key) {
+	String defName = getDefaultLabel("camera", name)
 	if(state?.devNameOverride && state?.custLabelUsed) {
 		return settings?."cam_${key}_lbl" ?: defName
 	}
-
 	return defName
 }
 
-def getNestVtstatLabel(name, key) {
-	def defName = getDefaultLabel("vthermostat", name)
-
+String getNestVtstatLabel(name, key) {
+	String defName = getDefaultLabel("vthermostat", name)
 	if(state?.devNameOverride && state?.custLabelUsed) {
 		return settings?."vtstat_${key}_lbl" ?: defName
 	}
-
 	return defName
 }
 
-def getNestPresLabel() {
-	def defName = getDefaultLabel("presence", "name")
-
+String getNestPresLabel() {
+	String defName = getDefaultLabel("presence", "name")
 	if(state?.devNameOverride && state?.custLabelUsed) {
 		return settings?.presDev_lbl ? settings?.presDev_lbl.toString() : defName
 	}
-
 	return defName
 }
 
-def getChildDeviceLabel(dni) {
+String getChildDeviceLabel(dni) {
 	if(!dni) { return null }
 	def t0 = getChildDevice(dni.toString())
 	return t0?.getLabel() ?: null
@@ -3827,18 +3822,18 @@ def addRemoveDevices(uninst = null) {
 		def nProtects
 		def nCameras
 		def nVstats
-		def devsCrt = 0
-		def presCnt = 0
+		int devsCrt = 0
+		int presCnt = 0
 		def streamCnt = 0
-		def noCreates = true
-		def noDeletes = true
+		boolean noCreates = true
+		boolean noDeletes = true
 
 		if(!uninst) {
 			if(state?.thermostats) {
 				tstats = state?.thermostats?.collect { dni ->
 					def d1 = getChildDevice(getNestTstatDni(dni))
 					if(!d1) {
-						def d1Label = getNestTstatLabel("${dni?.value}", "${dni.key}")
+						String d1Label = getNestTstatLabel("${dni?.value}", "${dni.key}")
 						d1 = addChildDevice(namespace(), getThermostatChildName(), dni?.key, null, [label: "${d1Label}"])
 						devsCrt = devsCrt + 1
 						LogAction("Created: ${d1?.displayName} with (Id: ${dni?.key})", "debug", true)
@@ -3853,7 +3848,7 @@ def addRemoveDevices(uninst = null) {
 				nProtects = state?.protects?.collect { dni ->
 					def d2 = getChildDevice(getNestProtDni(dni).toString())
 					if(!d2) {
-						def d2Label = getNestProtLabel("${dni.value}", "${dni.key}")
+						String d2Label = getNestProtLabel("${dni.value}", "${dni.key}")
 						d2 = addChildDevice(namespace(), getProtectChildName(), dni.key, null, [label: "${d2Label}"])
 						devsCrt = devsCrt + 1
 						LogAction("Created: ${d2?.displayName} with (Id: ${dni?.key})", "debug", true)
@@ -3866,10 +3861,10 @@ def addRemoveDevices(uninst = null) {
 
 			if(state?.presDevice) {
 				try {
-					def dni = getNestPresId()
+					String dni = getNestPresId()
 					def d3 = getChildDevice(dni)
 					if(!d3) {
-						def d3Label = getNestPresLabel()
+						String d3Label = getNestPresLabel()
 						d3 = addChildDevice(namespace(), getPresenceChildName(), dni, null, [label: "${d3Label}"])
 						devsCrt = devsCrt + 1
 						LogAction("Created: ${d3.displayName} with (Id: ${dni})", "debug", true)
@@ -3888,7 +3883,7 @@ def addRemoveDevices(uninst = null) {
 				nCameras = state?.cameras?.collect { dni ->
 					def d4 = getChildDevice(getNestCamDni(dni).toString())
 					if(!d4) {
-						def d4Label = getNestCamLabel("${dni.value}", "${dni.key}")
+						String d4Label = getNestCamLabel("${dni.value}", "${dni.key}")
 						d4 = addChildDevice(namespace(), getCameraChildName(), dni.key, null, [label: "${d4Label}"])
 						devsCrt = devsCrt + 1
 						LogAction("Created: ${d4?.displayName} with (Id: ${dni?.key})", "debug", true)
@@ -3904,7 +3899,7 @@ def addRemoveDevices(uninst = null) {
 					//LogAction("state.vThermostats: ${state.vThermostats} dni: ${dni} dni.key: ${dni.key.toString()} dni.value: ${dni.value.toString()}", "debug", true)
 					def d6 = getChildDevice(getNestvStatDni(dni).toString())
 					if(!d6) {
-						def d6Label = getNestVtstatLabel("${dni.value}", "${dni.key}")
+						String d6Label = getNestVtstatLabel("${dni.value}", "${dni.key}")
 						//LogAction("CREATED: ${d6Label} with (Id: ${dni.key})", "debug", true)
 						d6 = addChildDevice(namespace(), getThermostatChildName(), dni.key, null, [label: "${d6Label}", "data":["isVirtual":"true"]])
 						devsCrt = devsCrt + 1
@@ -4061,21 +4056,23 @@ def addRemoveVthermostat(tstatdni, tval, myID) {
 }
 
 
-def getAccessToken() {
-	try {
-		if(!state?.access_token) { state?.access_token = createAccessToken() }
-		else { return true }
+boolean getAccessToken() {
+	if(!state.access_token) {
+		try {
+			state.access_token = createAccessToken()
+		}
+		catch (ex) {
+			String msg = "Error: OAuth is not Enabled for ${app?.name}!.  Please click remove and Enable Oauth under the App Settings in the IDE"
+			sendPush(msg)
+			log.error "getAccessToken Exception ${ex?.message}"
+			LogAction("getAccessToken Exception | $msg", "warn", true)
+			return false
+		}
 	}
-	catch (ex) {
-		def msg = "Error: OAuth is not Enabled for ${app?.name}!.  Please click remove and Enable Oauth under the App Settings in the IDE"
-		sendPush(msg)
-		log.error "getAccessToken Exception ${ex?.message}"
-		LogAction("getAccessToken Exception | $msg", "warn", true)
-		return false
-	}
+	return true
 }
 
-def enableOauth() {
+void enableOauth() {
 	def params = [
 			uri: "http://localhost:8080/app/edit/update?_action_update=Update&oauthEnabled=true&id=${app.appTypeId}",
 			headers: ['Content-Type':'text/html;charset=utf-8']
@@ -4109,13 +4106,13 @@ void resetAppAccessToken() {
  |					Below This line handle Hubitat >> Nest Token Authentication				|
  *************************************************************************************************/
 
-def nestDevAccountCheckOk() {
+boolean nestDevAccountCheckOk() {
 	if(getNestAuthToken() == null && (clientId() == null || clientSecret() == null) ) { return false }
 	else { return true }
 }
 
 Map devClientData() {
-	def clt = devCltNum() ?: 1
+	int clt = devCltNum() ?: 1
 	Map m = [
 		0: [id: "OWQxMzJlODMtMTFmYy00NWJlLTlhOGQtOTViN2E3Y2IwN2Ew", secret: "TERhSmU4dEFNdmRQR3lGUHQwSkpQMTY1eA=="],
 		1: [id: "MzFhZWE0NmMtNDA0OC00YzJiLWI2YmUtY2FjN2ZlMzA1ZDRj", secret: "Rm1PNDY5R1hmZFNWam43UGhLbmpHV1psbQ=="],
@@ -4137,9 +4134,9 @@ String clientSecret() {
 	return devClientData()?.secret ?: null//Developer Secret
 }
 
-def getNestAuthToken() { return (state?.authData && state?.authData?.token) ? state?.authData?.token : null }
+String getNestAuthToken() { return (state?.authData && state?.authData?.token) ? state?.authData?.token : null }
 
-def getOauthInitUrl() {
+String getOauthInitUrl() {
 	def oauthParams = [
 		response_type: "code",
 		client_id: clientId(),
@@ -4174,19 +4171,19 @@ def callback() {
 				if(authData?.token) {
 					updTimestampMap("authTokenCreatedDt", getDtNow())
 					authData["tokenExpires"] = resp?.data.expires_in
-					state?.authData = authData
+					state.authData = authData
 				}
 			}
 			if(state?.authData?.token) {
 				LogAction("Nest AuthToken Generated SUCCESSFULLY", "info", true)
 				if(state?.isInstalled) {
-					state?.needStrPoll = true
-					state?.needDevPoll = true
-					state?.needMetaPoll = true
+					state.needStrPoll = true
+					state.needDevPoll = true
+					state.needMetaPoll = true
 					state.needToFinalize = true
 					checkRemapping()  // settings updates do not take immiediate effect, so we have to wait before using them
-					state?.pollBlocked = true
-					state?.pollBlockedReason = "Awaiting fixDevAS"
+					state.pollBlocked = true
+					state.pollBlockedReason = "Awaiting fixDevAS"
 					runIn(4, "finishRemap", [overwrite: true])
 				}
 				success()
@@ -4201,36 +4198,36 @@ def callback() {
 	}
 }
 
-def finishRemap() {
+void finishRemap() {
 	LogTrace("finishRemap (${state?.pollBlocked}) (${state?.pollBlockedReason})")
 	fixDevAS()
-	state?.pollBlocked = false
-	state?.pollBlockedReason = ""
+	state.pollBlocked = false
+	state.pollBlockedReason = ""
 	state.needToFinalize = false
 	initialize()
 }
 
-def getNestApiUrl()	{ return "https://developer-api.nest.com" }
+String getNestApiUrl()	{ return "https://developer-api.nest.com" }
 def getStructure()	{ return state?.structures ?: null }
 
-def getCallbackUrl(){ return "https://cloud.hubitat.com/api/nest" }
-def getOauthState()	{ return "${getHubUID()}/apps/${app?.id}/callback?access_token=${state?.access_token}" }
-def getAppEndpointUrl(subPath)	{ return "${getApiServerUrl()}/${getHubUID()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state?.access_token}" }
-def getLocalEndpointUrl(subPath){ return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state?.access_token}" }
-def sectionTitleStr(title)	{ return "<h3>$title</h3>" }
-def inputTitleStr(title)	{ return "<u>$title</u>" }
-def pageTitleStr(title)		{ return "<h1>$title</h1>" }
-def paraTitleStr(title)		{ return "<b>$title</b>" }
+String getCallbackUrl(){ return "https://cloud.hubitat.com/api/nest" }
+String getOauthState()	{ return "${getHubUID()}/apps/${app?.id}/callback?access_token=${state?.access_token}" }
+String getAppEndpointUrl(subPath)	{ return "${getApiServerUrl()}/${getHubUID()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state?.access_token}" }
+String getLocalEndpointUrl(subPath){ return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state?.access_token}" }
+String sectionTitleStr(String title)	{ return "<h3>$title</h3>" }
+String inputTitleStr(String title)	{ return "<u>$title</u>" }
+String pageTitleStr(String title)	{ return "<h1>$title</h1>" }
+String paraTitleStr(String title)	{ return "<b>$title</b>" }
 
-def imgTitle(imgSrc, titleStr, color=null, imgWidth=30, imgHeight=null) {
-	def imgStyle = ""
+String imgTitle(String imgSrc, String titleStr, String color=null, imgWidth=30, imgHeight=null) {
+	String imgStyle = ""
 	imgStyle += imgWidth ? "width: ${imgWidth}px !important;" : ""
 	imgStyle += imgHeight ? "${imgWidth ? " " : ""}height: ${imgHeight}px !important;" : ""
 	if(color) { return """<div style="color: ${color}; font-weight: bold;"><img style="${imgStyle}" src="${imgSrc}"> ${titleStr}</img></div>""" }
 	else { return """<img style="${imgStyle}" src="${imgSrc}"> ${titleStr}</img>""" }
 }
 
-def revokeNestToken() {
+void revokeNestToken() {
 	if(getNestAuthToken()) {
 		LogAction("revokeNestToken()", "info", true)
 		restStreamHandler(true, "revokeNestToken()", false)
@@ -4245,24 +4242,24 @@ def revokeNestToken() {
 				if(resp?.status == 204) {
 					LogAction("Nest Token revoked", "warn", true)
 					revokeCleanState()
-					return true
+					return //true
 				}
 			}
 		}
 		catch (ex) {
 			if(ex?.message?.toString() == "Not Found") {
 				revokeCleanState()
-				return true
+				return //true
 			} else {
 				log.error "revokeNestToken Exception: ${ex?.message}"
 				revokeCleanState()
-				return false
+				return //false
 			}
 		}
 	} else { revokeCleanState() }
 }
 
-def revokeCleanState() {
+void revokeCleanState() {
 LogTrace("revokeCleanState")
 	unschedule()
 	atomicState?.diagRunInOn = false
@@ -4271,18 +4268,18 @@ LogTrace("revokeCleanState")
 	state?.authData = null
 	updTimestampMap("authTokenCreatedDt", null)
 	//state?.nestAuthTokenExpires = getDtNow()
-	state?.structData = null
-	state?.deviceData = null
-	state?.metaData = null
+	state.structData = null
+	deviceDataFLD = null
+	state.metaData = null
 	updTimestampMap("lastStrDataUpd", null)
 	updTimestampMap("lastDevDataUpd", null)
 	updTimestampMap("lastMetaDataUpd", null)
 	resetPolling()
 	state?.pollingOn = false
 	state?.streamPolling = false
-	state?.pollBlocked = true
-	state?.pollBlockedReason = "No Auth Token"
-	atomicState?.workQrunInActive = false
+	state.pollBlocked = true
+	state.pollBlockedReason = "No Auth Token"
+	atomicState.workQrunInActive = false
 }
 
 //HTML Connections Pages
@@ -4375,40 +4372,40 @@ def toQueryString(Map m) {
 /************************************************************************************************
  |									LOGGING AND Diagnostic										|
  *************************************************************************************************/
-def LogTrace(msg, logSrc=null) {
-	def trOn = (appDebug && advAppDebug && !enRemDiagLogging) ? true : false
+void LogTrace(String msg, String logSrc=null) {
+	boolean trOn = (appDebug && advAppDebug && !enRemDiagLogging) ? true : false
 	if(trOn) {
-		def logOn = (settings?.enRemDiagLogging && state?.enRemDiagLogging) ? true : false
+		boolean logOn = (settings?.enRemDiagLogging && state?.enRemDiagLogging) ? true : false
 		//def theLogSrc = (logSrc == null) ? (parent ? "Automation" : "Manager") : logSrc
 		Logger(msg, "trace", logSrc, logOn)
 	}
 }
 
-def LogAction(msg, type="debug", showAlways=false, logSrc=null) {
-	def isDbg = (appDebug /* && !enRemDiagLogging */) ? true : false
+void LogAction(String msg, String type="debug", boolean showAlways=false, String logSrc=null) {
+	boolean isDbg = (appDebug /* && !enRemDiagLogging */) ? true : false
 	//def theLogSrc = (logSrc == null) ? (parent ? "Automation" : "Manager") : logSrc
 	if(showAlways || (isDbg && !showAlways)) { Logger(msg, type, logSrc) }
 
 //	if (showAlways || isDbg) { Logger(msg, type) }
 }
 
-def tokenStrScrubber(str) {
+String tokenStrScrubber(String str) {
 	def regex1 = /(Bearer c.{1}\w+)/
 	def regex2 = /(auth=c.{1}\w+)/
-	def newStr = str.replaceAll(regex1, "Bearer 'token code redacted'")
+	String newStr = str.replaceAll(regex1, "Bearer 'token code redacted'")
 	newStr = newStr.replaceAll(regex2, "auth='token code redacted'")
 	//log.debug "newStr: $newStr"
 	return newStr
 }
 
-def Logger(msg, type, logSrc=null, noSTlogger=false) {
-	def labelstr = ""
-	def logOut = true
+void Logger(String msg, String type, String logSrc=null, boolean noSTlogger=false) {
+	String labelstr = ""
+	boolean logOut = true
 	if(settings?.dbgAppndName == true) { labelstr = "${app.label} | " }
 	if(msg && type) {
-		def themsg = tokenStrScrubber("${labelstr}${msg}")
+		String themsg = tokenStrScrubber("${labelstr}${msg}")
 		if(state?.enRemDiagLogging && settings?.enRemDiagLogging && state?.remDiagAppAvailable == true) {
-			def theLogSrc = (logSrc == null) ? (parent ? "Automation" : "Manager") : logSrc
+			String theLogSrc = (logSrc == null) ? (parent ? "Automation" : "Manager") : logSrc
 			if(saveLogtoRemDiagStore(themsg, type, theLogSrc) == true) {
 				logOut = false
 			}
@@ -4535,8 +4532,8 @@ def saveLogtoRemDiagStore(String msg, String type, String logSrcType=null, frc=f
 void diagLogChecks(frc=false) {
 	atomicState?.diagRunInOn = false
 	if(state?.enRemDiagLogging && settings?.enRemDiagLogging) {
-		def turnOff = false
-		def reasonStr = ""
+		boolean turnOff = false
+		String reasonStr = ""
 		if(!frc && getRemDiagActSec() > (3600 * 48)) {
 			turnOff = true
 			reasonStr += "was active for last 48 hours "
@@ -4564,7 +4561,7 @@ void diagLogChecks(frc=false) {
 	}
 }
 
-void settingUpdate(name, value, type=null) {
+void settingUpdate(String name, value, Stringtype=null) {
 	//LogAction("settingUpdate($name, $value, $type)...", "trace", false)
 	if(name && type) {
 		app?.updateSetting("$name", [type: "$type", value: value])
@@ -4572,20 +4569,20 @@ void settingUpdate(name, value, type=null) {
 	else if (name && type == null){ app?.updateSetting(name.toString(), value) }
 }
 
-void settingRemove(name) {
+void settingRemove(String name) {
 	//LogAction("settingRemove($name)...", "trace", false)
 	if(name) { app?.clearSetting("$name") }
 }
 
-def stateUpdate(key, value) {
+def stateUpdate(String key, value) {
 	if(key) { state?."${key}" = value }
 	else { LogAction("stateUpdate: null key $key $value", "error", true) }
 }
 
 //Things that need to clear up on updates go here
-def stateCleanup() {
+void stateCleanup() {
 	// LogAction("stateCleanup", "trace", true)
-	def data = [ "cmdIsProc", "apiIssuesList", "cmdQlist", "nestRedirectUrl" /*, "timestampDtMap" , "accessToken" */ ]
+	def data = [ "deviceData", "cmdIsProc", "apiIssuesList", "cmdQlist", "nestRedirectUrl" /*, "timestampDtMap" , "accessToken" */ ]
 	["lastCmdSent", "recentSendCmd", "cmdQ", "remSenLock", "oldTstat", "oldvstat", "oldCamData", "oldProt", "oldPres" ]?.each { oi->
 		state?.each { if(it?.key?.toString().startsWith(oi)) { data?.push(it?.key) } }
 	}
@@ -4593,8 +4590,8 @@ def stateCleanup() {
 		state?.remove(item?.toString())
 	}
 	updTimestampMap("lastApiIssueMsgDt", null)
-	atomicState?.workQrunInActive = false
-	state?.forceChildUpd = true
+	atomicState.workQrunInActive = false
+	state.forceChildUpd = true
 	def sdata = ["updChildOnNewOnly"]
 	sdata.each { item ->
 		if(settings?."${item}" != null) {
@@ -4606,31 +4603,31 @@ def stateCleanup() {
 /******************************************************************************
  *								STATIC METHODS								*
  *******************************************************************************/
-def getThermostatChildName()	{ return "Nest Thermostat" }
-def getProtectChildName()	{ return "Nest Protect" }
-def getPresenceChildName()	{ return "Nest Presence" }
-def getCameraChildName()	{ return "Nest Camera" }
-def getEventDeviceName()	{ return "Nest Eventstream" }
-def getEventDeviceDni()		{ return "nest-eventstream01" }
+String getThermostatChildName()	{ return "Nest Thermostat" }
+String getProtectChildName()	{ return "Nest Protect" }
+String getPresenceChildName()	{ return "Nest Presence" }
+String getCameraChildName()	{ return "Nest Camera" }
+String getEventDeviceName()	{ return "Nest Eventstream" }
+String getEventDeviceDni()	{ return "nest-eventstream01" }
 
-def getAppImg(imgName, on = true)	{ return on ? "https://raw.githubusercontent.com/tonesto7/nest-manager/master/Images/App/$imgName" : "" }
-def getDevImg(imgName, on = true)	{ return on ? "https://raw.githubusercontent.com/tonesto7/nest-manager/master/Images/Devices/$imgName" : "" }
+String getAppImg(imgName, on = true)	{ return on ? "https://raw.githubusercontent.com/tonesto7/nest-manager/master/Images/App/$imgName" : "" }
+String getDevImg(imgName, on = true)	{ return on ? "https://raw.githubusercontent.com/tonesto7/nest-manager/master/Images/Devices/$imgName" : "" }
 /*
 private Integer convertHexToInt(hex) { Integer.parseInt(hex,16) }
 private String convertHexToIP(hex) { [convertHexToInt(hex[0..1]),convertHexToInt(hex[2..3]),convertHexToInt(hex[4..5]),convertHexToInt(hex[6..7])].join(".") }
 */
 
 //Returns app State Info
-def getStateSize() {
+int getStateSize() {
 	def resultJson = new groovy.json.JsonOutput().toJson(state)
 	return resultJson?.toString().length()
 }
-def getStateSizePerc()  { return (int) ((stateSize / 100000)*100).toDouble().round(0) } //
+int getStateSizePerc()  { return (int) ((stateSize / 100000)*100).toDouble().round(0) } //
 
-def debugStatus() { return !appDebug ? "Off" : "On" }
-def isAppDebug() { return !appDebug ? false : true }
+String debugStatus() { return !appDebug ? "Off" : "On" }
+boolean isAppDebug() { return !appDebug ? false : true }
 
-def getObjType(obj, retType=false) {
+String getObjType(obj, retType=false) {
 	if(obj instanceof String) {return "String"}
 	else if(obj instanceof GString) {return "GString"}
 	else if(obj instanceof Map) {return "Map"}
@@ -4654,7 +4651,7 @@ def getTimeZone() {
 	return tz
 }
 
-def formatDt(dt) {
+String formatDt(dt) {
 	def tf = new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
 	if(getTimeZone()) { tf.setTimeZone(getTimeZone()) }
 	else {
@@ -4663,42 +4660,42 @@ def formatDt(dt) {
 	return tf.format(dt)
 }
 
-private getTimeSeconds(timeKey, defVal, meth) {
+private int getTimeSeconds(String timeKey, int defVal, String meth) {
 	def t0 = getTimestampVal(timeKey)
 	return !t0 ? defVal : GetTimeDiffSeconds(t0, null, meth).toInteger()
 }
 
-def getTimestampVal(val) {
+String getTimestampVal(String val) {
 	def tsData = state?.timestampDtMap
 	if(val && tsData && tsData[val]) { return tsData[val] }
-	return null
+	return (String)null
 }
 
-void updTimestampMap(keyName, dt=null) {
+void updTimestampMap(String keyName, dt=null) {
 	def data = state?.timestampDtMap ?: [:]
 	if(keyName) { data[keyName] = dt }
 	state?.timestampDtMap = data
 }
 
-def GetTimeDiffSeconds(strtDate, stpDate=null, methName=null) {
+def GetTimeDiffSeconds(String strtDate, String stpDate=null, String methName=null) {
 	//LogTrace("[GetTimeDiffSeconds] StartDate: $strtDate | StopDate: ${stpDate ?: "Not Sent"} | MethodName: ${methName ?: "Not Sent"})")
 	if((strtDate && !stpDate) || (strtDate && stpDate)) {
 		def now = new Date()
-		def stopVal = stpDate ? stpDate.toString() : formatDt(now)
-		def start = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
-		def stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
-		def diff = (int) (long) (stop - start) / 1000 //
+		String stopVal = stpDate ? stpDate.toString() : formatDt(now)
+		long start = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
+		long stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
+		long diff = (int) (long) (stop - start) / 1000 //
 		//LogTrace("[GetTimeDiffSeconds] Results for '$methName': ($diff seconds)")
 		return diff
 	} else { return null }
 }
 
-def getDtNow() {
+String getDtNow() {
 	def now = new Date()
 	return formatDt(now)
 }
 
-def strCapitalize(str) {
+String strCapitalize(String str) {
 	return str ? str?.toString().capitalize() : null
 }
 
@@ -4714,8 +4711,8 @@ def getStateVal(var) {
 // Calls by Automation children
 // parent only method
 
-def remSenLock(val, myId) {
-	def res = false
+boolean remSenLock(val, myId) {
+	boolean res = false
 	def k = "remSenLock${val}"
 	if(val && myId) {
 		def lval = state?."${k}"
@@ -4727,8 +4724,8 @@ def remSenLock(val, myId) {
 	return res
 }
 
-def remSenUnlock(val, myId) {
-	def res = false
+boolean remSenUnlock(val, myId) {
+	boolean res = false
 	if(val && myId) {
 		def k = "remSenLock${val}"
 		def lval = state?."${k}"
@@ -4743,7 +4740,7 @@ def remSenUnlock(val, myId) {
 	return res
 }
 
-def automationNestModeEnabled(val=null) {
+boolean automationNestModeEnabled(val=null) {
 	LogTrace("NestModeEnabled: $val")
 	return getSetVal("automationNestModeEnabled", val)
 
@@ -4757,7 +4754,7 @@ def automationNestModeEnabled(val=null) {
 */
 }
 
-def setNModeActive(val=null) {
+boolean setNModeActive(val=null) {
 	LogTrace("setNModeActive: $val")
 	def myKey = "automationNestModeEcoActive"
 	def retVal
@@ -4779,7 +4776,7 @@ def setNModeActive(val=null) {
 	return retVal
 }
 
-def getSetVal(k, val=null) {
+boolean getSetVal(k, val=null) {
 	if(val == null) {
 		return state?."${k}" ?: false
 	} else {

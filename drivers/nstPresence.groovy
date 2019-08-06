@@ -7,7 +7,7 @@
 
 import java.text.SimpleDateFormat
 
-def devVer() { return "2.0.1" }
+def devVer() { return "2.0.2" }
 
 metadata {
 	definition (name: "Nest Presence", namespace: "tonesto7", author: "Anthony S.", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstPresence.groovy") {
@@ -100,7 +100,7 @@ void refresh() {
 	poll()
 }
 
-def generateEvent(eventData) {
+void generateEvent(eventData) {
 	// log.trace("eventData ${eventData}")
 	try {
 		if(eventData) {
@@ -113,7 +113,7 @@ def generateEvent(eventData) {
 			lastConnectionEvent(eventData?.lastStrDataUpd)
 			lastUpdatedEvent()
 		}
-		return null
+		return
 	}
 	catch (ex) {
 		log.error "generateEvent Exception: ${ex.message}"
