@@ -21,7 +21,8 @@ definition(
 	category: "Convenience",
 	iconUrl: "",
 	iconX2Url: "",
-	iconX3Url: "")
+	iconX3Url: "",
+	importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/apps/nstAutomations.groovy")
 
 String appVersion() { "2.0.3" }
 
