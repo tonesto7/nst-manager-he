@@ -2,7 +2,7 @@
  *  Nest Thermostat
  *	Copyright (C) 2018, 2019 Anthony Santilli.
  *	Author: Anthony Santilli (@tonesto7), Eric Schott (@imnotbob)
- *  Modified: 05/01/2019
+ *  Modified: 08/08/2019
  */
 
 import java.text.SimpleDateFormat
@@ -375,7 +375,7 @@ void sunlightCorrectionEnabledEvent(sunEn) {
 	String val = device.currentState("sunlightCorrectionEnabled")?.value
 	String newVal = sunEn.toString()
 	if(isStateChange(device, "sunlightCorrectionEnabled", newVal)) {
-		Logger("SunLight Correction Enabled: (${newVal}) | Previous State: (${val.capitalize()})")
+		Logger("SunLight Correction Enabled: (${newVal}) | Previous State: (${val?.capitalize()})")
 		sendEvent(name: 'sunlightCorrectionEnabled', value: newVal, displayed: false)
 	}
 }
@@ -384,7 +384,7 @@ void sunlightCorrectionActiveEvent(sunAct) {
 	String val = device.currentState("sunlightCorrectionActive")?.value
 	String newVal = sunAct.toString()
 	if(isStateChange(device, "sunlightCorrectionActive", newVal)) {
-		Logger("SunLight Correction Active: (${newVal}) | Previous State: (${val.capitalize()})")
+		Logger("SunLight Correction Active: (${newVal}) | Previous State: (${val?.capitalize()})")
 		sendEvent(name: 'sunlightCorrectionActive', value: newVal, displayed: false)
 	}
 }
@@ -406,7 +406,7 @@ void timeToTargetEvent(ttt, tttTr) {
 	}
 	String newVal = ttt ? (nVal == 0 || opIdle ? "System is Idle" : "${nVal} Minutes${trStr}") : "Not Available"
 	if(isStateChange(device, "timeToTarget", newVal)) {
-		Logger("Time to Target: (${newVal}) | Previous State: (${val.capitalize()})")
+		Logger("Time to Target: (${newVal}) | Previous State: (${val?.capitalize()})")
 		sendEvent(name: 'timeToTarget', value: newVal, displayed: false)
 	}
 }
@@ -624,7 +624,7 @@ private void presenceEvent(String presence) {
 		chgType += isStateChange(device, "presence", pres) ? "HE" : ""
 		chgType += isStateChange(device, "presence", pres) && isStateChange(device, "nestPresence", newNestPres) ? " | " : ""
 		chgType += isStateChange(device, "nestPresence", newNestPres) ? "Nest" : ""
-		Logger("${chgType} Presence: ${pres.capitalize()} | Previous State: ${val.capitalize()} | State Variable: ${statePres}")
+		Logger("${chgType} Presence: ${pres?.capitalize()} | Previous State: ${val?.capitalize()} | State Variable: ${statePres}")
 		sendEvent(name: 'presence', value: pres, descriptionText: "Device is: ${pres}", displayed: false, isStateChange: true, state: pres )
 		sendEvent(name: 'nestPresence', value: newNestPres, descriptionText: "Nest Presence is: ${newNestPres}", displayed: true, isStateChange: true )
 	}
@@ -642,7 +642,7 @@ void hvacModeEvent(String mode) {
 */
 	state.hvac_mode = newMode
 	if(!hvacMode.equals(newMode)) {
-		Logger("Hvac Mode is (${newMode.capitalize()}) | Previous State: (${hvacMode.capitalize()})")
+		Logger("Hvac Mode is (${newMode?.capitalize()}) | Previous State: (${hvacMode?.capitalize()})")
 		sendEvent(name: "thermostatMode", value: newMode, descriptionText: "HVAC mode is ${newMode} mode", displayed: true, isStateChange: true)
 	}
 
@@ -650,7 +650,7 @@ void hvacModeEvent(String mode) {
 	newMode = (mode == "heat-cool") ? "auto" : mode
 	state.nestHvac_mode = newMode
 	if(!oldnestmode.equals(newMode)) {
-		Logger("NEST Hvac Mode is (${newMode.capitalize()}) | Previous State: (${oldnestmode.capitalize()})")
+		Logger("NEST Hvac Mode is (${newMode?.capitalize()}) | Previous State: (${oldnestmode?.capitalize()})")
 		sendEvent(name: "nestThermostatMode", value: newMode, descriptionText: "Nest HVAC mode is ${newMode} mode", displayed: true, isStateChange: true)
 	}
 }
@@ -660,7 +660,7 @@ void hvacPreviousModeEvent(String mode) {
 	String newMode = (mode == "heat-cool") ? "auto" : mode
 	state.previous_hvac_mode = newMode
 	if(mode != "" && isStateChange(device, "previousthermostatMode", newMode)) {
-		Logger("Hvac Previous Mode is (${newMode.capitalize()}) | Previous State: (${hvacMode.capitalize()})")
+		Logger("Hvac Previous Mode is (${newMode?.capitalize()}) | Previous State: (${hvacMode?.capitalize()})")
 		sendEvent(name: "previousthermostatMode", value: newMode?.toString(), descriptionText: "HVAC Previous mode is ${newMode} mode", displayed: true, isStateChange: true)
 	}
 }
@@ -669,7 +669,7 @@ void fanModeEvent(String fanActive) {
 	String val = state.has_fan ? ((fanActive == "true") ? "on" : "auto") : "disabled"
 	String fanMode = device.currentState("thermostatFanMode")?.value
 	if(isStateChange(device, "thermostatFanMode", val)) {
-		Logger("Fan Mode: (${val.capitalize()}) | Previous State: (${fanMode.capitalize()})")
+		Logger("Fan Mode: (${val?.capitalize()}) | Previous State: (${fanMode?.capitalize()})")
 		sendEvent(name: "thermostatFanMode", value: val, descriptionText: "Fan Mode is: ${val}", displayed: true, isStateChange: true, state: val)
 	}
 }
@@ -759,7 +759,7 @@ void apiStatusEvent(String issueDesc) {
 	String curStat = device.currentState("apiStatus")?.value
 	String newStat = issueDesc
 	if(isStateChange(device, "apiStatus", newStat)) {
-		Logger("API Status is: (${newStat.capitalize()}) | Previous State: (${curStat.capitalize()})")
+		Logger("API Status is: (${newStat.capitalize()}) | Previous State: (${curStat?.capitalize()})")
 		sendEvent(name: "apiStatus", value: newStat, descriptionText: "API Status is: ${newStat}", displayed: true, isStateChange: true, state: newStat)
 	}
 }
@@ -769,7 +769,7 @@ void emergencyHeatEvent(emerHeat) {
 	String newStat = emerHeat.toString()
 	if(isStateChange(device, "usingEmergencyHeat", newStat)) {
 		state.is_using_emergency_heat = !!newStat
-		Logger("Using Emergency Heat is: (${newStat.capitalize()}) | Previous State: (${curStat.capitalize()})")
+		Logger("Using Emergency Heat is: (${newStat?.capitalize()}) | Previous State: (${curStat?.capitalize()})")
 		sendEvent(name: "usingEmergencyHeat", value: newStat.toString(), descriptionText: "Using Emergency Heat is: ${newStat}", displayed: true, isStateChange: true, state: newStat)
 	}
 }
