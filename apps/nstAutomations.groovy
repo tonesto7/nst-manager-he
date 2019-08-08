@@ -5,7 +5,7 @@
 |    Contributors: Ben W. (@desertblade)                                                    |
 |    A few code methods are modeled from those in CoRE by Adrian Caramaliu                  |
 |                                                                                           |
-|    August, 3, 2019                                                                          |
+|    August, 8, 2019                                                                          |
 |    License Info: https://github.com/tonesto7/nest-manager/blob/master/app_license.txt     |
 |********************************************************************************************/
 
@@ -23,7 +23,7 @@ definition(
 	iconX2Url: "",
 	iconX3Url: "")
 
-String appVersion() { "2.0.3" }
+String appVersion() { "2.0.4" }
 
 preferences {
 	page(name: "startPage")
@@ -7333,7 +7333,7 @@ def scheduleAlarmOn(String autoType) {
 	boolean ok2Notify = true //setting?."${autoType}UseParentNotifRestrictions" != false ? getOk2Notify(autoType) : getOk2Notify(autoType) //parent?.getOk2Notify()
 
 	LogAction("scheduleAlarmOn timeVal: $timeVal ok2Notify: $ok2Notify", "info", false)
-	if(canSchedule() && ok2Notify) {
+	if(ok2Notify) {
 		if(timeVal > 0) {
 			runIn(timeVal, "alarm0FollowUp", [data: [autoType: autoType]])
 			LogAction("scheduleAlarmOn: Scheduling Alarm Followup 0 in timeVal: $timeVal", "info", false)
@@ -7347,7 +7347,7 @@ void alarm0FollowUp(val) {
 	LogAction("alarm0FollowUp: autoType: $autoType 1 OffVal: ${getAlert1AlarmEvtOffVal(autoType)}", "debug", false)
 	int timeVal = getAlert1AlarmEvtOffVal(autoType).toInteger()
 	LogAction("alarm0FollowUp timeVal: $timeVal", "info", false)
-	if(canSchedule() && timeVal > 0 && sendEventAlarmAction(1, autoType)) {
+	if(timeVal > 0 && sendEventAlarmAction(1, autoType)) {
 		runIn(timeVal, "alarm1FollowUp", [data: [autoType: autoType]])
 		LogAction("alarm0FollowUp: Scheduling Alarm Followup 1 in timeVal: $timeVal", "info", false)
 	} else { LogAction ("alarm0FollowUp: Could not schedule operation timeVal: $timeVal", "error", true) }
@@ -7364,7 +7364,7 @@ void alarm1FollowUp(val) {
 	}
 	int timeVal = getAlert2DelayVal(autoType).toInteger()
 	//if(canSchedule() && (settings["${autoType}_Alert_2_Use_Alarm"] && timeVal > 0)) {
-	if(canSchedule() && timeVal > 0) {
+	if(timeVal > 0) {
 		runIn(timeVal, "alarm2FollowUp", [data: [autoType: autoType]])
 		LogAction("alarm1FollowUp: Scheduling Alarm Followup 2 in timeVal: $timeVal", "info", false)
 	} else { LogAction ("alarm1FollowUp: Could not schedule operation timeVal: $timeVal", "error", true) }
@@ -7374,7 +7374,7 @@ void alarm2FollowUp(val) {
 	String autoType = val.autoType
 	LogAction("alarm2FollowUp: autoType: $autoType 2 OffVal: ${getAlert2AlarmEvtOffVal(autoType)}", "debug", false)
 	int timeVal = getAlert2AlarmEvtOffVal(autoType)
-	if(canSchedule() && timeVal > 0 && sendEventAlarmAction(2, autoType)) {
+	if(timeVal > 0 && sendEventAlarmAction(2, autoType)) {
 		runIn(timeVal, "alarm3FollowUp", [data: [autoType: autoType]])
 		LogAction("alarm2FollowUp: Scheduling Alarm Followup 3 in timeVal: $timeVal", "info", false)
 	} else { LogAction ("alarm2FollowUp: Could not schedule operation timeVal: $timeVal", "error", true) }
