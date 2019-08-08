@@ -21,6 +21,7 @@ definition(
 	iconUrl: "",
 	iconX2Url: "",
 	iconX3Url: "",
+	importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/apps/nstRemoteDiag.groovy",
 	singleInstance: true,
 	oauth: true)
 
