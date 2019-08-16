@@ -2,7 +2,7 @@
  *  Nest Eventstream
  *	Copyright (C) 2018, 2019 Anthony S..
  *	Author: Anthony Santilli (@tonesto7)
- *  Modified: 08/13/2019
+ *  Modified: 08/15/2019
  */
 
 import java.text.SimpleDateFormat
@@ -10,7 +10,7 @@ import groovy.json.*
 import java.security.MessageDigest
 import groovy.transform.Field
 
-def devVer() { return "2.0.3" }
+def devVer() { return "2.0.4" }
 
 metadata {
 	definition (name: "Nest Eventstream", namespace: "tonesto7", author: "Anthony S.", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstEventstream.groovy") {
@@ -583,7 +583,7 @@ void setStreamStatusVal(Boolean active) {
 	String curStat = device.currentState("streamStatus")?.value
 	String newStat = active ? "running" : "stopped"
 	if(isStateChange(device, "streamStatus", newStat.toString())) {
-		Logger("Stream Status is: (${newStat.capitalize()}) | Previous State: (${curStat.capitalize()})")
+		Logger("Stream Status is: (${newStat.capitalize()}) | Previous State: (${curStat.toString().capitalize()})")
 		sendEvent(name: "streamStatus", value: newStat, descriptionText: "Rest Stream is: ${(active ? "Running" : "Stopped")}", displayed: true)
 	}
 }
@@ -615,7 +615,7 @@ void apiStatusEvent(String issueDesc) {
 	String newStat = issueDesc
 	state.apiStatus = newStat
 	if(isStateChange(device, "apiStatus", newStat.toString())) {
-		Logger("API Status is: (${newStat.capitalize()}) | Previous State: (${curStat.capitalize()})")
+		Logger("API Status is: (${newStat.toString().capitalize()}) | Previous State: (${curStat.toString().capitalize()})")
 		sendEvent(name: "apiStatus", value: newStat, descriptionText: "API Status is: ${newStat}", displayed: true, isStateChange: true)
 	}
 }
