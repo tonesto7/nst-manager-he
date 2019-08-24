@@ -5,7 +5,7 @@
 |    Contributors: Ben W. (@desertblade)                                                    |
 |    A few code methods are modeled from those in CoRE by Adrian Caramaliu                  |
 |                                                                                           |
-|    August, 8, 2019                                                                          |
+|    August 24, 2019                                                                          |
 |    License Info: https://github.com/tonesto7/nest-manager/blob/master/app_license.txt     |
 |********************************************************************************************/
 
@@ -24,7 +24,7 @@ definition(
 	iconX3Url: "",
 	importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/apps/nstAutomations.groovy")
 
-String appVersion() { "2.0.4" }
+String appVersion() { "2.0.5" }
 
 preferences {
 	page(name: "startPage")
@@ -8240,10 +8240,11 @@ String lastN(String input, n) {
 	//return n > input?.size() ? input : n ? input[-n..-1] : ''
 }
 
-void LogTrace(String msg, String logSrc=null) {
+void LogTrace(String msg, String logSrc=(String)null) {
 	boolean trOn = (showDebug && advAppDebug) ? true : false
 	if(trOn) {
-		Logger(msg, "trace", logSrc, state?.enRemDiagLogging)
+		boolean logOn = (settings?.enRemDiagLogging && state?.enRemDiagLogging) ? true : false
+		Logger(msg, "trace", logSrc, logOn)
 	}
 }
 
@@ -8252,7 +8253,7 @@ void LogAction(String msg, String type="debug", boolean showAlways=false, String
 	if(showAlways || (isDbg && !showAlways)) { Logger(msg, type, logSrc) }
 }
 
-void Logger(String msg, String type="debug", String logSrc=null, boolean noSTlogger=false) {
+void Logger(String msg, String type="debug", String logSrc=(String)null, boolean noSTlogger=false) {
 	if(msg && type) {
 		String labelstr = ""
 		if(state?.dbgAppndName == null) {

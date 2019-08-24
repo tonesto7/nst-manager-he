@@ -3,7 +3,7 @@
 |	Copyright (C) 2018, 2019								|
 |	Authors: Anthony S. (@tonesto7), Eric S. (@nh.schottfam)				|
 |												|
-|	Updated 8/3/2019									|
+|	Updated 8/24/2019									|
 |	License Info: https://github.com/tonesto7/nest-manager/blob/master/app_license.txt	|
 |************************************************************************************************/
 
@@ -27,7 +27,7 @@ definition(
 	oauth: true
 )
 
-String appVersion() { "2.0.2" }
+String appVersion() { "2.0.3" }
 
 preferences {
 	page(name: "startPage")
@@ -3286,12 +3286,13 @@ String lastN(String input, n) {
 	return n > input?.size() ? input : input[-n..-1]
 }
 
-void LogTrace(String msg, String logSrc=null) {
+void LogTrace(String msg, String logSrc=(String)null) {
 	boolean trOn = (showDebug && advAppDebug) ? true : false
 	if(trOn) {
+		boolean logOn = (settings?.enRemDiagLogging && state?.enRemDiagLogging) ? true : false
 		//def theId = lastN(app?.id.toString(),5)
 		//def theLogSrc = (logSrc == null) ? (parent ? "Automation-${theId}" : "NestManager") : logSrc
-		Logger(msg, "trace", logSrc, state?.enRemDiagLogging)
+		Logger(msg, "trace", logSrc, logOn)
 	}
 }
 

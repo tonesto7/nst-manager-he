@@ -2,7 +2,7 @@
  *  Nest Eventstream
  *	Copyright (C) 2018, 2019 Anthony S..
  *	Author: Anthony Santilli (@tonesto7)
- *  Modified: 08/15/2019
+ *  Modified: 08/24/2019
  */
 
 import java.text.SimpleDateFormat
@@ -10,7 +10,7 @@ import groovy.json.*
 import java.security.MessageDigest
 import groovy.transform.Field
 
-def devVer() { return "2.0.4" }
+def devVer() { return "2.0.5" }
 
 metadata {
 	definition (name: "Nest Eventstream", namespace: "tonesto7", author: "Anthony S.", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstEventstream.groovy") {
@@ -591,8 +591,8 @@ void setStreamStatusVal(Boolean active) {
 def eventStreamStatus(String msg) {
 	if(!msg.contains("ALIVE:")) { Logger("Status: ${msg}") }
 	if (msg.contains("STOP:")) {
-		setStreamStatusVal(false)
 		streamStop()
+		//setStreamStatusVal(false)
 	} else if (msg.contains("ALIVE:")) {
 		setStreamStatusVal(true)
 	} else if (msg.contains("ERROR:")) {

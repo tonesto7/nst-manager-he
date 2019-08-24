@@ -23,7 +23,7 @@ definition(
 	oauth: true
 )
 
-String appVer() { "2.0.4" }
+String appVer() { "2.0.5" }
 String namespace()  { "tonesto7" }
 int devCltNum() { 1 }
 boolean restEnabled(){ true } // Enables the Rest Stream Device
@@ -4373,7 +4373,7 @@ def toQueryString(Map m) {
 /************************************************************************************************
  |									LOGGING AND Diagnostic										|
  *************************************************************************************************/
-void LogTrace(String msg, String logSrc=null) {
+void LogTrace(String msg, String logSrc=(String)null) {
 	boolean trOn = (appDebug && advAppDebug && !enRemDiagLogging) ? true : false
 	if(trOn) {
 		boolean logOn = (settings?.enRemDiagLogging && state?.enRemDiagLogging) ? true : false
@@ -4399,7 +4399,7 @@ String tokenStrScrubber(String str) {
 	return newStr
 }
 
-void Logger(String msg, String type, String logSrc=null, boolean noSTlogger=false) {
+void Logger(String msg, String type, String logSrc=(String)null, boolean noSTlogger=false) {
 	String labelstr = ""
 	boolean logOut = true
 	if(settings?.dbgAppndName == true) { labelstr = "${app.label} | " }
