@@ -26,7 +26,7 @@ definition(
 	oauth: true)
 
 
-def appVersion() { "2.0.0" }
+def appVersion() { "2.0.1" }
 
 preferences {
 	page(name: "startPage")
@@ -4508,10 +4508,11 @@ String lastN(String input, n) {
 	return n > input?.size() ? input : input[-n..-1]
 }
 
-void LogTrace(String msg, String logSrc=null) {
+void LogTrace(String msg, String logSrc=(String)null) {
 	boolean trOn = (showDebug && advAppDebug) ? true : false
 	if(trOn) {
-		Logger(msg, "trace", logSrc, state?.enRemDiagLogging)
+		boolean logOn = (settings?.enRemDiagLogging && state?.enRemDiagLogging) ? true : false
+		Logger(msg, "trace", logSrc, logOn)
 	}
 }
 
@@ -4520,7 +4521,7 @@ void LogAction(String msg, String type="debug", boolean showAlways=false, String
 	if(showAlways || (isDbg && !showAlways)) { Logger(msg, type, logSrc) }
 }
 
-void Logger(String msg, String type="debug", String logSrc=null, boolean noSTlogger=false) {
+void Logger(String msg, String type="debug", String logSrc=(String)null, boolean noSTlogger=false) {
 	if(msg && type) {
 		String labelstr = ""
 		if(state?.dbgAppndName == null) {
