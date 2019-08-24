@@ -681,7 +681,7 @@ def initAutoApp() {
 	stateRemove("detailExecutionHistory")
 
 	scheduleAutomationEval(30)
-	if(showDebug || advAppDebug) { runIn(1800, logsOff) }
+	if(settings?.showDebug || settings?.advAppDebug) { runIn(1800, logsOff) }
 
 }
 
@@ -8241,7 +8241,7 @@ String lastN(String input, n) {
 }
 
 void LogTrace(String msg, String logSrc=(String)null) {
-	boolean trOn = (showDebug && advAppDebug) ? true : false
+	boolean trOn = (settings?.showDebug && settings?.advAppDebug) ? true : false
 	if(trOn) {
 		boolean logOn = (settings?.enRemDiagLogging && state?.enRemDiagLogging) ? true : false
 		Logger(msg, "trace", logSrc, logOn)
@@ -8249,7 +8249,7 @@ void LogTrace(String msg, String logSrc=(String)null) {
 }
 
 void LogAction(String msg, String type="debug", boolean showAlways=false, String logSrc=null) {
-	def isDbg = showDebug ? true : false
+	def isDbg = settings?.showDebug ? true : false
 	if(showAlways || (isDbg && !showAlways)) { Logger(msg, type, logSrc) }
 }
 

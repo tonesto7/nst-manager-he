@@ -921,7 +921,7 @@ void initialize() {
 		settingUpdate("appDebug", "true",  "bool")
 		runIn(600, logsOff)
 	} else {
-		if(appDebug || advAppDebug || showDataChgdLogs) { runIn(1800, logsOff) }
+		if(settings?.appDebug || settings?.advAppDebug || settings?.showDataChgdLogs) { runIn(1800, logsOff) }
 	}
 
 	// force child update on next poll
@@ -4374,7 +4374,7 @@ def toQueryString(Map m) {
  |									LOGGING AND Diagnostic										|
  *************************************************************************************************/
 void LogTrace(String msg, String logSrc=(String)null) {
-	boolean trOn = (appDebug && advAppDebug && !enRemDiagLogging) ? true : false
+	boolean trOn = (settings?.appDebug && settings?.advAppDebug && !settings?.enRemDiagLogging) ? true : false
 	if(trOn) {
 		boolean logOn = (settings?.enRemDiagLogging && state?.enRemDiagLogging) ? true : false
 		//def theLogSrc = (logSrc == null) ? (parent ? "Automation" : "Manager") : logSrc
@@ -4383,7 +4383,7 @@ void LogTrace(String msg, String logSrc=(String)null) {
 }
 
 void LogAction(String msg, String type="debug", boolean showAlways=false, String logSrc=null) {
-	boolean isDbg = (appDebug /* && !enRemDiagLogging */) ? true : false
+	boolean isDbg = (settings?.appDebug /* && !enRemDiagLogging */) ? true : false
 	//def theLogSrc = (logSrc == null) ? (parent ? "Automation" : "Manager") : logSrc
 	if(showAlways || (isDbg && !showAlways)) { Logger(msg, type, logSrc) }
 
@@ -4625,8 +4625,8 @@ int getStateSize() {
 }
 int getStateSizePerc()  { return (int) ((stateSize / 100000)*100).toDouble().round(0) } //
 
-String debugStatus() { return !appDebug ? "Off" : "On" }
-boolean isAppDebug() { return !appDebug ? false : true }
+String debugStatus() { return !settings?.appDebug ? "Off" : "On" }
+boolean isAppDebug() { return !settings?.appDebug ? false : true }
 
 String getObjType(obj, retType=false) {
 	if(obj instanceof String) {return "String"}

@@ -258,7 +258,7 @@ def initAutoApp() {
 	stateRemove("enRemDiagLogging") // cause recheck
 
 	scheduleAutomationEval(30)
-	if(showDebug || advAppDebug) { runIn(1800, logsOff) }
+	if(settings?.showDebug || settings?.advAppDebug) { runIn(1800, logsOff) }
 
 	checkCleanups()
 
@@ -3287,7 +3287,7 @@ String lastN(String input, n) {
 }
 
 void LogTrace(String msg, String logSrc=(String)null) {
-	boolean trOn = (showDebug && advAppDebug) ? true : false
+	boolean trOn = (settings?.showDebug && settings?.advAppDebug) ? true : false
 	if(trOn) {
 		boolean logOn = (settings?.enRemDiagLogging && state?.enRemDiagLogging) ? true : false
 		//def theId = lastN(app?.id.toString(),5)
@@ -3297,7 +3297,7 @@ void LogTrace(String msg, String logSrc=(String)null) {
 }
 
 void LogAction(String msg, String type="debug", boolean showAlways=false, String logSrc=null) {
-	boolean isDbg = showDebug ? true : false
+	boolean isDbg = settings?.showDebug ? true : false
 //	def theId = lastN(app?.id.toString(),5)
 //	def theLogSrc = (logSrc == null) ? (parent ? "Automation-${theId}" : "NestManager") : logSrc
 	if(showAlways || (isDbg && !showAlways)) { Logger(msg, type, logSrc) }
