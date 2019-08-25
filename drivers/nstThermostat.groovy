@@ -2,13 +2,13 @@
  *  Nest Thermostat
  *	Copyright (C) 2018, 2019 Anthony Santilli.
  *	Author: Anthony Santilli (@tonesto7), Eric Schott (@imnotbob)
- *  Modified: 08/08/2019
+ *  Modified: 08/25/2019
  */
 
 import java.text.SimpleDateFormat
 import groovy.time.*
 
-String devVer() { return "2.0.4" }
+String devVer() { return "2.0.5" }
 metadata {
 	definition (name: "Nest Thermostat", namespace: "tonesto7", author: "Anthony S.", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstThermostat.groovy") {
 		capability "Actuator"
@@ -363,7 +363,7 @@ void pauseEvent(String val = "false") {
 }
 
 void nestTypeEvent(String type) {
-	String val = device.currentState("nestType")?.value
+	String val = device.currentState("nestType")?.value?.toString()
 	state.nestType=type
 	if(!val.equals(type)) {
 		Logger("UPDATED | nestType: (${type}) | Original State: (${val})")
@@ -372,7 +372,7 @@ void nestTypeEvent(String type) {
 }
 
 void sunlightCorrectionEnabledEvent(sunEn) {
-	String val = device.currentState("sunlightCorrectionEnabled")?.value
+	String val = device.currentState("sunlightCorrectionEnabled")?.value?.toString()
 	String newVal = sunEn.toString()
 	if(isStateChange(device, "sunlightCorrectionEnabled", newVal)) {
 		Logger("SunLight Correction Enabled: (${newVal}) | Previous State: (${val?.capitalize()})")
@@ -381,8 +381,8 @@ void sunlightCorrectionEnabledEvent(sunEn) {
 }
 
 void sunlightCorrectionActiveEvent(sunAct) {
-	String val = device.currentState("sunlightCorrectionActive")?.value
-	String newVal = sunAct.toString()
+	String val = device.currentState("sunlightCorrectionActive")?.value?.toString()
+	String newVal = sunAct?.toString()
 	if(isStateChange(device, "sunlightCorrectionActive", newVal)) {
 		Logger("SunLight Correction Active: (${newVal}) | Previous State: (${val?.capitalize()})")
 		sendEvent(name: 'sunlightCorrectionActive', value: newVal, displayed: false)
@@ -417,7 +417,7 @@ void lastCheckinEvent(checkin, isOnline) {
 	def regex1 = /Z/
 	String t0 = checkin.replaceAll(regex1, "-0000")
 
-	String prevOnlineStat = device.currentState("onlineStatus")?.value
+	String prevOnlineStat = device.currentState("onlineStatus")?.value?.toString()
 
 	//def curConn = t0 ? "${tf.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0))}" : "Not Available"
 	String curConnFmt = t0 ? "${formatDt(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0))}" : "Not Available"
@@ -452,7 +452,7 @@ void lastUpdatedEvent(sendEvt=false) {
 }
 
 void softwareVerEvent(String ver) {
-	String verVal = device.currentState("softwareVer")?.value
+	String verVal = device.currentState("softwareVer")?.value?.toString()
 	if(isStateChange(device, "softwareVer", ver)) {
 		Logger("Firmware Version: (${ver}) | Previous State: (${verVal})")
 		sendEvent(name: 'softwareVer', value: ver, descriptionText: "Firmware Version is now ${ver}", displayed: false, isStateChange: true)
@@ -460,7 +460,7 @@ void softwareVerEvent(String ver) {
 }
 
 void tempUnitEvent(String unit) {
-	String tmpUnit = device.currentState("temperatureUnit")?.value
+	String tmpUnit = device.currentState("temperatureUnit")?.value?.toString()
 	state.tempUnit = unit
 	if(isStateChange(device, "temperatureUnit", unit)) {
 		Logger("Temperature Unit: (${unit}) | Previous State: (${tmpUnit})")
@@ -506,7 +506,7 @@ void thermostatSetpointEvent(Double targetTemp) {
 }
 
 void temperatureEvent(Double tempVal) {
-	String temp = device.currentState("temperature")?.value?.toString()
+	def temp = device.currentState("temperature")?.value
 	def rTempVal = wantMetric() ? tempVal.round(1) : tempVal.round(0).toInteger()
 	if(isStateChange(device, "temperature", rTempVal.toString())) {
 		Logger("Temperature is (${rTempVal}${tUnitStr()}) | Previous Temp: (${temp}${tUnitStr()})")
@@ -516,7 +516,7 @@ void temperatureEvent(Double tempVal) {
 }
 
 void heatingSetpointEvent(Double tempVal) {
-	String temp = device.currentState("heatingSetpoint")?.value?.toString()
+	def temp = device.currentState("heatingSetpoint")?.value
 	if(tempVal.toInteger() == 0 || !state.can_heat || (getHvacMode() == "off")) {
 		if(temp != "") { clearHeatingSetpoint() }
 	} else {
@@ -550,7 +550,7 @@ void heatingSetpointEvent(Double tempVal) {
 }
 
 void coolingSetpointEvent(Double tempVal) {
-	String temp = device.currentState("coolingSetpoint")?.value?.toString()
+	def temp = device.currentState("coolingSetpoint")?.value
 	if(tempVal.toInteger() == 0 || !state.can_cool || (getHvacMode() == "off")) {
 		if(temp != "") { clearCoolingSetpoint() }
 	} else {
@@ -584,7 +584,7 @@ void coolingSetpointEvent(Double tempVal) {
 }
 
 private void hasLeafEvent(Boolean hasLeaf) {
-	String leaf = device.currentState("hasLeaf")?.value
+	String leaf = device.currentState("hasLeaf")?.value?.toString()
 	String lf = hasLeaf ? "On" : "Off"
 	state.hasLeaf = hasLeaf
 	if(isStateChange(device, "hasLeaf", lf)) {
@@ -603,7 +603,7 @@ private void humidityEvent(String humidity) {
 }
 
 private void etaEvent(String eta) {
-	String oeta = device.currentState("etaBegin")?.value
+	String oeta = device.currentState("etaBegin")?.value?.toString()
 	if(isStateChange(device, "etaBegin", eta)) {
 		Logger("Eta Begin is (${eta}) | Previous State: (${oeta})")
 		sendEvent(name:'etaBegin', value: eta, descriptionText: "Eta is ${eta}", displayed: true, isStateChange: true)
@@ -667,7 +667,7 @@ void hvacPreviousModeEvent(String mode) {
 
 void fanModeEvent(String fanActive) {
 	String val = state.has_fan ? ((fanActive == "true") ? "on" : "auto") : "disabled"
-	String fanMode = device.currentState("thermostatFanMode")?.value
+	String fanMode = device.currentState("thermostatFanMode")?.value?.toString()
 	if(isStateChange(device, "thermostatFanMode", val)) {
 		Logger("Fan Mode: (${val?.capitalize()}) | Previous State: (${fanMode?.capitalize()})")
 		sendEvent(name: "thermostatFanMode", value: val, descriptionText: "Fan Mode is: ${val}", displayed: true, isStateChange: true, state: val)
@@ -679,7 +679,7 @@ void nestoperatingStateEvent(String opState=null) {
 	String operState = opState == null ? nesthvacState : opState
 	if(operState == null) { return }
 	if(isStateChange(device, "nestThermostatOperatingState", operState.toString())) {
-		Logger("nestOperatingState is (${operState.toString().capitalize()}) | Previous State: (${nesthvacState.toString().capitalize()})")
+		Logger("nestOperatingState is (${operState?.toString()?.capitalize()}) | Previous State: (${nesthvacState?.capitalize()})")
 		sendEvent(name: 'nestThermostatOperatingState', value: operState, descriptionText: "Device is ${operState}")
 	}
 }
@@ -696,7 +696,7 @@ void operatingStateEvent(String opState=null) {
 
 	String hvacState = device.currentState("thermostatOperatingState")?.value?.toString()
 	if(isStateChange(device, "thermostatOperatingState", newoperState)) {
-		Logger("OperatingState is (${newoperState.capitalize()}) | Previous State: (${hvacState.capitalize()})")
+		Logger("OperatingState is (${newoperState?.capitalize()}) | Previous State: (${hvacState?.capitalize()})")
 		sendEvent(name: 'thermostatOperatingState', value: newoperState, descriptionText: "Device is ${newoperState}", displayed: true, isStateChange: true)
 	}
 }
@@ -712,8 +712,8 @@ void tempLockOnEvent(String isLocked) {
 }
 
 void lockedTempEvent(Double minTemp, Double maxTemp) {
-	double curMinTemp = device.currentState("lockedTempMin")?.value?.toDouble()
-	double curMaxTemp = device.currentState("lockedTempMax")?.value?.toDouble()
+	def curMinTemp = device.currentState("lockedTempMin")?.value?.toDouble()
+	def curMaxTemp = device.currentState("lockedTempMax")?.value?.toDouble()
 	//def rTempVal = wantMetric() ? tempVal.round(1) : tempVal.round(0).toInteger()
 	if(curMinTemp != minTemp || curMaxTemp != maxTemp) {
 		Logger("Temperature Lock Minimum is (${minTemp}) | Previous Temp: (${curMinTemp})")
@@ -756,21 +756,21 @@ def checkSafetyTemps() {
 }
 
 void apiStatusEvent(String issueDesc) {
-	String curStat = device.currentState("apiStatus")?.value
+	String curStat = device.currentState("apiStatus")?.value?.toString()
 	String newStat = issueDesc
 	if(isStateChange(device, "apiStatus", newStat)) {
-		Logger("API Status is: (${newStat.capitalize()}) | Previous State: (${curStat?.capitalize()})")
+		Logger("API Status is: (${newStat?.capitalize()}) | Previous State: (${curStat?.capitalize()})")
 		sendEvent(name: "apiStatus", value: newStat, descriptionText: "API Status is: ${newStat}", displayed: true, isStateChange: true, state: newStat)
 	}
 }
 
 void emergencyHeatEvent(emerHeat) {
-	String curStat = device.currentState("usingEmergencyHeat")?.value
+	String curStat = device.currentState("usingEmergencyHeat")?.value?.toString()
 	String newStat = emerHeat.toString()
 	if(isStateChange(device, "usingEmergencyHeat", newStat)) {
 		state.is_using_emergency_heat = !!newStat
 		Logger("Using Emergency Heat is: (${newStat?.capitalize()}) | Previous State: (${curStat?.capitalize()})")
-		sendEvent(name: "usingEmergencyHeat", value: newStat.toString(), descriptionText: "Using Emergency Heat is: ${newStat}", displayed: true, isStateChange: true, state: newStat)
+		sendEvent(name: "usingEmergencyHeat", value: newStat, descriptionText: "Using Emergency Heat is: ${newStat}", displayed: true, isStateChange: true, state: newStat)
 	}
 }
 
