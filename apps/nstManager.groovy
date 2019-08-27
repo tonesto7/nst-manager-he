@@ -23,7 +23,7 @@ definition(
 	oauth: true
 )
 
-String appVer() { "2.0.5" }
+String appVer() { "2.0.6" }
 String namespace()  { "tonesto7" }
 int devCltNum() { 1 }
 boolean restEnabled(){ true } // Enables the Rest Stream Device
@@ -1004,8 +1004,8 @@ void initBuiltin(String btype) {
 			}
 			break
 		case "initWatchdogApp":
-			int t0 = settings?.thermostats?.size()
-			int t1 = settings?.cameras?.size()
+			def t0 = settings?.thermostats?.size()
+			def t1 = settings?.cameras?.size()
 			if(state?.isInstalled && (t0 || t1)) {
 				keepApp = true
 				createApp = true
