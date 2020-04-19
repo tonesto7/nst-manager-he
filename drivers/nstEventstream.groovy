@@ -2,7 +2,7 @@
  *  Nest Eventstream
  *	Copyright (C) 2018, 2019 Anthony S..
  *	Author: Anthony Santilli (@tonesto7)
- *  Modified: 08/24/2019
+ *  Modified: 04/17/2020
  */
 
 import java.text.SimpleDateFormat
@@ -10,7 +10,7 @@ import groovy.json.*
 import java.security.MessageDigest
 import groovy.transform.Field
 
-def devVer() { return "2.0.5" }
+static def devVer() { return "2.0.6" }
 
 metadata {
 	definition (name: "Nest Eventstream", namespace: "tonesto7", author: "Anthony S.", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstEventstream.groovy") {
@@ -47,6 +47,7 @@ void initialize() {
 	if(state.streamRunning) {
 		parent.streamDeviceInstalled(true)
 		streamStart()
+		if (logEnable) runIn(1800, logsOff)
 	}
 }
 
@@ -102,7 +103,7 @@ def getDeviceStateData() {
 	return getState()
 }
 
-boolean isStreamDevice() { return true }
+Boolean isStreamDevice() { return true }
 
 // called by parent
 void blockStreaming(Boolean val) {
@@ -156,7 +157,7 @@ void streamStart() {
 // called by parent
 void streamStop() {
 	Logger("Stream Stopping...")
-	boolean sendNull = false
+	Boolean sendNull = false
 	if(state.streamRunning) {
 		sendNull = true
 	}
@@ -166,8 +167,8 @@ void streamStop() {
 	eventStreamClose()
 }
 
-@Field static long allEventCountFLD 
-@Field static long eventCountFLD 
+@Field static Long allEventCountFLD 
+@Field static Long eventCountFLD 
 @Field static Map lastEventDataFLD
 @Field static Map camSaveFLD
 
@@ -179,8 +180,8 @@ void parse(description) {
 			if (data?.size()) {
 				allEventCountFLD = allEventCountFLD ? allEventCountFLD + 1 : 1L
 				//Logger("Stream Event Received...", "info")
-				boolean chgd = false
-				boolean somechg = false
+				Boolean chgd = false
+				Boolean somechg = false
 				if(state.structure) {
 					//def theRawEvent = new JsonSlurper().parseText(description as String)
 					//def theRawEvent = new JsonSlurper().parseText(JsonOutput.toJson(data))
@@ -196,27 +197,27 @@ void parse(description) {
 
 					def mydata = [:]
 					mydata = data?.data as Map
-					if(!mydata) { Logger("No Data in mydata", "warn"); }
+					if(!mydata) { Logger("No Data in mydata", "warn") }
 
 					def tempmymeta = [:]
 					tempmymeta = mydata?.metadata
 
-					boolean chgFound = true
+					Boolean chgFound = true
 					def tchksum
 
 					if(tempmymeta) {
 						theNewEvent.data.metadata = [:] + theRawEvent.data.metadata
 						tchksum = generateMD5_A(tempmymeta.toString())
 						if(tchksum == state.savedmymeta) { chgFound = false }
-						//chgFound = getChanges(tempmymeta, state?.savedmymeta, "/metatdata", "metadata")
+						//chgFound = getChanges(tempmymeta, state.savedmymeta, "/metatdata", "metadata")
 					}
-					if(tempmymeta && ( !state?.savedmymeta || chgFound )) {
+					if(tempmymeta && ( !state.savedmymeta || chgFound )) {
 						chgd = true
 						state.savedmymeta = tchksum
 						//Logger("tempmymeta changed", "info")
 						//Logger("chgFound ${chgFound}", "info")
 						//Logger("tempmymeta ${tempmymeta.toString()}", "info")
-						//Logger("state.savedmyymeta ${state?.savedmymeta.toString()}", "info")
+						//Logger("state.savedmyymeta ${state.savedmymeta.toString()}", "info")
 					}
 
 					def mystruct = [:]
@@ -228,18 +229,18 @@ void parse(description) {
 					tchksum = null
 					chgFound = true
 					def st0 = [:] + mystruct
-					//def st1 = state?.savedmystruct
+					//def st1 = state.savedmystruct
 					if(st0) {
 						st0.wheres = [:]
 						tchksum = generateMD5_A(st0.toString())
 						if(tchksum == state.savedmystruct) { chgFound = false }
 						//chgFound = getChanges(st0, st1, "/structure", "structure")
 					} else {
-						Logger("No Data in structures ${state?.structure}", "warn")
+						Logger("No Data in structures ${state.structure}", "warn")
 						return
 					}
 
-					if(st0 && ( !state?.savedmystruct || chgFound)) {
+					if(st0 && ( !state.savedmystruct || chgFound)) {
 						chgd = true
 						state.savedmystruct = tchksum
 						//Logger("mystruct changed structure ${state.structure}", "info")
@@ -259,7 +260,7 @@ void parse(description) {
 	
 							def t0 = [:]
 							def prevCheckSum = //[:]
-							t0 = state?.savedmythermostatsorig ?: [:]
+							t0 = state.savedmythermostatsorig ?: [:]
 							if(t0?."${t1}") { prevCheckSum = t0[t1] }
 							//Logger("thermostat ${i} ${t1} adjT1 ${adjT1}", "debug")
 							//Logger("thermostat ${i} ${t1} prevCheckSum ${prevCheckSum}", "debug")
@@ -279,7 +280,7 @@ void parse(description) {
 							}
 
 							prevCheckSum = //[:]
-							t0 = state?.savedmythermostats ?: [:]
+							t0 = state.savedmythermostats ?: [:]
 							if(t0?."${t1}") { prevCheckSum = t0[t1] }
 
 							tchksum = null
@@ -318,7 +319,7 @@ void parse(description) {
 							theNewEvent.data.devices.smoke_co_alarms."${t1}" = [:] + adjT1
 
 							def prevCheckSum // = [:]
-							def t0 = state?.savedmyprotectsorig ?: [:]
+							def t0 = state.savedmyprotectsorig ?: [:]
 							if(t0?."${t1}") { prevCheckSum = t0[t1] }
 
 							tchksum = null
@@ -335,7 +336,7 @@ void parse(description) {
 							}
 
 							prevCheckSum = null // this is a checksum [:]
-							t0 = state?.savedmyprotects ?: [:]
+							t0 = state.savedmyprotects ?: [:]
 							if(t0?."${t1}") { prevCheckSum = t0[t1] }
 
 							tchksum = null
@@ -373,7 +374,7 @@ void parse(description) {
 							adjT1 = mydata.devices.cameras[t1]
 							if(!adjT1) { Logger("No Data in cameras ${i} ${t1}", "warn"); return }
 
-							def t0 = state?.savedmycamerasorig ?: [:]
+							def t0 = state.savedmycamerasorig ?: [:]
 							def prevCheckSum // = [:]   this is a checksum [:]
 							if(t0?."${t1}") { prevCheckSum = t0[t1] }
 
@@ -407,7 +408,7 @@ void parse(description) {
 							}
 
 /*
-							t0 = state?.savedmycameras ?: [:]
+							t0 = state.savedmycameras ?: [:]
 							prevCheckSum = //[:]
 							if(t0?."${t1}") { prevCheckSum = t0[t1] }
 
@@ -481,14 +482,14 @@ void parse(description) {
 				}
 				setStreamStatusVal(true)
 				if(!chgd && somechg) {
-					if(!state?.runInSlowActive) {
+					if(!state.runInSlowActive) {
 						state.runInSlowActive = true
 						Logger("scheduling event", "info")
 						runIn(95, "sendRecent", [overwrite: true])
 					}
 				}
 				if(chgd) {
-					if(state?.runInSlowActive) {
+					if(state.runInSlowActive) {
 						Logger("unscheduling event", "info")
 						unschedule("sendRecent")  // or runIn(6000, "sendRecent", [overwrite: true])
 						state.runInSlowActive = false
@@ -554,9 +555,9 @@ def getChanges(mapA, mapB, String headstr, String objType=null) {
 	return false
 }
 
-void sendRecent(boolean forceNull=false) {
+void sendRecent(Boolean forceNull=false) {
 	def t0 = [:]
-	//t0 = state?.lastEventData
+	//t0 = state.lastEventData
 	t0 = lastEventDataFLD
 	state.runInSlowActive = false
 	if(t0 || forceNull) {
@@ -579,7 +580,7 @@ void sendRecent(boolean forceNull=false) {
 }
 
 void setStreamStatusVal(Boolean active) {
-	state?.streamRunning = active
+	state.streamRunning = active
 	String curStat = device.currentState("streamStatus")?.value
 	String newStat = active ? "running" : "stopped"
 	if(isStateChange(device, "streamStatus", newStat.toString())) {
@@ -605,7 +606,7 @@ def eventStreamStatus(String msg) {
 def getTimeZone() {
 	def tz = null
 	if (location?.timeZone) { tz = location?.timeZone }
-	else { tz = state?.nestTimeZone ? TimeZone.getTimeZone(state?.nestTimeZone) : null }
+	else { tz = state.nestTimeZone ? TimeZone.getTimeZone(state.nestTimeZone) : null }
 	if (!tz) { Logger("getTimeZone: Hub or Nest TimeZone is not found...", "warn") }
 	return tz
 }
@@ -620,14 +621,14 @@ void apiStatusEvent(String issueDesc) {
 	}
 }
 
-void lastUpdatedEvent(boolean sendEvt=false) {
-	def now = new Date()
+void lastUpdatedEvent(Boolean sendEvt=false) {
+	Date now = new Date()
 	def tf = new SimpleDateFormat("MMM d, yyyy - h:mm:ss a")
 	tf.setTimeZone(getTimeZone())
 	String lastUpd = device.currentState("lastConnection")?.value
 	String lastDt = tf.format(now)
-//	state?.lastUpdatedDt = lastDt?.toString()
-//	state?.lastUpdatedDtFmt = formatDt(now)
+//	state.lastUpdatedDt = lastDt?.toString()
+//	state.lastUpdatedDtFmt = formatDt(now)
 	if(sendEvt) {
 		// Logger("Last Parent Refresh time: (${lastDt}) | Previous Time: (${lastUpd})")
 		sendEvent(name: 'lastConnection', value: lastDt, displayed: false, isStateChange: true)
@@ -638,21 +639,21 @@ void lastUpdatedEvent(boolean sendEvt=false) {
  |										LOGGING FUNCTIONS										|
  *************************************************************************************************/
 
-String lastN(String input, int n) {
+static String lastN(String input, Integer n) {
 	return n > input?.size() ? input : input[-n..-1]
 }
 
 void Logger(String msg, String logType = "debug") {
 	if(!logEnable || !msg) { return }
 	String smsg = "${device.displayName} (v${devVer()}) | ${msg}"
-	if(state?.enRemDiagLogging == null) {
-		state?.enRemDiagLogging = parent?.getStateVal("enRemDiagLogging")
-		if(state?.enRemDiagLogging == null) {
-			state?.enRemDiagLogging = false
+	if(state.enRemDiagLogging == null) {
+		state.enRemDiagLogging = parent?.getStateVal("enRemDiagLogging")
+		if(state.enRemDiagLogging == null) {
+			state.enRemDiagLogging = false
 		}
-		//log.debug "set enRemDiagLogging to ${state?.enRemDiagLogging}"
+		//log.debug "set enRemDiagLogging to ${state.enRemDiagLogging}"
 	}
-        if(state?.enRemDiagLogging) {
+        if(state.enRemDiagLogging) {
 		String theId = lastN(device.getId().toString(),5)
                 parent.saveLogtoRemDiagStore(smsg, logType, "EventStream-${theId}")
         } else {
@@ -686,7 +687,7 @@ def log(message, level = "trace") {
 }
 
 String getDtNow() {
-	def now = new Date()
+	Date now = new Date()
 	return formatDt(now)
 }
 

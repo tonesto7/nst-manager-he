@@ -5,6 +5,7 @@
 |    Contributors: Ben W. (@desertblade)						    |
 |    A few code methods are modeled from those in CoRE by Adrian Caramaliu		    |
 |											    |
+|	4/17/2020									    |
 |    License Info: https://github.com/tonesto7/nest-manager/blob/master/app_license.txt     |
 |********************************************************************************************/
 
@@ -26,7 +27,7 @@ definition(
 	oauth: true)
 
 
-def appVersion() { "2.0.1" }
+def appVersion() { "2.0.2" }
 
 preferences {
 	page(name: "startPage")
@@ -66,7 +67,7 @@ preferences {
 
 mappings {
 		//Web Diagnostics Pages
-		if(state?.autoTyp == "remDiag" || getDevOpt()) {
+		if(state.autoTyp == "remDiag" || getDevOpt()) {
 		//	path("/processCmd")     {action: [POST: "procDiagCmd"]}
 			path("/diagHome")	       {action: [GET: "renderDiagHome"]}
 			path("/getLogData")	     {action: [GET: "renderLogData"]}
@@ -92,11 +93,11 @@ def startPage() {
 	//log.info "startPage"
 	if(parent) {
 		Boolean t0 = parent.getStateVal("ok2InstallAutoFlag")
-		if( /* !state?.isInstalled && */ t0 != true) {
+		if( /* !state.isInstalled && */ t0 != true) {
 			//Logger("Not installed ${t0}")
 			notAllowedPage()
 		} else {
-			state?.isParent = false
+			state.isParent = false
 			selectAutoPage()
 		}
 	} else {
@@ -125,18 +126,18 @@ def installed() {
 
 def updated() {
 	log.debug "${app.getLabel()} Updated...with settings: ${settings}"
-	state?.isInstalled = true
+	state.isInstalled = true
 	def appLbl = getCurAppLbl()
 /*
 	if(appLbl?.contains("Watchdog")) {
-		if(!state?.autoTyp) { state.autoTyp = "watchDog" }
+		if(!state.autoTyp) { state.autoTyp = "watchDog" }
 	}
 */
 	if(appLbl?.contains("Diagnostics")) {
-		if(!state?.autoTyp) { state.autoTyp = "remDiag" }
+		if(!state.autoTyp) { state.autoTyp = "remDiag" }
 	}
 	initialize()
-	state?.lastUpdatedDt = getDtNow()
+	state.lastUpdatedDt = getDtNow()
 	return true
 }
 
@@ -147,9 +148,9 @@ def uninstalled() {
 
 def initialize() {
 	log.debug "${app.label} Initialize..."			// Must be log.debug
-	if(!state?.isInstalled) { state?.isInstalled = true }
+	if(!state.isInstalled) { state.isInstalled = true }
 	Boolean settingsReset = parent.getSettingVal("resetAllData")
-	//if(state?.resetAllData || settingsReset) {
+	//if(state.resetAllData || settingsReset) {
 	//	if(fixState()) { return }	// runIn of fixState will call initAutoApp()
 	//}
 	runIn(6, "initAutoApp", [overwrite: true])
@@ -168,13 +169,13 @@ private adj_temp(tempF) {
 }
 
 def setMyLockId(val) {
-	if(state?.myID == null && parent && val) {
+	if(state.myID == null && parent && val) {
 		state.myID = val
 	}
 }
 
 def getMyLockId() {
-	if(parent) { return state?.myID } else { return null }
+	if(parent) { return state.myID } else { return null }
 }
 
 /*
@@ -182,7 +183,7 @@ def fixState() {
 	def result = false
 	LogTrace("fixState")
 	def before = getStateSizePerc()
-	if(!state?.resetAllData && parent.getSettingVal("resetAllData")) { // automation cleanup called from update() -> initAutoApp()
+	if(!state.resetAllData && parent.getSettingVal("resetAllData")) { // automation cleanup called from update() -> initAutoApp()
 		def data = getState()?.findAll { !(it?.key in [ "autoTyp", "autoDisabled", "scheduleList", "resetAllData", "autoDisabledDt",
 			"leakWatRestoreMode", "leakWatTstatOffRequested",
 			"conWatRestoreMode", "conWatlastMode", "conWatTstatOffRequested",
@@ -200,7 +201,7 @@ def fixState() {
 		unschedule()
 		unsubscribe()
 		result = true
-	} else if(state?.resetAllData && !parent.getSettingVal("resetAllData")) {
+	} else if(state.resetAllData && !parent.getSettingVal("resetAllData")) {
 		LogAction("fixState: resetting ALL toggle", "info", true)
 		state.resetAllData = false
 	}
@@ -215,22 +216,22 @@ def fixState() {
 
 void finishFixState(migrate=false) {
 	LogTrace("finishFixState")
-	if(state?.resetAllData || migrate) {
-		def tstat = settings?.schMotTstat
+	if(state.resetAllData || migrate) {
+		def tstat = settings.schMotTstat
 		if(tstat) {
 			LogAction("finishFixState found tstat", "info", true)
 			getTstatCapabilities(tstat, schMotPrefix())
 			if(!getMyLockId()) {
 				setMyLockId(app.id)
 			}
-			if(settings?.schMotRemoteSensor) {
+			if(settings.schMotRemoteSensor) {
 				LogAction("finishFixState found remote sensor", "info", true)
 				if( parent?.remSenLock(tstat?.deviceNetworkId, getMyLockId()) ) {  // lock new ID
-					state?.remSenTstat = tstat?.deviceNetworkId
+					state.remSenTstat = tstat?.deviceNetworkId
 				}
-				if(isRemSenConfigured() && settings?.remSensorDay) {
+				if(isRemSenConfigured() && settings.remSensorDay) {
 					LogAction("finishFixState found remote sensor configured", "info", true)
-					if(settings?.vthermostat != null) { parent?.addRemoveVthermostat(tstat.deviceNetworkId, vthermostat, getMyLockId()) }
+					if(settings.vthermostat != null) { parent?.addRemoveVthermostat(tstat.deviceNetworkId, vthermostat, getMyLockId()) }
 				}
 			}
 		}
@@ -242,7 +243,7 @@ void finishFixState(migrate=false) {
 
 def selectAutoPage() {
 	//LogTrace("selectAutoPage()")
-	if(!state?.autoTyp) {
+	if(!state.autoTyp) {
 		return dynamicPage(name: "selectAutoPage", title: "Choose an Automation Type", uninstall: false, install: false, nextPage: null) {
 /*
 			def thereIsChoice = !parent.automationNestModeEnabled(null)
@@ -258,7 +259,7 @@ def selectAutoPage() {
 			notAllowedPage()
 		}
 	}
-	else { return mainAutoPage( [aTyp: state?.autoTyp]) }
+	else { return mainAutoPage( [aTyp: state.autoTyp]) }
 }
 
 def sectionTitleStr(title)	{ return "<h3>$title</h3>" }
@@ -358,11 +359,11 @@ def mainAutoPage2(params) {
 def mainAutoPage(params) {
 	//LogTrace("mainAutoPage()")
 	def t0 = getTemperatureScale()?.toString()
-	state?.tempUnit = (t0 != null) ? t0 : state?.tempUnit
-	if(!state?.autoDisabled) { state.autoDisabled = false }
+	state.tempUnit = (t0 != null) ? t0 : state.tempUnit
+	if(!state.autoDisabled) { state.autoDisabled = false }
 	def autoType = null
 	//If params.aTyp is not null then save to state.
-	if(!state?.autoTyp) {
+	if(!state.autoTyp) {
 		if(!params?.aTyp) { Logger("nothing is set mainAutoPage") }
 		else {
 			//Logger("setting autoTyp")
@@ -376,7 +377,7 @@ def mainAutoPage(params) {
 
 	//Logger("mainPage: ${state.autoTyp}  ${autoType}")
 	// If the selected automation has not been configured take directly to the config page.  Else show main page
-//Logger("in mainAutoPage ${autoType}  ${state?.autoTyp}")
+//Logger("in mainAutoPage ${autoType}  ${state.autoTyp}")
 /*
 	if(autoType == "nMode" && !isNestModesConfigured())		{ return nestModePresPage() }
 	else if(autoType == "watchDog" && !isWatchdogConfigured())	{ return watchDogPage() }
@@ -391,7 +392,7 @@ def mainAutoPage(params) {
 		//return dynamicPage(name: "mainAutoPage", title: "Automation Configuration", uninstall: false, install: false, nextPage: "nameAutoPage" ) {
 		return dynamicPage(name: "mainAutoPage", title: pageTitleStr("Automation Configuration"), uninstall: true, install: true, nextPage:null ) {
 			section() {
-				if(settings?.autoDisabledreq) {
+				if(settings.autoDisabledreq) {
 					paragraph imgTitle(getAppImg("i_inst"), paraTitleStr("This Automation is currently disabled!\nTurn it back on to to make changes or resume operation")), required: true, state: null
 				} else {
 					if(getIsAutomationDisabled()) { paragraph imgTitle(getAppImg("i_inst"), paraTitleStr("This Automation is still disabled!\nPress Next and Done to Activate this Automation Again")), state: "complete" }
@@ -408,8 +409,8 @@ def mainAutoPage(params) {
 							paragraph sectionTitleStr(remDiagDesc)
 						//href "diagnosticsPage", title: imgTitle(getAppImg("diag_icon.png"), inputTitleStr("NST Diagnostics")), description: remDiagDesc ?: descriptions("d_ttc"), state: (remDiagDesc ? "complete" : null)
 
-							if(!state?.access_token) { getAccessToken() }
-							if(!state?.access_token) { enableOauth(); getAccessToken() }
+							if(!state.access_token) { getAccessToken() }
+							if(!state.access_token) { enableOauth(); getAccessToken() }
 
 							def myUrl = getAppEndpointUrl("diagHome")
 							def myStr = """ <a href="${myUrl}" target="_blank">NST Diagnostic Web Page</a> """
@@ -423,7 +424,7 @@ def mainAutoPage(params) {
 			section(sectionTitleStr("Automation Options:")) {
 				if( /* (isNestModesConfigured() || isWatchdogConfigured() || isSchMotConfigured())*/ isDiagnosticsConfigured() ) {
 					//paragraph paraTitleStr("Enable/Disable this Automation")
-					input "autoDisabledreq", "bool", title: imgTitle(getAppImg("disable_icon2.png"), inputTitleStr("Disable this Automation?")), required: false, defaultValue: false /* state?.autoDisabled */, submitOnChange: true
+					input "autoDisabledreq", "bool", title: imgTitle(getAppImg("disable_icon2.png"), inputTitleStr("Disable this Automation?")), required: false, defaultValue: false /* state.autoDisabled */, submitOnChange: true
 					setAutomationStatus()
 				}
 				input ("showDebug", "bool", title: imgTitle(getAppImg("debug_icon.png"), inputTitleStr("Debug Option")), description: "Show ${app?.name} Logs in the IDE?", required: false, defaultValue: false, submitOnChange: true)
@@ -437,7 +438,7 @@ def mainAutoPage(params) {
 				def newName = getAutoTypeLabel()
 				if(!app?.label) { app?.updateLabel("${newName}") }
 				label title: imgTitle(getAppImg("name_tag_icon.png"), inputTitleStr("Label this Automation: Suggested Name: ${newName}")), defaultValue: "${newName}", required: true //, wordWrap: true
-				if(!state?.isInstalled) {
+				if(!state.isInstalled) {
 					paragraph "Make sure to name it something that you can easily recognize."
 				}
 			}
@@ -448,32 +449,32 @@ def mainAutoPage(params) {
 /*
 def getSchMotConfigDesc(retAsList=false) {
 	def list = []
-	if(settings?.schMotWaterOff) { list.push("Turn Off if Leak Detected") }
-	if(settings?.schMotContactOff) { list.push("Set ECO if Contact Open") }
-	if(settings?.schMotExternalTempOff) { list.push("Set ECO based on External Temp") }
-	if(settings?.schMotRemoteSensor) { list.push("Use Remote Temp Sensors") }
+	if(settings.schMotWaterOff) { list.push("Turn Off if Leak Detected") }
+	if(settings.schMotContactOff) { list.push("Set ECO if Contact Open") }
+	if(settings.schMotExternalTempOff) { list.push("Set ECO based on External Temp") }
+	if(settings.schMotRemoteSensor) { list.push("Use Remote Temp Sensors") }
 	if(isTstatSchedConfigured()) { list.push("Setpoint Schedules Created") }
-	if(settings?.schMotOperateFan) { list.push("Control Fans with HVAC") }
-	if(settings?.schMotHumidityControl) { list.push("Control Humidifier") }
+	if(settings.schMotOperateFan) { list.push("Control Fans with HVAC") }
+	if(settings.schMotHumidityControl) { list.push("Control Humidifier") }
 
 	if(retAsList) {
 		return isSchMotConfigured() ? list : null
 	} else {
 		def sDesc = ""
-		sDesc += settings?.schMotTstat ? "${settings?.schMotTstat?.label}" : ""
+		sDesc += settings.schMotTstat ? "${settings.schMotTstat?.label}" : ""
 		list?.each { ls ->
 			sDesc += "\n • ${ls}"
 		}
 		def t1 = getNotifConfigDesc("schMot")
 		sDesc += t1 ? "\n\n${t1}" : ""
-		sDesc += settings?.schMotTstat ? descriptions("d_ttm") : ""
+		sDesc += settings.schMotTstat ? descriptions("d_ttm") : ""
 		return isSchMotConfigured() ? "${sDesc}" : null
 	}
 }
 */
 
 def setAutomationStatus(upd=false) {
-	Boolean myDis = (settings?.autoDisabledreq == true)
+	Boolean myDis = (settings.autoDisabledreq == true)
 	Boolean settingsReset = (parent.getSettingVal("disableAllAutomations") == true)
 	Boolean storAutoType = getAutoType() == "storage" ? true : false
 	if(settingsReset && !storAutoType) {
@@ -484,12 +485,12 @@ def setAutomationStatus(upd=false) {
 	}
 	if(!getIsAutomationDisabled() && myDis) {
 		LogAction("Automation Disabled at (${getDtNow()})", "info", true)
-		state?.autoDisabledDt = getDtNow()
+		state.autoDisabledDt = getDtNow()
 	} else if(getIsAutomationDisabled() && !myDis) {
 		LogAction("Automation Enabled at (${getDtNow()})", "info", true)
-		state?.autoDisabledDt = null
+		state.autoDisabledDt = null
 	}
-	state?.autoDisabled = myDis
+	state.autoDisabled = myDis
 	if(upd) { app.update() }
 }
 
@@ -511,7 +512,7 @@ void settingRemove(name) {
 }
 
 def stateUpdate(key, value) {
-	if(key) { state?."${key}" = value; return true }
+	if(key) { state."${key}" = value; return true }
 	//else { LogAction("stateUpdate: null key $key $value", "error", true); return false }
 }
 
@@ -523,7 +524,7 @@ def stateRemove(key) {
 def initAutoApp() {
 	//log.debug "${app.label} initAutoApp..."			// Must be log.debug
 	if(settings["watchDogFlag"]) {
-		state?.autoTyp = "watchDog"
+		state.autoTyp = "watchDog"
 	}
 
 	def autoType = getAutoType()
@@ -532,8 +533,8 @@ def initAutoApp() {
 		parent.automationNestModeEnabled(true)
 	} else
 */
-	if(settings["remDiagFlag"] || state?.autoTyp == "remDiag") {
-		//state?.automationType = "remDiag"
+	if(settings["remDiagFlag"] || state.autoTyp == "remDiag") {
+		//state.automationType = "remDiag"
 		parent?.remDiagAppAvail(true)
 	}
 
@@ -561,7 +562,7 @@ def initAutoApp() {
 	settingUpdate("advAppDebug", "true", "bool")
 
 	scheduleAutomationEval(30)
-	if(settings?.showDebug || settings?.advAppDebug) { runIn(1800, logsOff) }
+	if(settings.showDebug || settings.advAppDebug) { runIn(1800, logsOff) }
 
 }
 
@@ -584,7 +585,7 @@ def getCurAppLbl() { return app?.label?.toString() }
 
 def getAutoTypeLabel() {
 	//LogTrace("getAutoTypeLabel()")
-	def type = state?.autoTyp
+	def type = state.autoTyp
 	def appLbl = getCurAppLbl()
 	def newName = appName() == "${appLabel()}" ? "NST Diagnostics" : "${appName()}"
 	def typeLabel = ""
@@ -609,7 +610,7 @@ def getAutoTypeLabel() {
 
 def getSettingsData() {
 	def sets = []
-	settings?.sort().each { st ->
+	settings.sort().each { st ->
 		sets << st
 	}
 	return sets
@@ -624,12 +625,12 @@ def getStateVal(var) {
 }
 
 public automationsInst() {
-	state?.isInstalled = true
+	state.isInstalled = true
 }
 
 List getAutomationsInstalled() {
 	List list = []
-	String aType = state?.autoTyp
+	String aType = state.autoTyp
 	switch(aType) {
 		case "remDiag":
 			list.push(aType)
@@ -640,13 +641,13 @@ List getAutomationsInstalled() {
 }
 
 String getAutomationType() {
-	return state?.autoTyp ?: null
+	return state.autoTyp ?: null
 }
 
-String getAutoType() { return !parent ? "" : state?.autoTyp }
+String getAutoType() { return !parent ? "" : state.autoTyp }
 
 def getIsAutomationDisabled() {
-	def dis = state?.autoDisabled
+	def dis = state.autoDisabled
 	return (dis != null && dis == true) ? true : false
 }
 
@@ -668,7 +669,7 @@ def scheduler() {
 
 	def autoType = getAutoType()
 /*
-	if(autoType == "schMot" && state?.scheduleActiveCnt && state?.scheduleTimersActive) {
+	if(autoType == "schMot" && state.scheduleActiveCnt && state.scheduleTimersActive) {
 		LogTrace("${autoType} scheduled (${random_int} ${random_dint}/5 * * * ?)")
 		schedule("${random_int} ${random_dint}/5 * * * ?", heartbeatAutomation)
 	} else
@@ -712,14 +713,14 @@ def scheduleAutomationEval(schedtime = defaultAutomationTime()) {
 			}
 			break
 	}
-	if(!state?.evalSched) {
+	if(!state.evalSched) {
 		runIn(theTime, "runAutomationEval", [overwrite: true])
-		state?.autoRunInSchedDt = getDtNow()
+		state.autoRunInSchedDt = getDtNow()
 		state.evalSched = true
 		state.evalSchedLastTime = theTime
 	} else {
 		def str = "scheduleAutomationEval: "
-		def t0 = state?.evalSchedLastTime
+		def t0 = state.evalSchedLastTime
 		if(t0 == null) { t0 = 0 }
 		def timeLeftPrev = t0 - getAutoRunInSec()
 		if(timeLeftPrev < 0) { timeLeftPrev = 100 }
@@ -728,7 +729,7 @@ def scheduleAutomationEval(schedtime = defaultAutomationTime()) {
 			if(Math.abs(timeLeftPrev - theTime) > 3) {
 				runIn(theTime, "runAutomationEval", [overwrite: true])
 				LogTrace("${str}Performing${str1}")
-				state?.autoRunInSchedDt = getDtNow()
+				state.autoRunInSchedDt = getDtNow()
 				state.evalSched = true
 				state.evalSchedLastTime = theTime
 			}
@@ -736,7 +737,7 @@ def scheduleAutomationEval(schedtime = defaultAutomationTime()) {
 	}
 }
 
-def getAutoRunInSec() { return !state?.autoRunInSchedDt ? 100000 : GetTimeDiffSeconds(state?.autoRunInSchedDt, null, "getAutoRunInSec").toInteger() }
+def getAutoRunInSec() { return !state.autoRunInSchedDt ? 100000 : GetTimeDiffSeconds(state.autoRunInSchedDt, null, "getAutoRunInSec").toInteger() }
 
 def runAutomationEval() {
 	LogTrace("runAutomationEval")
@@ -759,9 +760,9 @@ def storeLastAction(actionDesc, actionDt, autoType=null, dev=null) {
 	if(actionDesc && actionDt) {
 
 		def newVal = ["actionDesc":actionDesc, "dt":actionDt, "autoType":autoType]
-		state?.lastAutoActionData = newVal
+		state.lastAutoActionData = newVal
 
-		def list = state?.detailActionHistory ?: []
+		def list = state.detailActionHistory ?: []
 		def listSize = 30
 		if(list?.size() < listSize) {
 			list.push(newVal)
@@ -777,7 +778,7 @@ def storeLastAction(actionDesc, actionDt, autoType=null, dev=null) {
 			nList?.push(newVal)
 			list = nList
 		}
-		if(list) { state?.detailActionHistory = list }
+		if(list) { state.detailActionHistory = list }
 
 //		if(dev) {
 //			sendAutoChgToDevice(dev, autoType, actionDesc)		// THIS ONLY WORKS ON NEST THERMOSTATS
@@ -792,10 +793,10 @@ def automationGenericEvt(evt) {
 	LogAction("${evt?.name.toUpperCase()} Event | Device: ${evt?.displayName} | Value: (${strCapitalize(evt?.value)}) with a delay of ${eventDelay}ms", "info", false)
 
 // if streaming, this is not needed
-//	if(isRemSenConfigured() && settings?.vthermostat) {
+//	if(isRemSenConfigured() && settings.vthermostat) {
 //		state.needChildUpdate = true
 //	}
-//	if(settings?.humCtrlUseWeather && isHumCtrlConfigured()) {
+//	if(settings.humCtrlUseWeather && isHumCtrlConfigured()) {
 //		state.needWeathUpd = true
 //	}
 
@@ -818,13 +819,13 @@ def remDiagPrefix() { return "remDiag" }
 def isDiagnosticsConfigured() {
 	def t0 = parent.getSettingVal("enDiagWebPage")
 	//def t1 = parent.getSettingVal("enRemDiagLogging")
-	return (state?.autoTyp == "remDiag" && t0) ? true : false
-	//return (state?.automationType == "remDiag") ? true : false
+	return (state.autoTyp == "remDiag" && t0) ? true : false
+	//return (state.automationType == "remDiag") ? true : false
 }
 
 def savetoRemDiagChild(List newdata) {
 	//LogTrace("savetoRemDiagChild($msg, $type, $logSrcType)")
-	if(state?.autoTyp == "remDiag") {
+	if(state.autoTyp == "remDiag") {
 		def stateSz = getStateSizePerc()
 		if(stateSz >= 75) {
 			// this is log.xxxx to avoid looping/recursion
@@ -1110,7 +1111,7 @@ def getRemLogData() {
 
 def getAccessToken() {
 	try {
-		if(!state?.access_token) { state?.access_token = createAccessToken() }
+		if(!state.access_token) { state.access_token = createAccessToken() }
 		else { return true }
 	}
 	catch (ex) {
@@ -1139,8 +1140,8 @@ void resetAppAccessToken(reset) {
 	if(reset != true) { return }
 	LogAction("Resetting Access Token....", "info", true)
 	//revokeAccessToken()
-	state?.access_token = null
-	state?.accessToken = null
+	state.access_token = null
+	state.accessToken = null
 	if(getAccessToken()) {
 		LogAction("Reset Access Token... Successful", "info", true)
 		settingUpdate("resetAppAccessToken", "false", "bool")
@@ -1164,8 +1165,8 @@ def renderLogData() {
 
 //def getDiagHomeUrl() { getAppEndpointUrl("diagHome") }
 
-def getAppEndpointUrl(subPath) { return "${getFullApiServerUrl()}${subPath ? "/${subPath}" : ""}?access_token=${state?.access_token}" }
-def getLocalEndpointUrl(subPath) { return "${getFullLocalApiServerUrl()}${subPath ? "/${subPath}" : ""}?access_token=${state?.access_token}" }
+def getAppEndpointUrl(subPath) { return "${getFullApiServerUrl()}${subPath ? "/${subPath}" : ""}?access_token=${state.access_token}" }
+def getLocalEndpointUrl(subPath) { return "${getFullLocalApiServerUrl()}${subPath ? "/${subPath}" : ""}?access_token=${state.access_token}" }
 
 /*
 def getLogMap() {
@@ -2230,7 +2231,7 @@ def renderHtmlMapDesc(title, heading, datamap) {
 
 /*
 def getTstatAutoDevId() {
-	if(settings?.schMotTstat) { return settings?.schMotTstat.deviceNetworkId.toString() }
+	if(settings.schMotTstat) { return settings.schMotTstat.deviceNetworkId.toString() }
 	return null
 }
 
@@ -2409,7 +2410,7 @@ private checkRestriction(cnt) {
 	def restriction
 	def act = settings["${sLbl}SchedActive"]
 	if(act) {
-		def apprestrict = state?."sched${cnt}restrictions"
+		def apprestrict = state."sched${cnt}restrictions"
 
 		if (apprestrict?.m && apprestrict?.m.size() && !(location.mode in apprestrict?.m)) {
 			restriction = "a HE MODE mismatch"
@@ -2459,11 +2460,11 @@ private checkRestriction(cnt) {
 }
 
 def getActiveScheduleState() {
-	return state?.activeSchedData ?: null
+	return state.activeSchedData ?: null
 }
 
 def getSchRestrictDoWOk(cnt) {
-	def apprestrict = state?.activeSchedData
+	def apprestrict = state.activeSchedData
 	def result = true
 	apprestrict?.each { sch ->
 		if(sch?.key.toInteger() == cnt.toInteger()) {
@@ -2634,7 +2635,7 @@ def notOkSym() {
 /*
 
 def getRemSenTempSrc() {
-	return state?.remoteTempSourceStr ?: null
+	return state.remoteTempSourceStr ?: null
 }
 
 def getAbrevDay(vals) {
@@ -2747,22 +2748,22 @@ def inputItemsToList(items) {
 
 /*
 def isSchMotConfigured() {
-	return (settings?.schMotTstat && (
-					settings?.schMotOperateFan ||
-					settings?.schMotRemoteSensor ||
-					settings?.schMotWaterOff ||
-					settings?.schMotContactOff ||
-					settings?.schMotHumidityControl ||
-					settings?.schMotExternalTempOff)) ? true : false
+	return (settings.schMotTstat && (
+					settings.schMotOperateFan ||
+					settings.schMotRemoteSensor ||
+					settings.schMotWaterOff ||
+					settings.schMotContactOff ||
+					settings.schMotHumidityControl ||
+					settings.schMotExternalTempOff)) ? true : false
 }
 
-def getAutoRunSec() { return !state?.autoRunDt ? 100000 : GetTimeDiffSeconds(state?.autoRunDt, null, "getAutoRunSec").toInteger() }
+def getAutoRunSec() { return !state.autoRunDt ? 100000 : GetTimeDiffSeconds(state.autoRunDt, null, "getAutoRunSec").toInteger() }
 
 def schMotCheck() {
 	LogTrace("schMotCheck")
 	try {
 		if(getIsAutomationDisabled()) { return }
-		def schWaitVal = settings?.schMotWaitVal?.toInteger() ?: 60
+		def schWaitVal = settings.schMotWaitVal?.toInteger() ?: 60
 		if(schWaitVal > 120) { schWaitVal = 120 }
 		def t0 = getAutoRunSec()
 		if(t0 < schWaitVal) {
@@ -2773,39 +2774,39 @@ def schMotCheck() {
 		}
 
 		def execTime = now()
-		state?.autoRunDt = getDtNow()
+		state.autoRunDt = getDtNow()
 
 		// This order is important
 		// turn system on/off, then update schedule mode/temps, then remote sensors, then update fans
 
 		def updatedWeather = false
-		if(settings?.schMotWaterOff) {
+		if(settings.schMotWaterOff) {
 			if(isLeakWatConfigured()) { leakWatCheck() }
 		}
-		if(settings?.schMotContactOff) {
+		if(settings.schMotContactOff) {
 			if(isConWatConfigured()) { conWatCheck() }
 		}
-		if(settings?.schMotExternalTempOff) {
+		if(settings.schMotExternalTempOff) {
 			if(isExtTmpConfigured()) {
-				if(settings?.extTmpUseWeather && !updatedWeather) { updatedWeather = true; getExtConditions() }
+				if(settings.extTmpUseWeather && !updatedWeather) { updatedWeather = true; getExtConditions() }
 				extTmpTempCheck()
 			}
 		}
-//		if(settings?.schMotSetTstatTemp) {
+//		if(settings.schMotSetTstatTemp) {
 			if(isTstatSchedConfigured()) { setTstatTempCheck() }
 //		}
-		if(settings?.schMotRemoteSensor) {
+		if(settings.schMotRemoteSensor) {
 			if(isRemSenConfigured()) {
 				remSenCheck()
 			}
 		}
-		if(settings?.schMotHumidityControl) {
+		if(settings.schMotHumidityControl) {
 			if(isHumCtrlConfigured()) {
-				if(settings?.humCtrlUseWeather && !updateWeather) { getExtConditions() }
+				if(settings.humCtrlUseWeather && !updateWeather) { getExtConditions() }
 				humCtrlCheck()
 			}
 		}
-		if(settings?.schMotOperateFan) {
+		if(settings.schMotOperateFan) {
 			if(isFanCtrlConfigured()) {
 				fanCtrlCheck()
 			}
@@ -2822,10 +2823,10 @@ def schMotCheck() {
 def storeLastEventData(evt) {
 	if(evt) {
 		def newVal = ["name":evt.name, "displayName":evt.displayName, "value":evt.value, "date":formatDt(evt.date), "unit":evt.unit]
-		state?.lastEventData = newVal
-		//log.debug "LastEvent: ${state?.lastEventData}"
+		state.lastEventData = newVal
+		//log.debug "LastEvent: ${state.lastEventData}"
 
-		def list = state?.detailEventHistory ?: []
+		def list = state.detailEventHistory ?: []
 		def listSize = 15
 		if(list?.size() < listSize) {
 			list.push(newVal)
@@ -2841,7 +2842,7 @@ def storeLastEventData(evt) {
 			nList?.push(newVal)
 			list = nList
 		}
-		if(list) { state?.detailEventHistory = list }
+		if(list) { state.detailEventHistory = list }
 	}
 }
 
@@ -2852,17 +2853,17 @@ def storeExecutionHistory(val, method = null) {
 			LogTrace("${method} Execution Time: (${val} milliseconds)")
 		}
 		if(method in ["watchDogCheck", "checkNestMode", "schMotCheck"]) {
-			state?.autoExecMS = val ?: null
-			def list = state?.evalExecutionHistory ?: []
+			state.autoExecMS = val ?: null
+			def list = state.evalExecutionHistory ?: []
 			def listSize = 20
 			list = addToList(val, list, listSize)
-			if(list) { state?.evalExecutionHistory = list }
+			if(list) { state.evalExecutionHistory = list }
 		}
 		//if(!(method in ["watchDogCheck", "checkNestMode"])) {
-			def list = state?.detailExecutionHistory ?: []
+			def list = state.detailExecutionHistory ?: []
 			def listSize = 30
 			list = addToList([val, method, getDtNow()], list, listSize)
-			if(list) { state?.detailExecutionHistory = list }
+			if(list) { state.detailExecutionHistory = list }
 		//}
 	} catch (ex) {
 		log.error "storeExecutionHistory Exception:", ex
@@ -2952,7 +2953,7 @@ def setNotificationPage(params) {
 		state.t_notifD = params
 		allowSpeech = params?.allowSpeech?.toBoolean(); showSched = params?.showSchedule?.toBoolean(); allowAlarm = params?.allowAlarm?.toBoolean()
 	} else {
-		pName = state?.t_notifD?.pName; allowSpeech = state?.t_notifD?.allowSpeech; showSched = state?.t_notifD?.showSchedule; allowAlarm = state?.t_notifD?.allowAlarm
+		pName = state.t_notifD?.pName; allowSpeech = state.t_notifD?.allowSpeech; showSched = state.t_notifD?.showSchedule; allowAlarm = state.t_notifD?.allowAlarm
 	}
 	if(pName == null) { return }
 	dynamicPage(name: "setNotificationPage", title: "Configure Notification Options", uninstall: false) {
@@ -2964,13 +2965,13 @@ def setNotificationPage(params) {
 //				section("Use NST Manager Settings:") {
 					input "${pName}UseMgrNotif", "bool", title: imgTitle(getAppImg("notification_icon2.png"), inputTitleStr("Use Manager Settings?")), defaultValue: true, submitOnChange: true, required: false
 //				}
-				if(settings?."${pName}UseMgrNotif" == false) {
+				if(settings."${pName}UseMgrNotif" == false) {
 		//			section("Enable Text Messaging:") {
 						input "${pName}NotifPhones", "phone", title: imgTitle(getAppImg("notification_icon2.png"), inputTitleStr("Send SMS to Number (Optional)")), required: false, submitOnChange: true
 		//			}
 		//			section("Enable Pushover Support:") {
 						input "${pName}PushoverEnabled", "bool", title: imgTitle(getAppImg("pushover_icon.png"), inputTitleStr("Notification Device")), required: false, submitOnChange: true
-						if(settings?."${pName}PushoverEnabled" == true) {
+						if(settings."${pName}PushoverEnabled" == true) {
 							input "${pName}PushoverDevices", "capability.notification", title: imgTitle(getAppImg("pushover_icon.png"), inputTitleStr("Notification Device")), required: false, submitOnChange: true
 						}
 		//			}
@@ -2988,12 +2989,12 @@ def setNotificationPage(params) {
 			}
 */
 /*
-			if(allowSpeech && settings?."${pName}NotifOn") {
+			if(allowSpeech && settings."${pName}NotifOn") {
 //			section("Voice Notification Preferences:") {
-				input "${pName}AllowSpeechNotif", "bool", title: "Enable Voice Notifications?", description: "Media players, or Speech Devices", required: false, defaultValue: (settings?."${pName}AllowSpeechNotif" ? true : false), submitOnChange: true, image: getAppImg("speech_icon.png")
+				input "${pName}AllowSpeechNotif", "bool", title: "Enable Voice Notifications?", description: "Media players, or Speech Devices", required: false, defaultValue: (settings."${pName}AllowSpeechNotif" ? true : false), submitOnChange: true, image: getAppImg("speech_icon.png")
 				if(settings["${pName}AllowSpeechNotif"]) {
 					setInitialVoiceMsgs(pName)
-					input "${pName}SendToAskAlexaQueue", "bool", title: "Send to Ask Alexa Message Queue?", required: false, defaultValue: (settings?."${pName}AllowSpeechNotif" ? false : true), submitOnChange: true,
+					input "${pName}SendToAskAlexaQueue", "bool", title: "Send to Ask Alexa Message Queue?", required: false, defaultValue: (settings."${pName}AllowSpeechNotif" ? false : true), submitOnChange: true,
 							image: askAlexaImgUrl()
 					input "${pName}SpeechMediaPlayer", "capability.musicPlayer", title: "Select Media Player(s)", hideWhenEmpty: true, multiple: true, required: false, submitOnChange: true, image: getAppImg("media_player.png")
 					input "${pName}EchoDevices", "device.echoSpeaksDevice", title: "Select Alexa Devices(s)", hideWhenEmpty: true, multiple: true, required: false, submitOnChange: true, image: getAppImg('echo_speaks.png')
@@ -3021,23 +3022,23 @@ def setNotificationPage(params) {
 
 							input "${pName}SpeechOnRestore", "bool", title: "Speak when restoring HVAC on (${desc})?", required: false, defaultValue: false, submitOnChange: true, image: getAppImg("speech_icon.png")
 							// TODO: There are more messages and errors than ON / OFF
-							input "${pName}UseCustomSpeechNotifMsg", "bool", title: "Customize Notitification Message?", required: false, defaultValue: (settings?."${pName}AllowSpeechNotif" ? false : true), submitOnChange: true,
+							input "${pName}UseCustomSpeechNotifMsg", "bool", title: "Customize Notitification Message?", required: false, defaultValue: (settings."${pName}AllowSpeechNotif" ? false : true), submitOnChange: true,
 								image: getAppImg("speech_icon.png")
 							if(settings["${pName}UseCustomSpeechNotifMsg"]) {
 								getNotifVariables(pName)
-								input "${pName}CustomOffSpeechMessage", "text", title: "Turn Off Message?", required: false, defaultValue: state?."${pName}OffVoiceMsg" , submitOnChange: true, image: getAppImg("speech_icon.png")
-								state?."${pName}OffVoiceMsg" = settings?."${pName}CustomOffSpeechMessage"
-								if(settings?."${pName}CustomOffSpeechMessage") {
-									paragraph "Off Msg:\n" + voiceNotifString(state?."${pName}OffVoiceMsg",pName)
+								input "${pName}CustomOffSpeechMessage", "text", title: "Turn Off Message?", required: false, defaultValue: state."${pName}OffVoiceMsg" , submitOnChange: true, image: getAppImg("speech_icon.png")
+								state."${pName}OffVoiceMsg" = settings."${pName}CustomOffSpeechMessage"
+								if(settings."${pName}CustomOffSpeechMessage") {
+									paragraph "Off Msg:\n" + voiceNotifString(state."${pName}OffVoiceMsg",pName)
 								}
-								input "${pName}CustomOnSpeechMessage", "text", title: "Restore On Message?", required: false, defaultValue: state?."${pName}OnVoiceMsg", submitOnChange: true, image: getAppImg("speech_icon.png")
-								state?."${pName}OnVoiceMsg" = settings?."${pName}CustomOnSpeechMessage"
-								if(settings?."${pName}CustomOnSpeechMessage") {
-									paragraph "Restore On Msg:\n" + voiceNotifString(state?."${pName}OnVoiceMsg",pName)
+								input "${pName}CustomOnSpeechMessage", "text", title: "Restore On Message?", required: false, defaultValue: state."${pName}OnVoiceMsg", submitOnChange: true, image: getAppImg("speech_icon.png")
+								state."${pName}OnVoiceMsg" = settings."${pName}CustomOnSpeechMessage"
+								if(settings."${pName}CustomOnSpeechMessage") {
+									paragraph "Restore On Msg:\n" + voiceNotifString(state."${pName}OnVoiceMsg",pName)
 								}
 							} else {
-								state?."${pName}OffVoiceMsg" = ""
-								state?."${pName}OnVoiceMsg" = ""
+								state."${pName}OffVoiceMsg" = ""
+								state."${pName}OnVoiceMsg" = ""
 							}
 						}
 					}
@@ -3046,9 +3047,9 @@ def setNotificationPage(params) {
 		}
 */
 /*
-			if(allowAlarm && settings?."${pName}NotifOn") {
+			if(allowAlarm && settings."${pName}NotifOn") {
 	//			section("Alarm/Siren Device Preferences:") {
-					input "${pName}AllowAlarmNotif", "bool", title: imgTitle(getAppImg("alarm_icon.png"), inputTitleStr("Enable Alarm | Siren?")), required: false, defaultValue: (settings?."${pName}AllowAlarmNotif" ? true : false), submitOnChange: true
+					input "${pName}AllowAlarmNotif", "bool", title: imgTitle(getAppImg("alarm_icon.png"), inputTitleStr("Enable Alarm | Siren?")), required: false, defaultValue: (settings."${pName}AllowAlarmNotif" ? true : false), submitOnChange: true
 					if(settings["${pName}AllowAlarmNotif"]) {
 						input "${pName}AlarmDevices", "capability.alarm", title: imgTitle(getAppImg("alarm_icon.png"), inputTitleStr("Select Alarm/Siren(s)")), multiple: true, required: settings["${pName}AllowAlarmNotif"], submitOnChange: true
 					}
@@ -3060,9 +3061,9 @@ def setNotificationPage(params) {
 			if(pName in ["conWat", "leakWat", "extTmp", "watchDog"] && settings["${pName}NotifOn"] && settings["${pName}AllowAlarmNotif"] && settings["${pName}AlarmDevices"]) {
 	//			section("Notification Alert Options (1):") {
 					input "${pName}_Alert_1_Delay", "enum", title: imgTitle(getAppImg("alert_icon2.png"), inputTitleStr("First Alert Delay (in minutes)")), defaultValue: null, required: true, submitOnChange: true, options: longTimeSecEnum()
-					if(settings?."${pName}_Alert_1_Delay") {
+					if(settings."${pName}_Alert_1_Delay") {
 						input "${pName}_Alert_1_AlarmType", "enum", title: imgTitle(getAppImg("alarm_icon.png"), inputTitleStr("Alarm Type to use?")), options: alarmActionsEnum(), defaultValue: null, submitOnChange: true, required: true
-						if(settings?."${pName}_Alert_1_AlarmType") {
+						if(settings."${pName}_Alert_1_AlarmType") {
 							input "${pName}_Alert_1_Alarm_Runtime", "enum", title: imgTitle(getAppImg("i_dt"), inputTitleStr("Turn off Alarm After (in seconds)?")), options: shortTimeEnum(), defaultValue: 10, required: true, submitOnChange: true
 						}
 					}
@@ -3070,9 +3071,9 @@ def setNotificationPage(params) {
 				if(settings["${pName}_Alert_1_Delay"]) {
 	//				section("Notification Alert Options (2):") {
 						input "${pName}_Alert_2_Delay", "enum", title: imgTitle(getAppImg("alert_icon2.png"), inputTitleStr("Second Alert Delay (in minutes)")), defaultValue: null, options: longTimeSecEnum(), required: false, submitOnChange: true
-						if(settings?."${pName}_Alert_2_Delay") {
+						if(settings."${pName}_Alert_2_Delay") {
 							input "${pName}_Alert_2_AlarmType", "enum", title: imgTitle(getAppImg("alarm_icon.png"), inputTitleStr("Alarm Type to use?")), options: alarmActionsEnum(), defaultValue: null, submitOnChange: true, required: true
-							if(settings?."${pName}_Alert_2_AlarmType") {
+							if(settings."${pName}_Alert_2_AlarmType") {
 								input "${pName}_Alert_2_Alarm_Runtime", "enum", title: imgTitle(getAppImg("i_dt"), inputTitleStr("Turn off Alarm After (in minutes)?")), options: shortTimeEnum(), defaultValue: 10, required: true, submitOnChange: true
 							}
 						}
@@ -3089,22 +3090,22 @@ def setNotificationPage(params) {
 	if(settings["${pName}AllowSpeechNotif"]) {
 		if(pName in ["conWat", "extTmp", "leakWat"]) {
 			if(pName == "leakWat") {
-				if(!state?."${pName}OffVoiceMsg" || !settings["${pName}UseCustomSpeechNotifMsg"]) {
-					state?."${pName}OffVoiceMsg" = "ATTENTION: %devicename% has been turned OFF because %wetsensor% has reported it is WET" }
-				if(!state?."${pName}OnVoiceMsg" || !settings["${pName}UseCustomSpeechNotifMsg"]) {
-					state?."${pName}OnVoiceMsg" = "Restoring %devicename% to %lastmode% Mode because ALL water sensors have been Dry again for (%ondelay%)" }
+				if(!state."${pName}OffVoiceMsg" || !settings["${pName}UseCustomSpeechNotifMsg"]) {
+					state."${pName}OffVoiceMsg" = "ATTENTION: %devicename% has been turned OFF because %wetsensor% has reported it is WET" }
+				if(!state."${pName}OnVoiceMsg" || !settings["${pName}UseCustomSpeechNotifMsg"]) {
+					state."${pName}OnVoiceMsg" = "Restoring %devicename% to %lastmode% Mode because ALL water sensors have been Dry again for (%ondelay%)" }
 			}
 			if(pName == "conWat") {
-				if(!state?."${pName}OffVoiceMsg" || !settings["${pName}UseCustomSpeechNotifMsg"]) {
-					state?."${pName}OffVoiceMsg" = "ATTENTION: %devicename% has been turned OFF because %opencontact% has been Opened for (%offdelay%)" }
-				if(!state?."${pName}OnVoiceMsg" || !settings["${pName}UseCustomSpeechNotifMsg"]) {
-					state?."${pName}OnVoiceMsg" = "Restoring %devicename% to %lastmode% Mode because ALL contacts have been Closed again for (%ondelay%)" }
+				if(!state."${pName}OffVoiceMsg" || !settings["${pName}UseCustomSpeechNotifMsg"]) {
+					state."${pName}OffVoiceMsg" = "ATTENTION: %devicename% has been turned OFF because %opencontact% has been Opened for (%offdelay%)" }
+				if(!state."${pName}OnVoiceMsg" || !settings["${pName}UseCustomSpeechNotifMsg"]) {
+					state."${pName}OnVoiceMsg" = "Restoring %devicename% to %lastmode% Mode because ALL contacts have been Closed again for (%ondelay%)" }
 			}
 			if(pName == "extTmp") {
-				if(!state?."${pName}OffVoiceMsg" || !settings["${pName}UseCustomSpeechNotifMsg"]) {
-					state?."${pName}OffVoiceMsg" = "ATTENTION: %devicename% has been turned to ECO because External Temp is above the temp threshold for (%offdelay%)" }
-				if(!state?."${pName}OnVoiceMsg" || !settings["${pName}UseCustomSpeechNotifMsg"]) {
-					state?."${pName}OnVoiceMsg" = "Restoring %devicename% to %lastmode% Mode because External Temp has been above the temp threshold for (%ondelay%)" }
+				if(!state."${pName}OffVoiceMsg" || !settings["${pName}UseCustomSpeechNotifMsg"]) {
+					state."${pName}OffVoiceMsg" = "ATTENTION: %devicename% has been turned to ECO because External Temp is above the temp threshold for (%offdelay%)" }
+				if(!state."${pName}OnVoiceMsg" || !settings["${pName}UseCustomSpeechNotifMsg"]) {
+					state."${pName}OnVoiceMsg" = "Restoring %devicename% to %lastmode% Mode because External Temp has been above the temp threshold for (%ondelay%)" }
 			}
 		}
 	}
@@ -3117,8 +3118,8 @@ def setNotificationPage(params) {
 	if(settings["${pName}AllowSpeechNotif"]) {
 		if(pName in ["conWat", "extTmp", "leakWat"]) {
 			if(settings["${pName}UseCustomSpeechNotifMsg"]) {
-				state?."${pName}OffVoiceMsg" = settings?."${pName}CustomOffSpeechMessage"
-				state?."${pName}OnVoiceMsg" = settings?."${pName}CustomOnSpeechMessage"
+				state."${pName}OffVoiceMsg" = settings."${pName}CustomOffSpeechMessage"
+				state."${pName}OnVoiceMsg" = settings."${pName}CustomOnSpeechMessage"
 			}
 		}
 	}
@@ -3130,7 +3131,7 @@ def setNotificationTimePage(params) {
 	def pName = params?.pName
 	if(params?.pName) {
 		state.curNotifTimePageData = params
-	} else { pName = state?.curNotifTimePageData?.pName }
+	} else { pName = state.curNotifTimePageData?.pName }
 	dynamicPage(name: "setNotificationTimePage", title: "Prevent Notifications\nDuring these Days, Times or Modes", uninstall: false) {
 		def timeReq = (settings["${pName}qStartTime"] || settings["${pName}qStopTime"]) ? true : false
 		section() {
@@ -3139,7 +3140,7 @@ def setNotificationTimePage(params) {
 				input "${pName}qStartTime", "time", title: "Start time", required: timeReq, image: getAppImg("start_time_icon.png")
 			}
 			input "${pName}qStopInput", "enum", title: "Stopping at", options: ["A specific time", "Sunrise", "Sunset"], defaultValue: null, submitOnChange: true, required: false, image: getAppImg("stop_time_icon.png")
-			if(settings?."${pName}qStopInput" == "A specific time") {
+			if(settings."${pName}qStopInput" == "A specific time") {
 				input "${pName}qStopTime", "time", title: "Stop time", required: timeReq, image: getAppImg("stop_time_icon.png")
 			}
 			input "${pName}quietDays", "enum", title: "Prevent during these days of the week", multiple: true, required: false, image: getAppImg("day_calendar_icon.png"), options: timeDayOfWeekOptions()
@@ -3150,14 +3151,14 @@ def setNotificationTimePage(params) {
 
 String getNotifSchedDesc(pName) {
 	def sun = getSunriseAndSunset()
-	def startInput = settings?."${pName}qStartInput"
-	def startTime = settings?."${pName}qStartTime"
-	def stopInput = settings?."${pName}qStopInput"
-	def stopTime = settings?."${pName}qStopTime"
-	def dayInput = settings?."${pName}quietDays"
-	def modeInput = settings?."${pName}quietModes"
+	def startInput = settings."${pName}qStartInput"
+	def startTime = settings."${pName}qStartTime"
+	def stopInput = settings."${pName}qStopInput"
+	def stopTime = settings."${pName}qStopTime"
+	def dayInput = settings."${pName}quietDays"
+	def modeInput = settings."${pName}quietModes"
 	def notifDesc = ""
-	if(settings?."${pName}UseParentNotifRestrictions" == false) {
+	if(settings."${pName}UseParentNotifRestrictions" == false) {
 		def getNotifTimeStartLbl = ( (startInput == "Sunrise" || startInput == "Sunset") ? ( (startInput == "Sunset") ? epochToTime(sun?.sunset.time) : epochToTime(sun?.sunrise.time) ) : (startTime ? time2Str(startTime) : "") )
 		def getNotifTimeStopLbl = ( (stopInput == "Sunrise" || stopInput == "Sunset") ? ( (stopInput == "Sunset") ? epochToTime(sun?.sunset.time) : epochToTime(sun?.sunrise.time) ) : (stopTime ? time2Str(stopTime) : "") )
 		notifDesc += (getNotifTimeStartLbl && getNotifTimeStopLbl) ? "• Silent Time: ${getNotifTimeStartLbl} - ${getNotifTimeStopLbl}" : ""
@@ -3172,7 +3173,7 @@ String getNotifSchedDesc(pName) {
 }
 
 def getOk2Notify(pName) {
-	return ((settings["${pName}NotifOn"] == true) && (daysOk(settings?."${pName}quietDays") == true) && (notificationTimeOk(pName) == true) && (modesOk(settings?."${pName}quietModes") == true))
+	return ((settings["${pName}NotifOn"] == true) && (daysOk(settings."${pName}quietDays") == true) && (notificationTimeOk(pName) == true) && (modesOk(settings."${pName}quietModes") == true))
 }
 
 def notificationTimeOk(pName) {
@@ -3180,14 +3181,14 @@ def notificationTimeOk(pName) {
 	def stopTime = null
 	def now = new Date()
 	def sun = getSunriseAndSunset() // current based on geofence, previously was: def sun = getSunriseAndSunset(zipCode: zipCode)
-	if(settings?."${pName}qStartTime" && settings?."${pName}qStopTime") {
-		if(settings?."${pName}qStartInput" == "sunset") { strtTime = sun.sunset }
-		else if(settings?."${pName}qStartInput" == "sunrise") { strtTime = sun.sunrise }
-		else if(settings?."${pName}qStartInput" == "A specific time" && settings?."${pName}qStartTime") { strtTime = settings?."${pName}qStartTime" }
+	if(settings."${pName}qStartTime" && settings."${pName}qStopTime") {
+		if(settings."${pName}qStartInput" == "sunset") { strtTime = sun.sunset }
+		else if(settings."${pName}qStartInput" == "sunrise") { strtTime = sun.sunrise }
+		else if(settings."${pName}qStartInput" == "A specific time" && settings."${pName}qStartTime") { strtTime = settings."${pName}qStartTime" }
 
-		if(settings?."${pName}qStopInput" == "sunset") { stopTime = sun.sunset }
-		else if(settings?."${pName}qStopInput" == "sunrise") { stopTime = sun.sunrise }
-		else if(settings?."${pName}qStopInput" == "A specific time" && settings?."${pName}qStopTime") { stopTime = settings?."${pName}qStopTime" }
+		if(settings."${pName}qStopInput" == "sunset") { stopTime = sun.sunset }
+		else if(settings."${pName}qStopInput" == "sunrise") { stopTime = sun.sunrise }
+		else if(settings."${pName}qStopInput" == "A specific time" && settings."${pName}qStopTime") { stopTime = settings."${pName}qStopTime" }
 	} else { return true }
 	if(strtTime && stopTime) {
 		return timeOfDayIsBetween(strtTime, stopTime, new Date(), getTimeZone()) ? false : true
@@ -3210,16 +3211,16 @@ def getNotifVariables(pName) {
 def voiceNotifString(phrase, pName) {
 	//LogTrace("conWatVoiceNotifString")
 	try {
-		if(phrase?.toLowerCase().contains("%devicename%")) { phrase = phrase?.toLowerCase().replace('%devicename%', (settings?."schMotTstat"?.displayName.toString() ?: "unknown")) }
-		if(phrase?.toLowerCase().contains("%lastmode%")) { phrase = phrase?.toLowerCase().replace('%lastmode%', (state?."${pName}RestoreMode".toString() ?: "unknown")) }
+		if(phrase?.toLowerCase().contains("%devicename%")) { phrase = phrase?.toLowerCase().replace('%devicename%', (settings."schMotTstat"?.displayName.toString() ?: "unknown")) }
+		if(phrase?.toLowerCase().contains("%lastmode%")) { phrase = phrase?.toLowerCase().replace('%lastmode%', (state."${pName}RestoreMode".toString() ?: "unknown")) }
 		if(pName == "leakWat" && phrase?.toLowerCase().contains("%wetsensor%")) {
 			phrase = phrase?.toLowerCase().replace('%wetsensor%', (getWetWaterSensors(leakWatSensors) ? getWetWaterSensors(leakWatSensors)?.join(", ").toString() : "a selected leak sensor")) }
 		if(pName == "conWat" && phrase?.toLowerCase().contains("%opencontact%")) {
 			phrase = phrase?.toLowerCase().replace('%opencontact%', (getOpenContacts(conWatContacts) ? getOpenContacts(conWatContacts)?.join(", ").toString() : "a selected contact")) }
 		if(pName == "extTmp" && phrase?.toLowerCase().contains("%tempthreshold%")) {
 			phrase = phrase?.toLowerCase().replace('%tempthreshold%', "${extTmpDiffVal.toString()}(${tUnitStr()})") }
-		if(phrase?.toLowerCase().contains("%offdelay%")) { phrase = phrase?.toLowerCase().replace('%offdelay%', getEnumValue(longTimeSecEnum(), settings?."${pName}OffDelay").toString()) }
-		if(phrase?.toLowerCase().contains("%ondelay%")) { phrase = phrase?.toLowerCase().replace('%ondelay%', getEnumValue(longTimeSecEnum(), settings?."${pName}OnDelay").toString()) }
+		if(phrase?.toLowerCase().contains("%offdelay%")) { phrase = phrase?.toLowerCase().replace('%offdelay%', getEnumValue(longTimeSecEnum(), settings."${pName}OffDelay").toString()) }
+		if(phrase?.toLowerCase().contains("%ondelay%")) { phrase = phrase?.toLowerCase().replace('%ondelay%', getEnumValue(longTimeSecEnum(), settings."${pName}OnDelay").toString()) }
 	} catch (ex) {
 		log.error "voiceNotifString Exception:", ex
 		//parent?.sendExceptionData(ex, "voiceNotifString", true, getAutoType())
@@ -3231,16 +3232,16 @@ def voiceNotifString(phrase, pName) {
 def getNotifConfigDesc(pName) {
 	//LogTrace("getNotifConfigDesc pName: $pName")
 	def str = ""
-	if(settings?."${pName}NotifOn") {
+	if(settings."${pName}NotifOn") {
 		// str += "Notification Status:"
 		// if(!getRecipientDesc(pName)) {
 		// 	str += "\n • Contacts: Using Manager Settings"
 		// }
 		def t0
-		if(settings?."${pName}UseMgrNotif" == false) {
-			str += (settings?."${pName}NotifPhones") ? "${str != "" ? "\n" : ""} • SMS: (${settings?."${pName}NotifPhones"?.size()})" : ""
-			str += (settings?."${pName}PushoverEnabled") ? "${str != "" ? "\n" : ""}Pushover: (Enabled)" : ""
-			str += (settings?."${pName}PushoverEnabled" && settings?."${pName}PushoverDevices") ? "${str != "" ? "\n" : ""} • Pushover Devices: (${settings?."${pName}PushoverDevices"})" : ""
+		if(settings."${pName}UseMgrNotif" == false) {
+			str += (settings."${pName}NotifPhones") ? "${str != "" ? "\n" : ""} • SMS: (${settings."${pName}NotifPhones"?.size()})" : ""
+			str += (settings."${pName}PushoverEnabled") ? "${str != "" ? "\n" : ""}Pushover: (Enabled)" : ""
+			str += (settings."${pName}PushoverEnabled" && settings."${pName}PushoverDevices") ? "${str != "" ? "\n" : ""} • Pushover Devices: (${settings."${pName}PushoverDevices"})" : ""
 			//t0 = getNotifSchedDesc(pName)
 			//str += t0 ? "\n\nAlert Restrictions:\n${t0}" : ""
 		} else {
@@ -3263,9 +3264,9 @@ def getNotifConfigDesc(pName) {
 /*
 def getVoiceNotifConfigDesc(pName) {
 	def str = ""
-	if(settings?."${pName}NotifOn" && settings["${pName}AllowSpeechNotif"]) {
-		def speaks = settings?."${pName}SpeechDevices"
-		def medias = settings?."${pName}SpeechMediaPlayer"
+	if(settings."${pName}NotifOn" && settings["${pName}AllowSpeechNotif"]) {
+		def speaks = settings."${pName}SpeechDevices"
+		def medias = settings."${pName}SpeechMediaPlayer"
 		def echos = settings["${pName}EchoDevices"]
 		str += settings["${pName}SendToAskAlexaQueue"] ? "\n• Send to Ask Alexa: (True)" : ""
 		str += speaks ? "\n • Speech Devices:" : ""
@@ -3277,16 +3278,16 @@ def getVoiceNotifConfigDesc(pName) {
 		if(echos) {
 			def cnt = 1
 			echos?.each { str += it ? "\n ${cnt < echos.size() ? "├" : "└"} $it" : ""; cnt = cnt+1; }
-			str += (echos && settings?."${pName}SpeechVolumeLevel") ? "\n└ Volume: (${settings?."${pName}SpeechVolumeLevel"})" : ""
+			str += (echos && settings."${pName}SpeechVolumeLevel") ? "\n└ Volume: (${settings."${pName}SpeechVolumeLevel"})" : ""
 		}
 		str += medias ? "${(speaks || echos) ? "\n\n" : "\n"} • Media Players:" : ""
 		if(medias) {
 			def cnt = 1
 			medias?.sort { it?.displayName }?.each { str += it ? "\n│${cnt < medias.size() ? "├" : "└"} $it" : ""; cnt = cnt+1; }
 		}
-		str += (medias && settings?."${pName}SpeechVolumeLevel") ? "\n├ Volume: (${settings?."${pName}SpeechVolumeLevel"})" : ""
-		str += (medias && settings?."${pName}SpeechAllowResume") ? "\n└ Resume: (${strCapitalize(settings?."${pName}SpeechAllowResume")})" : ""
-		str += (settings?."${pName}UseCustomSpeechNotifMsg" && (medias || speaks)) ? "\n• Custom Message: (${strCapitalize(settings?."${pName}UseCustomSpeechNotifMsg")})" : ""
+		str += (medias && settings."${pName}SpeechVolumeLevel") ? "\n├ Volume: (${settings."${pName}SpeechVolumeLevel"})" : ""
+		str += (medias && settings."${pName}SpeechAllowResume") ? "\n└ Resume: (${strCapitalize(settings."${pName}SpeechAllowResume")})" : ""
+		str += (settings."${pName}UseCustomSpeechNotifMsg" && (medias || speaks)) ? "\n• Custom Message: (${strCapitalize(settings."${pName}UseCustomSpeechNotifMsg")})" : ""
 	}
 	return (str != "") ? "${str}" : null
 }
@@ -3294,7 +3295,7 @@ def getVoiceNotifConfigDesc(pName) {
 /*
 def getAlarmNotifConfigDesc(pName) {
 	def str = ""
-	if(settings?."${pName}NotifOn" && settings["${pName}AllowAlarmNotif"]) {
+	if(settings."${pName}NotifOn" && settings["${pName}AllowAlarmNotif"]) {
 		def alarms = getInputToStringDesc(settings["${pName}AlarmDevices"], true)
 		str += alarms ? "\n • Alarm Devices:${alarms.size() > 1 ? "\n" : ""}${alarms}" : ""
 	}
@@ -3304,7 +3305,7 @@ def getAlarmNotifConfigDesc(pName) {
 def getAlertNotifConfigDesc(pName) {
 	def str = ""
 //TODO not sure we do all these
-	if(settings?."${pName}NotifOn" && (settings["${pName}_Alert_1_Delay"] || settings["${pName}_Alert_2_Delay"]) && (settings["${pName}AllowSpeechNotif"] || settings["${pName}AllowAlarmNotif"])) {
+	if(settings."${pName}NotifOn" && (settings["${pName}_Alert_1_Delay"] || settings["${pName}_Alert_2_Delay"]) && (settings["${pName}AllowSpeechNotif"] || settings["${pName}AllowAlarmNotif"])) {
 		str += settings["${pName}_Alert_1_Delay"] ? "\nAlert (1) Status:\n  • Delay: (${getEnumValue(longTimeSecEnum(), settings["${pName}_Alert_1_Delay"])})" : ""
 //		str += settings["${pName}_Alert_1_Send_Push"] ? "\n  • Send Push: (${settings["${pName}_Alert_1_Send_Push"]})" : ""
 //		str += settings["${pName}_Alert_1_Use_Speech"] ? "\n  • Use Speech: (${settings["${pName}_Alert_1_Use_Speech"]})" : ""
@@ -3354,7 +3355,7 @@ def getRecipientsNames(val) {
 }
 
 def getRecipientDesc(pName) {
-	return (settings?."${pName}NotifPhones" || (settings?."${pName}PushoverEnabled" && settings?."${pName}PushoverDevices")) ? true : false
+	return (settings."${pName}NotifPhones" || (settings."${pName}PushoverEnabled" && settings."${pName}PushoverDevices")) ? true : false
 }
 */
 
@@ -3395,17 +3396,17 @@ def setDayModeTimePage(params) {
 	if(params?.pName) {
 		state.t_setDayData = params
 	} else {
-		pName = state?.t_setDayData?.pName
+		pName = state.t_setDayData?.pName
 	}
 	dynamicPage(name: "setDayModeTimePage", title: "Select Days, Times or Modes", uninstall: false) {
 		def secDesc = settings["${pName}DmtInvert"] ? "Not" : "Only"
 		def inverted = settings["${pName}DmtInvert"] ? true : false
 		section("") {
-			def actIcon = settings?."${pName}DmtInvert" ? "inactive" : "active"
+			def actIcon = settings."${pName}DmtInvert" ? "inactive" : "active"
 			input "${pName}DmtInvert", "bool", title: imgTitle(getAppImg("${actIcon}"), inputTitleStr("${secDesc} in These? (tap to invert)")), defaultValue: false, submitOnChange: true
 		}
 		section("${secDesc} During these Days, Times, or Modes:") {
-			def timeReq = (settings?."${pName}StartTime" || settings."${pName}StopTime") ? true : false
+			def timeReq = (settings."${pName}StartTime" || settings."${pName}StopTime") ? true : false
 			input "${pName}StartTime", "time", title: imgTitle(getAppImg("start_time_icon.png"), inputTitleStr("Start time")), required: timeReq
 			input "${pName}StopTime", "time", title: imgTitle(getAppImg("stop_time_icon.png"), inputTitleStr("Stop time")), required: timeReq
 			input "${pName}Days", "enum", title: imgTitle(getAppImg("day_calendar_icon2.png"), inputTitleStr("${inverted ? "Not": "Only"} These Days")), multiple: true, required: false, options: timeDayOfWeekOptions()
@@ -3419,20 +3420,20 @@ def setDayModeTimePage(params) {
 }
 
 def getDayModeTimeDesc(pName) {
-	def startTime = settings?."${pName}StartTime"
-	def stopTime = settings?."${pName}StopTime"
-	def dayInput = settings?."${pName}Days"
-	def modeInput = settings?."${pName}Modes"
-	def inverted = settings?."${pName}DmtInvert" ?: null
-	def swOnInput = settings?."${pName}rstrctSWOn"
-	def swOffInput = settings?."${pName}rstrctSWOff"
+	def startTime = settings."${pName}StartTime"
+	def stopTime = settings."${pName}StopTime"
+	def dayInput = settings."${pName}Days"
+	def modeInput = settings."${pName}Modes"
+	def inverted = settings."${pName}DmtInvert" ?: null
+	def swOnInput = settings."${pName}rstrctSWOn"
+	def swOffInput = settings."${pName}rstrctSWOff"
 	def str = ""
 	def days = getInputToStringDesc(dayInput)
 	def modes = getInputToStringDesc(modeInput)
 	def swOn = getInputToStringDesc(swOnInput)
 	def swOff = getInputToStringDesc(swOffInput)
 	str += ((startTime && stopTime) || modes || days) ? "${!inverted ? "When" : "When Not"}:" : ""
-	str += (startTime && stopTime) ? "\n • Time: ${time2Str(settings?."${pName}StartTime")} - ${time2Str(settings?."${pName}StopTime")}" : ""
+	str += (startTime && stopTime) ? "\n • Time: ${time2Str(settings."${pName}StartTime")} - ${time2Str(settings."${pName}StopTime")}" : ""
 	str += days ? "${(startTime && stopTime) ? "\n" : ""}\n • Day${isPluralString(dayInput)}: ${days}" : ""
 	str += modes ? "${((startTime && stopTime) || days) ? "\n" : ""}\n • Mode${isPluralString(modeInput)}: ${modes}" : ""
 	str += swOn ? "${((startTime && stopTime) || days || modes) ? "\n" : ""}\n • Switch${isPluralString(swOnInput)} that must be on: ${getRestSwitch(swOnInput)}" : ""
@@ -3463,28 +3464,28 @@ def getDmtSectionDesc(autoType) {
 /*
 def autoScheduleOk(autoType) {
 	try {
-		def inverted = settings?."${autoType}DmtInvert" ? true : false
+		def inverted = settings."${autoType}DmtInvert" ? true : false
 		def modeOk = true
-		modeOk = (!settings?."${autoType}Modes" || ((isInMode(settings?."${autoType}Modes") && !inverted) || (!isInMode(settings?."${autoType}Modes") && inverted))) ? true : false
+		modeOk = (!settings."${autoType}Modes" || ((isInMode(settings."${autoType}Modes") && !inverted) || (!isInMode(settings."${autoType}Modes") && inverted))) ? true : false
 
 		//dayOk
 		def dayOk = true
 		def dayFmt = new SimpleDateFormat("EEEE")
 		dayFmt.setTimeZone(getTimeZone())
 		def today = dayFmt.format(new Date())
-		def inDay = (today in settings?."${autoType}Days") ? true : false
-		dayOk = (!settings?."${autoType}Days" || ((inDay && !inverted) || (!inDay && inverted))) ? true : false
+		def inDay = (today in settings."${autoType}Days") ? true : false
+		dayOk = (!settings."${autoType}Days" || ((inDay && !inverted) || (!inDay && inverted))) ? true : false
 
 		//scheduleTimeOk
 		def timeOk = true
-		if(settings?."${autoType}StartTime" && settings?."${autoType}StopTime") {
-			def inTime = (timeOfDayIsBetween(settings?."${autoType}StartTime", settings?."${autoType}StopTime", new Date(), getTimeZone())) ? true : false
+		if(settings."${autoType}StartTime" && settings."${autoType}StopTime") {
+			def inTime = (timeOfDayIsBetween(settings."${autoType}StartTime", settings."${autoType}StopTime", new Date(), getTimeZone())) ? true : false
 			timeOk = ((inTime && !inverted) || (!inTime && inverted)) ? true : false
 		}
 
 		def soFarOk = (modeOk && dayOk && timeOk) ? true : false
 		def swOk = true
-		if(soFarOk && settings?."${autoType}rstrctSWOn") {
+		if(soFarOk && settings."${autoType}rstrctSWOn") {
 			for(sw in settings["${autoType}rstrctSWOn"]) {
 				if (sw.currentValue("switch") != "on") {
 					swOk = false
@@ -3493,7 +3494,7 @@ def autoScheduleOk(autoType) {
 			}
 		}
 		soFarOk = (modeOk && dayOk && timeOk && swOk) ? true : false
-		if(soFarOk && settings?."${autoType}rstrctSWOff") {
+		if(soFarOk && settings."${autoType}rstrctSWOff") {
 			for(sw in settings["${autoType}rstrctSWOff"]) {
 				if (sw.currentValue("switch") != "off") {
 					swOk = false
@@ -3516,15 +3517,15 @@ def autoScheduleOk(autoType) {
 *************************************************************************************************/
 def sendNofificationMsg(msg, msgType, pName, lvl=null, pusho=null, sms=null) {
 	LogAction("sendNofificationMsg($msg, $msgType, $pName, $sms, $pusho)", "debug", false)
-	if(settings?."${pName}NotifOn" == true) {
+	if(settings."${pName}NotifOn" == true) {
 		def nlvl = lvl ?: (sms || pusho) ? 5 : 4
-		if(settings?."${pName}UseMgrNotif" == false) {
-			def mySms = sms ?: settings?."${pName}NotifPhones"
+		if(settings."${pName}UseMgrNotif" == false) {
+			def mySms = sms ?: settings."${pName}NotifPhones"
 			if(mySms) {
 				parent?.sendMsg(msgType, msg, nlvl,  null, mySms)
 			}
-			if(pusho && settings?."${pName}PushoverDevices") {
-				parent?.sendMsg(msgType, msg, nlvl, settings?."${pName}PushoverDevices")
+			if(pusho && settings."${pName}PushoverDevices") {
+				parent?.sendMsg(msgType, msg, nlvl, settings."${pName}PushoverDevices")
 			}
 		} else {
 			parent?.sendMsg(msgType, msg, nlvl)
@@ -3544,8 +3545,8 @@ def sendEventPushNotifications(message, type, pName) {
 
 /*
 def sendEventVoiceNotifications(vMsg, pName, msgId, rmAAMsg=false, rmMsgId) {
-	def allowNotif = settings?."${pName}NotifOn" ? true : false
-	def allowSpeech = allowNotif && settings?."${pName}AllowSpeechNotif" ? true : false
+	def allowNotif = settings."${pName}NotifOn" ? true : false
+	def allowSpeech = allowNotif && settings."${pName}AllowSpeechNotif" ? true : false
 	def ok2Notify = setting?."${pName}UseParentNotifRestrictions" != false ? getOk2Notify(pName) : getOk2Notify(pName) //parent?.getOk2Notify()
 
 	LogAction("sendEventVoiceNotifications($vMsg, $pName) | ok2Notify: $ok2Notify", "info", false)
@@ -3658,7 +3659,7 @@ def alarm3FollowUp(val) {
 }
 
 def alarmEvtSchedCleanup(autoType) {
-	if(state?."${autoType}AlarmActive") {
+	if(state."${autoType}AlarmActive") {
 		LogAction("Cleaning Up Alarm Event Schedules autoType: $autoType", "info", false)
 		def items = ["alarm0FollowUp","alarm1FollowUp", "alarm2FollowUp", "alarm3FollowUp"]
 		items.each {
@@ -3673,8 +3674,8 @@ def sendEventAlarmAction(evtNum, autoType) {
 	LogAction("sendEventAlarmAction evtNum: $evtNum autoType: $autoType", "info", false)
 	try {
 		def resval = false
-		def allowNotif = settings?."${autoType}NotifOn" ? true : false
-		def allowAlarm = allowNotif && settings?."${autoType}AllowAlarmNotif" ? true : false
+		def allowNotif = settings."${autoType}NotifOn" ? true : false
+		def allowAlarm = allowNotif && settings."${autoType}AllowAlarmNotif" ? true : false
 		def aDev = settings["${autoType}AlarmDevices"]
 		if(allowNotif && allowAlarm && aDev) {
 			//if(settings["${autoType}_Alert_${evtNum}_Use_Alarm"]) {
@@ -3682,17 +3683,17 @@ def sendEventAlarmAction(evtNum, autoType) {
 				def alarmType = settings["${autoType}_Alert_${evtNum}_AlarmType"].toString()
 				switch (alarmType) {
 					case "both":
-						state?."${autoType}alarmEvt${evtNum}StartDt" = getDtNow()
+						state."${autoType}alarmEvt${evtNum}StartDt" = getDtNow()
 						aDev?.both()
 						storeLastAction("Set Alarm BOTH ON", getDtNow(), autoType)
 						break
 					case "siren":
-						state?."${autoType}alarmEvt${evtNum}StartDt" = getDtNow()
+						state."${autoType}alarmEvt${evtNum}StartDt" = getDtNow()
 						aDev?.siren()
 						storeLastAction("Set Alarm SIREN ON", getDtNow(), autoType)
 						break
 					case "strobe":
-						state?."${autoType}alarmEvt${evtNum}StartDt" = getDtNow()
+						state."${autoType}alarmEvt${evtNum}StartDt" = getDtNow()
 						aDev?.strobe()
 						storeLastAction("Set Alarm STROBE ON", getDtNow(), autoType)
 						break
@@ -3721,8 +3722,8 @@ def getAlert2AlarmEvtOffVal(autoType) { return !settings["${autoType}_Alert_2_Al
 */
 
 /*
-def getAlarmEvt1RuntimeDtSec() { return !state?.alarmEvt1StartDt ? 100000 : GetTimeDiffSeconds(state?.alarmEvt1StartDt).toInteger() }
-def getAlarmEvt2RuntimeDtSec() { return !state?.alarmEvt2StartDt ? 100000 : GetTimeDiffSeconds(state?.alarmEvt2StartDt).toInteger() }
+def getAlarmEvt1RuntimeDtSec() { return !state.alarmEvt1StartDt ? 100000 : GetTimeDiffSeconds(state.alarmEvt1StartDt).toInteger() }
+def getAlarmEvt2RuntimeDtSec() { return !state.alarmEvt2StartDt ? 100000 : GetTimeDiffSeconds(state.alarmEvt2StartDt).toInteger() }
 */
 
 /*
@@ -3730,13 +3731,13 @@ void sendTTS(txt, pName) {
 	LogAction("sendTTS(data: ${txt})", "debug", false)
 	try {
 		def msg = txt?.toString()?.replaceAll("\\[|\\]|\\(|\\)|\\'|\\_", "")
-		def spks = settings?."${pName}SpeechDevices"
-		def meds = settings?."${pName}SpeechMediaPlayer"
-		def echos = settings?."${pName}EchoDevices"
-		def res = settings?."${pName}SpeechAllowResume"
-		def vol = settings?."${pName}SpeechVolumeLevel"
+		def spks = settings."${pName}SpeechDevices"
+		def meds = settings."${pName}SpeechMediaPlayer"
+		def echos = settings."${pName}EchoDevices"
+		def res = settings."${pName}SpeechAllowResume"
+		def vol = settings."${pName}SpeechVolumeLevel"
 		LogAction("sendTTS msg: $msg | speaks: $spks | medias: $meds | echos: $echos| resume: $res | volume: $vol", "debug", false)
-		if(settings?."${pName}AllowSpeechNotif") {
+		if(settings."${pName}AllowSpeechNotif") {
 			if(spks) {
 				spks*.speak(msg)
 			}
@@ -3758,7 +3759,7 @@ void sendTTS(txt, pName) {
 				}
 			}
 			if(echos) {
-				echos*.setVolumeAndSpeak(settings?."${pName}SpeechVolumeLevel", msg as String)
+				echos*.setVolumeAndSpeak(settings."${pName}SpeechVolumeLevel", msg as String)
 			}
 		}
 	} catch (ex) {
@@ -3771,16 +3772,16 @@ void sendTTS(txt, pName) {
 
 def scheduleTimeoutRestore(pName) {
 	def timeOutVal = settings["${pName}OffTimeout"]?.toInteger()
-	if(timeOutVal && !state?."${pName}TimeoutScheduled") {
+	if(timeOutVal && !state."${pName}TimeoutScheduled") {
 		runIn(timeOutVal.toInteger(), "restoreAfterTimeOut", [data: [pName:pName]])
-		LogAction("Mode Restoration Timeout Scheduled ${pName} (${getEnumValue(longTimeSecEnum(), settings?."${pName}OffTimeout")})", "info", true)
+		LogAction("Mode Restoration Timeout Scheduled ${pName} (${getEnumValue(longTimeSecEnum(), settings."${pName}OffTimeout")})", "info", true)
 		state."${pName}TimeoutScheduled" = true
 	}
 }
 
 def unschedTimeoutRestore(pName) {
 	def timeOutVal = settings["${pName}OffTimeout"]?.toInteger()
-	if(timeOutVal && state?."${pName}TimeoutScheduled") {
+	if(timeOutVal && state."${pName}TimeoutScheduled") {
 		unschedule("restoreAfterTimeOut")
 		LogAction("Cancelled Scheduled Mode Restoration Timeout ${pName}", "info", false)
 	}
@@ -3789,7 +3790,7 @@ def unschedTimeoutRestore(pName) {
 
 def restoreAfterTimeOut(val) {
 	def pName = val?.pName.value
-	if(pName && settings?."${pName}OffTimeout") {
+	if(pName && settings."${pName}OffTimeout") {
 		switch(pName) {
 			case "conWat":
 				state."${pName}TimeoutScheduled" = false
@@ -3860,9 +3861,9 @@ def getTstatCapabilities(tstat, autoType, dyn = false) {
 		if(tstat?.currentCanHeat) { canHeat = tstat?.currentCanHeat.toBoolean() }
 		if(tstat?.currentHasFan) { hasFan = tstat?.currentHasFan.toBoolean() }
 
-		state?."${autoType}${dyn ? "_${tstat?.deviceNetworkId}_" : ""}TstatCanCool" = canCool
-		state?."${autoType}${dyn ? "_${tstat?.deviceNetworkId}_" : ""}TstatCanHeat" = canHeat
-		state?."${autoType}${dyn ? "_${tstat?.deviceNetworkId}_" : ""}TstatHasFan" = hasFan
+		state."${autoType}${dyn ? "_${tstat?.deviceNetworkId}_" : ""}TstatCanCool" = canCool
+		state."${autoType}${dyn ? "_${tstat?.deviceNetworkId}_" : ""}TstatCanHeat" = canHeat
+		state."${autoType}${dyn ? "_${tstat?.deviceNetworkId}_" : ""}TstatHasFan" = hasFan
 	} catch (ex) {
 		log.error "getTstatCapabilities Exception:", ex
 		//parent?.sendExceptionData(ex, "getTstatCapabilities", true, getAutoType())
@@ -3910,12 +3911,12 @@ def getSafetyTempsOk(tstat) {
 }
 
 def getGlobalDesiredHeatTemp() {
-	Double t0 = null //parent?.settings?.locDesiredHeatTemp?.toDouble()
+	Double t0 = null //parent?.settings.locDesiredHeatTemp?.toDouble()
 	return t0 ?: null
 }
 
 def getGlobalDesiredCoolTemp() {
-	Double t0 = null // parent?.settings?.locDesiredCoolTemp?.toDouble()
+	Double t0 = null // parent?.settings.locDesiredCoolTemp?.toDouble()
 	return t0 ?: null
 }
 
@@ -4190,9 +4191,9 @@ def shortTimeEnum() {
 /*
 def switchRunEnum(addAlways = false) {
 	def pName = schMotPrefix()
-	def hasFan = state?."${pName}TstatHasFan" ? true : false
-	def canCool = state?."${pName}TstatCanCool" ? true : false
-	def canHeat = state?."${pName}TstatCanHeat" ? true : false
+	def hasFan = state."${pName}TstatHasFan" ? true : false
+	def canCool = state."${pName}TstatCanCool" ? true : false
+	def canHeat = state."${pName}TstatCanHeat" ? true : false
 	def vals = [ 1:"Any operation: Heating or Cooling" ]
 	if(hasFan) {
 		vals << [2:"With HVAC Fan Only"]
@@ -4211,9 +4212,9 @@ def switchRunEnum(addAlways = false) {
 
 def fanModeTrigEnum() {
 	def pName = schMotPrefix()
-	def canCool = state?."${pName}TstatCanCool" ? true : false
-	def canHeat = state?."${pName}TstatCanHeat" ? true : false
-	def hasFan = state?."${pName}TstatHasFan" ? true : false
+	def canCool = state."${pName}TstatCanCool" ? true : false
+	def canHeat = state."${pName}TstatCanHeat" ? true : false
+	def hasFan = state."${pName}TstatHasFan" ? true : false
 	def vals = ["auto":"Auto", "cool":"Cool", "heat":"Heat", "eco":"Eco", "any":"Any Mode"]
 	if(!canHeat) {
 		vals = ["cool":"Cool", "eco":"Eco", "any":"Any Mode"]
@@ -4357,7 +4358,7 @@ def getGlobTitleStr(typ) {
 */
 
 def formatDt2(tm) {
-	//def formatVal = settings?.useMilitaryTime ? "MMM d, yyyy - HH:mm:ss" : "MMM d, yyyy - h:mm:ss a"
+	//def formatVal = settings.useMilitaryTime ? "MMM d, yyyy - HH:mm:ss" : "MMM d, yyyy - h:mm:ss a"
 	def formatVal = "MMM d, yyyy - h:mm:ss a"
 	def tf = new SimpleDateFormat(formatVal)
 	if(getTimeZone()) { tf.setTimeZone(getTimeZone()) }
@@ -4370,13 +4371,13 @@ def tUnitStr() {
 
 /*
 void updTimestampMap(keyName, dt=null) {
-	def data = state?.timestampDtMap ?: [:]
+	def data = state.timestampDtMap ?: [:]
 	if(keyName) { data[keyName] = dt }
-	state?.timestampDtMap = data
+	state.timestampDtMap = data
 }
 
 def getTimestampVal(val) {
-	def tsData = state?.timestampDtMap
+	def tsData = state.timestampDtMap
 	if(val && tsData && tsData[val]) { return tsData[val] }
 	return null
 }
@@ -4509,41 +4510,41 @@ String lastN(String input, n) {
 }
 
 void LogTrace(String msg, String logSrc=(String)null) {
-	boolean trOn = (settings?.showDebug && settings?.advAppDebug) ? true : false
+	boolean trOn = (settings.showDebug && settings.advAppDebug) ? true : false
 	if(trOn) {
-		boolean logOn = (state?.enRemDiagLogging) ? true : false
+		boolean logOn = (state.enRemDiagLogging) ? true : false
 		Logger(msg, "trace", logSrc, logOn)
 	}
 }
 
 void LogAction(String msg, String type="debug", boolean showAlways=false, String logSrc=null) {
-	boolean isDbg = settings?.showDebug ? true : false
+	boolean isDbg = settings.showDebug ? true : false
 	if(showAlways || (isDbg && !showAlways)) { Logger(msg, type, logSrc) }
 }
 
 void Logger(String msg, String type="debug", String logSrc=(String)null, boolean noSTlogger=false) {
 	if(msg && type) {
 		String labelstr = ""
-		if(state?.dbgAppndName == null) {
-			def tval = parent ? parent.getSettingVal("dbgAppndName") : settings?.dbgAppndName
-			state?.dbgAppndName = (tval || tval == null) ? true : false
+		if(state.dbgAppndName == null) {
+			def tval = parent ? parent.getSettingVal("dbgAppndName") : settings.dbgAppndName
+			state.dbgAppndName = (tval || tval == null) ? true : false
 		}
-		if(state?.dbgAppndName) { labelstr = "${app.label} | " }
+		if(state.dbgAppndName) { labelstr = "${app.label} | " }
 		String themsg = "${labelstr}${msg}"
 		//log.debug "Logger remDiagTest: $msg | $type | $logSrc"
 
-		if(state?.enRemDiagLogging == null) {
-			state?.enRemDiagLogging = parent?.getStateVal("enRemDiagLogging")
-			if(state?.enRemDiagLogging == null) {
-			       state?.enRemDiagLogging = false
+		if(state.enRemDiagLogging == null) {
+			state.enRemDiagLogging = parent?.getStateVal("enRemDiagLogging")
+			if(state.enRemDiagLogging == null) {
+			       state.enRemDiagLogging = false
 			}
-			if(!state?.enRemDiagLogging) {
+			if(!state.enRemDiagLogging) {
 				atomicState?.remDiagLogDataStore = []
 				atomicState?.remDiagLogpDataStore = []
 			}
-			//log.debug "set enRemDiagLogging to ${state?.enRemDiagLogging}"
+			//log.debug "set enRemDiagLogging to ${state.enRemDiagLogging}"
 		}
-		if(state?.enRemDiagLogging) {
+		if(state.enRemDiagLogging) {
 			String theId = lastN(app?.id.toString(),5)
 			String theLogSrc = (logSrc == null) ? (parent ? "Automation-${theId}" : "NestManager") : logSrc
 			parent?.saveLogtoRemDiagStore(themsg, type, theLogSrc)

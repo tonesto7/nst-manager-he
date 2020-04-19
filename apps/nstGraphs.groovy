@@ -3,7 +3,7 @@
 |	Copyright (C) 2018, 2019								|
 |	Authors: Anthony S. (@tonesto7), Eric S. (@nh.schottfam)				|
 |												|
-|	Updated 8/24/2019									|
+|	Updated 4/19/2020									|
 |	License Info: https://github.com/tonesto7/nest-manager/blob/master/app_license.txt	|
 |************************************************************************************************/
 
@@ -27,7 +27,7 @@ definition(
 	oauth: true
 )
 
-String appVersion() { "2.0.3" }
+static String appVersion() { "2.0.4" }
 
 preferences {
 	page(name: "startPage")
@@ -46,17 +46,17 @@ mappings {
 def startPage() {
 	//log.info "startPage"
 
-	if(!state?.autoTyp) { Logger("nothing is set startPage") }
+	if(!state.autoTyp) { Logger("nothing is set startPage") }
 
 	if(parent) {
 		Boolean t0 = parent.getStateVal("ok2InstallAutoFlag")
-		if( /* !state?.isInstalled && */ t0 != true) {
+		if( /* !state.isInstalled && */ t0 != true) {
 			//Logger("Not installed ${t0}")
 			notAllowedPage()
 		} else {
-			state?.isParent = false
-	if(!state?.access_token) { getAccessToken() }
-	if(!state?.access_token) { enableOauth(); getAccessToken() }
+			state.isParent = false
+	if(!state.access_token) { getAccessToken() }
+	if(!state.access_token) { enableOauth(); getAccessToken() }
 			mainAutoPage()
 		}
 	} else {
@@ -73,13 +73,13 @@ def notAllowedPage () {
 }
 
 def mainAutoPage() {
-	def t0 = getTemperatureScale()?.toString()
-	state?.tempUnit = (t0 != null) ? t0 : state?.tempUnit
-	if(!state?.autoDisabled) { state.autoDisabled = false }
+	String t0 = getTemperatureScale()
+	state.tempUnit = (t0 != null) ? t0 : state.tempUnit
+	if(!state.autoDisabled) { state.autoDisabled = false }
 
 		return dynamicPage(name: "mainAutoPage", title: pageTitleStr("Automation Configuration"), uninstall: true, install: true, nextPage:null ) {
 			section() {
-				if(settings?.autoDisabledreq) {
+				if(settings.autoDisabledreq) {
 					paragraph imgTitle(getAppImg("i_inst"), paraTitleStr("This Automation is currently disabled!\nTurn it back on to to make changes or resume operation")), required: true, state: null
 				} else {
 					if(getIsAutomationDisabled()) { paragraph imgTitle(getAppImg("i_inst"), paraTitleStr("This Automation is still disabled!\nPress Next and Done to Activate this Automation Again")), state: "complete" }
@@ -111,58 +111,58 @@ def mainAutoPage() {
 						paragraph sectionTitleStr(t1)
 
 						if(tstats.size() > 1 || (tstats.size() > 0 && weather.size() > 0)) {
-							def myUrl = getAppEndpointUrl("deviceTiles")
-							def myLUrl = getLocalEndpointUrl("deviceTiles")
-							def myStr = """ <a href="${myUrl}" target="_blank">All Devices</a>  <a href="${myLUrl}" target="_blank">(local)</a> """
+							String myUrl = getAppEndpointUrl("deviceTiles")
+							String myLUrl = getLocalEndpointUrl("deviceTiles")
+							String myStr = """ <a href="${myUrl}" target="_blank">All Devices</a>  <a href="${myLUrl}" target="_blank">(local)</a> """
 							paragraph imgTitle(getAppImg("graph_icon.png"), paraTitleStr(myStr))
 						}
 					}
 					if(tstats) {
 						if(tstats.size() > 1) {
-							def myUrl = getAppEndpointUrl("tstatTiles")
-							def myLUrl = getLocalEndpointUrl("tstatTiles")
-							def myStr = """ <a href="${myUrl}" target="_blank">All Thermostats</a>  <a href="${myLUrl}" target="_blank">(local)</a> """
+							String myUrl = getAppEndpointUrl("tstatTiles")
+							String myLUrl = getLocalEndpointUrl("tstatTiles")
+							String myStr = """ <a href="${myUrl}" target="_blank">All Thermostats</a>  <a href="${myLUrl}" target="_blank">(local)</a> """
 							paragraph imgTitle(getAppImg("graph_icon.png"), paraTitleStr(myStr))
 						}
 						//def sUrl = "${fullApiServerUrl("")}"
-						def foundTstats = tstats?.collect { dni ->
+						def foundTstats = tstats?.collect { String dni ->
 							def d1 = parent.getDevice(dni)
-							def myUrl = getAppEndpointUrl("getTile/${dni}")
-							def myLUrl = getLocalEndpointUrl("getTile/${dni}")
+							String myUrl = getAppEndpointUrl("getTile/${dni}")
+							String myLUrl = getLocalEndpointUrl("getTile/${dni}")
 							//def myUrl = "${sUrl}" + "/getTile/${dni}" + "?access_token=${state.access_token}"
 //Logger("mainAuto sUrl: ${sUrl}   myUrl: ${myUrl}")
-							def myStr = """ <a href="${myUrl}" target="_blank">${d1.label ?: d1.name}</a>  <a href="${myLUrl}" target="_blank">(local)</a> """
+							String myStr = """ <a href="${myUrl}" target="_blank">${d1.label ?: d1.name}</a>  <a href="${myLUrl}" target="_blank">(local)</a> """
 							paragraph imgTitle(getAppImg("graph_icon.png"), paraTitleStr(myStr))
 						}
 					}
 					if(prots) {
 						if(prots.size() > 1) {
-							def myUrl = getAppEndpointUrl("protTiles")
-							def myLUrl = getLocalEndpointUrl("protTiles")
-							def myStr = """ <a href="${myUrl}" target="_blank">All Protects</a>  <a href="${myLUrl}" target="_blank">(local)</a> """
+							String myUrl = getAppEndpointUrl("protTiles")
+							String myLUrl = getLocalEndpointUrl("protTiles")
+							String myStr = """ <a href="${myUrl}" target="_blank">All Protects</a>  <a href="${myLUrl}" target="_blank">(local)</a> """
 							paragraph imgTitle(getAppImg("graph_icon.png"), paraTitleStr(myStr))
 						}
 						//def sUrl = "${fullApiServerUrl("")}"
-						def foundTstats = prots?.collect { dni ->
+						def foundTstats = prots?.collect { String dni ->
 							def d1 = parent.getDevice(dni)
-							def myUrl = getAppEndpointUrl("getTile/${dni}")
-							def myLUrl = getLocalEndpointUrl("getTile/${dni}")
+							String myUrl = getAppEndpointUrl("getTile/${dni}")
+							String myLUrl = getLocalEndpointUrl("getTile/${dni}")
 							//def myUrl = "${sUrl}" + "/getTile/${dni}" + "?access_token=${state.access_token}"
 //Logger("mainAuto sUrl: ${sUrl}   myUrl: ${myUrl}")
-							def myStr = """ <a href="${myUrl}" target="_blank">${d1.label ?: d1.name}</a>  <a href="${myLUrl}" target="_blank">(local)</a> """
+							String myStr = """ <a href="${myUrl}" target="_blank">${d1.label ?: d1.name}</a>  <a href="${myLUrl}" target="_blank">(local)</a> """
 							paragraph imgTitle(getAppImg("graph_icon.png"), paraTitleStr(myStr))
 						}
 					}
 					if(weather) {
-						def myUrl = getAppEndpointUrl("weatherTile")
-						def myLUrl = getLocalEndpointUrl("weatherTile")
-						def myStr = """ <a href="${myUrl}" target="_blank">${weather.label ?: weather..name}</a> <a href="${myLUrl}" target="_blank">(local)</a> """
+						String myUrl = getAppEndpointUrl("weatherTile")
+						String myLUrl = getLocalEndpointUrl("weatherTile")
+						String myStr = """ <a href="${myUrl}" target="_blank">${weather?.label ?: weather.name}</a> <a href="${myLUrl}" target="_blank">(local)</a> """
 						paragraph imgTitle(getAppImg("graph_icon.png"), paraTitleStr(myStr))
 					}
 				}
 			}
 			section(sectionTitleStr("Automation Options:")) {
-				input "autoDisabledreq", "bool", title: imgTitle(getAppImg("disable_icon2.png"), inputTitleStr("Disable this Automation?")), required: false, defaultValue: false /* state?.autoDisabled */, submitOnChange: true
+				input "autoDisabledreq", "bool", title: imgTitle(getAppImg("disable_icon2.png"), inputTitleStr("Disable this Automation?")), required: false, defaultValue: false /* state.autoDisabled */, submitOnChange: true
 				setAutomationStatus()
 
 				input("showDebug", "bool", title: imgTitle(getAppImg("debug_icon.png"), inputTitleStr("Debug Option")), description: "Show ${app?.name} Logs in the IDE?", required: false, defaultValue: false, submitOnChange: true)
@@ -175,61 +175,59 @@ def mainAutoPage() {
 			section(sectionTitleStr("Application Security")) {
 				paragraph title:"What does resetting do?", "If you share a url with someone and want to remove their access you can reset your token and this will invalidate any URL you shared and create a new one for you.  This will require any use in dashboards to be updated to the new URL."
 				input (name: "resetAppAccessToken", type: "bool", title: "Reset Access Token?", required: false, defaultValue: false, submitOnChange: true, image: getAppImg("reset_icon.png"))
-				resetAppAccessToken(settings?.resetAppAccessToken == true)
+				resetAppAccessToken(settings.resetAppAccessToken == true)
 			}
 			section(sectionTitleStr("Automation Name:")) {
-				def newName = getAutoTypeLabel()
-				if(!app?.label) { app?.updateLabel("${newName}") }
-				label title: imgTitle(getAppImg("name_tag_icon.png"), inputTitleStr("Label this Automation: Suggested Name: ${newName}")), defaultValue: "${newName}", required: true //, wordWrap: true
-				if(!state?.isInstalled) {
+				String newName = getAutoTypeLabel()
+				if(!app?.label) { app?.updateLabel(newName) }
+				label title: imgTitle(getAppImg("name_tag_icon.png"), inputTitleStr("Label this Automation: Suggested Name: ${newName}")), defaultValue: newName, required: true //, wordWrap: true
+				if(!state.isInstalled) {
 					paragraph "Make sure to name it something that you can easily recognize."
 				}
 			}
 		}
 }
 
-private isHubitat(){
+Boolean isHubitat(){
 	return hubUID != null
 }
 
-def installed() {
+void installed() {
 	log.debug "${app.getLabel()} Installed with settings: ${settings}"		// MUST BE log.debug
 	if(isHubitat() && !app.id) return
 	initialize()
-	return true
 }
 
-def updated() {
+void updated() {
 	log.debug "${app.getLabel()} Updated...with settings: ${settings}"
-	state?.isInstalled = true
-	def appLbl = getCurAppLbl()
+	state.isInstalled = true
+	String appLbl = getCurAppLbl()
 	if(appLbl?.contains("Graphs")) {
-		if(!state?.autoTyp) { state.autoTyp = "chart" }
+		if(!state.autoTyp) { state.autoTyp = "chart" }
 	}
 	initialize()
-	state?.lastUpdatedDt = getDtNow()
-	return true
+	state.lastUpdatedDt = getDtNow()
 }
 
-def uninstalled() {
+void uninstalled() {
 	log.debug "uninstalled"
 	uninstAutomationApp()
 }
 
-def initialize() {
+void initialize() {
 	log.debug "${app.label} Initialize..."		// Must be log.debug
 	state.autoTyp = "chart"
 	resetVars()
-	if(!state?.isInstalled) { state?.isInstalled = true }
+	if(!state.isInstalled) { state.isInstalled = true }
 	Boolean settingsReset = parent.getSettingVal("resetAllData")
-	//if(state?.resetAllData || settingsReset) {
+	//if(state.resetAllData || settingsReset) {
 	//	if(fixState()) { return }	// runIn of fixState will call initAutoApp()
 	//}
 
 	runIn(6, "initAutoApp", [overwrite: true])
 }
 
-def resetVars() {
+void resetVars() {
 	stateRemove("evalSched")
 	stateRemove("haveWeather")
 	stateRemove("obs")
@@ -237,7 +235,7 @@ def resetVars() {
 	stateRemove("detailExecutionHistory")
 }
 
-def initAutoApp() {
+void initAutoApp() {
 	if(settings["chartFlag"]) {
 		state.autoTyp = "chart"
 	}
@@ -258,7 +256,7 @@ def initAutoApp() {
 	stateRemove("enRemDiagLogging") // cause recheck
 
 	scheduleAutomationEval(30)
-	if(settings?.showDebug || settings?.advAppDebug) { runIn(1800, logsOff) }
+	if(settings.showDebug || settings.advAppDebug) { runIn(1800, logsOff) }
 
 	checkCleanups()
 
@@ -266,9 +264,9 @@ def initAutoApp() {
 	//revokeAccessToken()
 
 /*
-	def devTilesUrl = getAppEndpointUrl("deviceTiles")
-	def tstatTilesUrl = getAppEndpointUrl("tstatTiles")
-	def weatherTilesUrl = getAppEndpointUrl("weatherTile")
+	String devTilesUrl = getAppEndpointUrl("deviceTiles")
+	String tstatTilesUrl = getAppEndpointUrl("tstatTiles")
+	String weatherTilesUrl = getAppEndpointUrl("weatherTile")
 
 Logger("initAutoApp: devTile: ${devTilesUrl}")
 Logger("initAutoApp: tstatTile: ${tstatTilesUrl}")
@@ -276,7 +274,7 @@ Logger("initAutoApp: weatherTile: ${weatherTilesUrl}")
 */
 }
 
-def subscribeToEvents() {
+void subscribeToEvents() {
 	def weather = parent.getSettingVal("weatherDevice")
 	if(weather) {
 		subscribe(weather, "temperature", automationGenericEvt)
@@ -286,7 +284,7 @@ def subscribeToEvents() {
 	def tstats = parent.getSettingVal("thermostats")
 	def foundTstats
 	if(tstats) {
-		foundTstats = tstats?.collect { dni ->
+		foundTstats = tstats?.collect { String dni ->
 			def d1 = parent.getDevice(dni)
 			if(d1) {
 				//LogAction("Found: ${d1?.displayName} with (Id: ${dni?.key})", "debug", false)
@@ -298,8 +296,8 @@ def subscribeToEvents() {
 	def vtstats = parent.getStateVal("vThermostats")
 	def foundvTstats
 	if(vtstats) {
-		foundvTstats = vtstats?.each { dni ->
-			def mydni = parent.getNestvStatDni(dni).toString()
+		foundvTstats = vtstats?.each { String dni ->
+			String mydni = parent.getNestvStatDni(dni).toString()
 			def d1 = parent.getDevice(mydni)
 			if(d1) {
 				//LogAction("Found: ${d1?.displayName} with (Id: ${mydni?.key})", "debug", false)
@@ -310,7 +308,7 @@ def subscribeToEvents() {
 
 }
 
-def tSubscribe(d1) {
+void tSubscribe(d1) {
 	subscribe(d1, "temperature", automationGenericEvt)
 	subscribe(d1, "humidity", automationGenericEvt)
 	subscribe(d1, "thermostatOperatingState", automationGenericEvt)
@@ -324,27 +322,27 @@ def tSubscribe(d1) {
 	}
 }
 
-def scheduler() {
+void scheduler() {
 //	"runEvery${state.poll}Minutes"(poll)
 	runEvery15Minutes(resetVars)
 }
 
-def uninstAutomationApp() {
+void uninstAutomationApp() {
 }
 
-def strCapitalize(str) {
-	return str ? str?.toString().capitalize() : null
+static String strCapitalize(String str) {
+	return str ? str.capitalize() : null
 }
 
-def automationGenericEvt(evt) {
-	def startTime = now()
-	def eventDelay = startTime - evt.date.getTime()
-	LogAction("${evt?.name.toUpperCase()} Event | Device: ${evt?.displayName} | Value: (${strCapitalize(evt?.value)}) with a delay of ${eventDelay}ms", "info", false)
+void automationGenericEvt(evt) {
+	Long startTime = now()
+	Long eventDelay = startTime - evt.date.getTime()
+	LogAction("${evt.name.toUpperCase()} Event | Device: ${evt?.displayName} | Value: (${strCapitalize(evt?.value)}) with a delay of ${eventDelay}ms", "info", false)
 
 	doTheEvent(evt)
 }
 
-def doTheEvent(evt) {
+void doTheEvent(evt) {
 	if(getIsAutomationDisabled()) { return }
 	else {
 		scheduleAutomationEval()
@@ -352,51 +350,51 @@ def doTheEvent(evt) {
 	}
 }
 
-def storeLastEventData(evt) {
+void storeLastEventData(evt) {
 	if(evt) {
-		def newVal = ["name":evt.name, "displayName":evt.displayName, "value":evt.value, "date":formatDt(evt.date), "unit":evt.unit]
-		state?.lastEventData = newVal
-		//log.debug "LastEvent: ${state?.lastEventData}"
+		Map newVal = ["name":evt.name, "displayName":evt.displayName, "value":evt.value, "date":formatDt(evt.date), "unit":evt.unit]
+		state.lastEventData = newVal
+		//log.debug "LastEvent: ${state.lastEventData}"
 
-		def list = state?.detailEventHistory ?: []
-		def listSize = 15
+		List list = state.detailEventHistory ?: []
+		Integer listSize = 15
 		if(list?.size() < listSize) {
-			list.push(newVal)
+			Boolean a=list.push(newVal)
 		}
 		else if(list?.size() > listSize) {
-			def nSz = (list?.size()-listSize) + 1
-			def nList = list?.drop(nSz)
-			nList?.push(newVal)
+			Integer nSz = (list?.size()-listSize) + 1
+			List nList = list.drop(nSz)
+			Boolean a=nList.push(newVal)
 			list = nList
 		}
 		else if(list?.size() == listSize) {
-			def nList = list?.drop(1)
-			nList?.push(newVal)
+			List nList = list.drop(1)
+			Boolean a=nList?.push(newVal)
 			list = nList
 		}
-		if(list) { state?.detailEventHistory = list }
+		if(list) { state.detailEventHistory = list }
 	}
 }
 
-def storeExecutionHistory(val, method = null) {
+void storeExecutionHistory(val, String method = null) {
 	//log.debug "storeExecutionHistory($val, $method)"
 	//try {
 		if(method) {
 			LogTrace("${method} Execution Time: (${val} milliseconds)")
 		}
 		//if(method in ["watchDogCheck", "checkNestMode", "schMotCheck"]) {
-			state?.autoExecMS = val ?: null
-			def list = state?.evalExecutionHistory ?: []
-			def listSize = 20
+			state.autoExecMS = val ?: null
+			List list = state.evalExecutionHistory ?: []
+			Integer listSize = 20
 			list = addToList(val, list, listSize)
-			if(list) { state?.evalExecutionHistory = list }
+			if(list) { state.evalExecutionHistory = list }
 		//}
 /*
 		if(!(method in ["watchDogCheck", "checkNestMode"])) {
-			def list = state?.detailExecutionHistory ?: []
-			def listSize = 30
+			List list = state.detailExecutionHistory ?: []
+			Integer listSize = 30
 			list = addToList([val, method, getDtNow()], list, listSize)
-			if(list) { state?.detailExecutionHistory = list }
+			if(list) { state.detailExecutionHistory = list }
 		}
 */
 /*
@@ -407,26 +405,26 @@ def storeExecutionHistory(val, method = null) {
 */
 }
 
-def addToList(val, list, listSize) {
+static List addToList(val, List list, Integer listSize) {
 	if(list?.size() < listSize) {
 		list.push(val)
 	} else if(list?.size() > listSize) {
-		def nSz = (list?.size()-listSize) + 1
-		def nList = list?.drop(nSz)
-		nList?.push(val)
+		Integer nSz = (list?.size()-listSize) + 1
+		List nList = list?.drop(nSz)
+		Boolean a=nList.push(val)
 		list = nList
 	} else if(list?.size() == listSize) {
-		def nList = list?.drop(1)
-		nList?.push(val)
+		List nList = list.drop(1)
+		Boolean a=nList?.push(val)
 		list = nList
 	}
 	return list
 }
 
-def setAutomationStatus(upd=false) {
-	Boolean myDis = (settings?.autoDisabledreq == true)
+void setAutomationStatus(Boolean upd=false) {
+	Boolean myDis = (settings.autoDisabledreq == true)
 	Boolean settingsReset = (parent.getSettingVal("disableAllAutomations") == true)
-	Boolean storAutoType = getAutoType() == "storage" ? true : false
+	Boolean storAutoType = getAutoType() == "storage"
 	if(settingsReset && !storAutoType) {
 		if(!myDis && settingsReset) { LogAction("setAutomationStatus: Nest Integrations forcing disable", "info", true) }
 		myDis = true
@@ -435,34 +433,34 @@ def setAutomationStatus(upd=false) {
 	}
 	if(!getIsAutomationDisabled() && myDis) {
 		LogAction("Automation Disabled at (${getDtNow()})", "info", true)
-		state?.autoDisabledDt = getDtNow()
+		state.autoDisabledDt = getDtNow()
 	} else if(getIsAutomationDisabled() && !myDis) {
 		LogAction("Automation Enabled at (${getDtNow()})", "info", true)
-		state?.autoDisabledDt = null
+		state.autoDisabledDt = null
 	}
-	state?.autoDisabled = myDis
+	state.autoDisabled = myDis
 	if(upd) { app.update() }
 }
 
-def defaultAutomationTime() {
+static Integer defaultAutomationTime() {
 	return 5
 }
 
-def scheduleAutomationEval(schedtime = defaultAutomationTime()) {
-	def theTime = schedtime
+void scheduleAutomationEval(Integer schedtime = defaultAutomationTime()) {
+	Integer theTime = schedtime
 	if(theTime < defaultAutomationTime()) { theTime = defaultAutomationTime() }
-	def autoType = getAutoType()
+	String autoType = getAutoType()
 	def random = new Random()
-	def random_int = random.nextInt(6)  // this randomizes a bunch of automations firing at same time off same event
-	def waitOverride = false
+	Integer random_int = random.nextInt(6)  // this randomizes a bunch of automations firing at same time off same event
+	Boolean  waitOverride = false
 	switch(autoType) {
 		case "chart":
 			if(theTime == defaultAutomationTime()) {
 				theTime += random_int
 			}
-			def schWaitVal = settings?.schMotWaitVal?.toInteger() ?: 60
+			Integer schWaitVal = settings.schMotWaitVal?.toInteger() ?: 60
 			if(schWaitVal > 120) { schWaitVal = 120 }
-			def t0 = getAutoRunSec()
+			Integer t0 = getAutoRunSec()
 			if((schWaitVal - t0) >= theTime ) {
 				theTime = (schWaitVal - t0)
 				waitOverride = true
@@ -470,23 +468,23 @@ def scheduleAutomationEval(schedtime = defaultAutomationTime()) {
 			//theTime = Math.min( Math.max(theTime,defaultAutomationTime()), 120)
 			break
 	}
-	if(!state?.evalSched) {
+	if(!state.evalSched) {
 		runIn(theTime, "runAutomationEval", [overwrite: true])
-		state?.autoRunInSchedDt = getDtNow()
+		state.autoRunInSchedDt = getDtNow()
 		state.evalSched = true
 		state.evalSchedLastTime = theTime
 	} else {
-		def str = "scheduleAutomationEval: "
-		def t0 = state?.evalSchedLastTime
+		String str = "scheduleAutomationEval: "
+		Integer t0 = state.evalSchedLastTime
 		if(t0 == null) { t0 = 0 }
-		def timeLeftPrev = t0 - getAutoRunInSec()
+		Integer timeLeftPrev = t0 - getAutoRunInSec()
 		if(timeLeftPrev < 0) { timeLeftPrev = 100 }
-		def str1 = " Schedule change: from (${timeLeftPrev}sec) to (${theTime}sec)"
+		String str1 = " Schedule change: from (${timeLeftPrev}sec) to (${theTime}sec)"
 		if(timeLeftPrev > (theTime + 5) || waitOverride) {
 			if(Math.abs(timeLeftPrev - theTime) > 3) {
 				runIn(theTime, "runAutomationEval", [overwrite: true])
 				LogTrace("${str}Performing${str1}")
-				state?.autoRunInSchedDt = getDtNow()
+				state.autoRunInSchedDt = getDtNow()
 				state.evalSched = true
 				state.evalSchedLastTime = theTime
 			}
@@ -494,16 +492,16 @@ def scheduleAutomationEval(schedtime = defaultAutomationTime()) {
 	}
 }
 
-def getAutoRunSec() { return !state?.autoRunDt ? 100000 : GetTimeDiffSeconds(state?.autoRunDt, null, "getAutoRunSec").toInteger() }
+Integer getAutoRunSec() { return !state.autoRunDt ? 100000 : GetTimeDiffSeconds(state.autoRunDt, null, "getAutoRunSec").toInteger() }
 
-def getAutoRunInSec() { return !state?.autoRunInSchedDt ? 100000 : GetTimeDiffSeconds(state?.autoRunInSchedDt, null, "getAutoRunInSec").toInteger() }
+Integer getAutoRunInSec() { return !state.autoRunInSchedDt ? 100000 : GetTimeDiffSeconds(state.autoRunInSchedDt, null, "getAutoRunInSec").toInteger() }
 
-def runAutomationEval() {
+void runAutomationEval() {
 	LogTrace("runAutomationEval")
-	def execTime = now()
-	def autoType = getAutoType()
+	Long execTime = now()
+	String autoType = getAutoType()
 	state.evalSched = false
-	state?.evalSchedLastTime = null
+	state.evalSchedLastTime = null
 	switch(autoType) {
 		case "chart":
 			def weather = parent.getSettingVal("weatherDevice")
@@ -514,7 +512,7 @@ def runAutomationEval() {
 			def tstats = parent.getSettingVal("thermostats")
 			def foundTstats
 			if(tstats) {
-				foundTstats = tstats?.collect { dni ->
+				foundTstats = tstats?.collect { String dni ->
 					def d1 = parent.getDevice(dni)
 					if(d1) {
 						//LogAction("Found: ${d1?.displayName} with (Id: ${dni})", "debug", false)
@@ -527,8 +525,8 @@ def runAutomationEval() {
 			def vtstats = parent.getStateVal("vThermostats")
 			def foundvTstats
 			if(vtstats) {
-				foundvTstats = vtstats?.collect { dni ->
-					def mydni = parent.getNestvStatDni(dni).toString()
+				foundvTstats = vtstats?.collect { String dni ->
+					String mydni = parent.getNestvStatDni(dni).toString()
 					def d1 = parent.getDevice(mydni)
 					if(d1) {
 						//LogAction("Found: ${d1?.displayName} with (Id: ${mydni})", "debug", false)
@@ -545,25 +543,25 @@ def runAutomationEval() {
 	storeExecutionHistory((now()-execTime), "runAutomationEval")
 }
 
-def getCurAppLbl() { return app?.label?.toString() }
+String getCurAppLbl() { return app.label }
 
-def appLabel()	{ return "NST Graphs" }
-def appName()		{ return "${appLabel()}" }
+static String appLabel()	{ return "NST Graphs" }
+static String appName()		{ return appLabel() }
 
-def getAutoTypeLabel() {
+String getAutoTypeLabel() {
 	//LogTrace("getAutoTypeLabel()")
-	def type = state?.autoTyp
-	def appLbl = getCurAppLbl()
-	def newName = appName() == "${appLabel()}" ? "NST Graphs" : "${appName()}"
-	def typeLabel = ""
-	def newLbl
-	def dis = (getIsAutomationDisabled() == true) ? "\n(Disabled)" : ""
+	String type = state.autoTyp
+	String appLbl = getCurAppLbl()
+	String newName = appName() == appLabel() ? "NST Graphs" : appName()
+	String typeLabel = ""
+	String newLbl
+	String dis = getIsAutomationDisabled() ? "\n(Disabled)" : ""
 
 	typeLabel = "Nest Location ${location.name} Graphs"
 
 //Logger("getAutoTypeLabel: ${type} ${appLbl} ${appName()} ${appLabel()} ${typeLabel}")
 
-	if(appLbl != "" && appLbl && appLbl != "Nst Graphs" && appLbl != "${appLabel()}") {
+	if(appLbl != "" && appLbl && appLbl != "Nst Graphs" && appLbl != appLabel()) {
 		if(appLbl?.contains("\n(Disabled)")) {
 			newLbl = appLbl?.replaceAll('\\\n\\(Disabled\\)', '')
 		} else {
@@ -572,11 +570,11 @@ def getAutoTypeLabel() {
 	} else {
 		newLbl = typeLabel
 	}
-	return "${newLbl}${dis}"
+	return newLbl+dis
 }
 
 //ERS
-def checkCleanups() {
+void checkCleanups() {
 	def inuse = []
 	def weather = parent.getSettingVal("weatherDevice")
 	if(weather) {
@@ -586,7 +584,7 @@ def checkCleanups() {
 	def tstats = parent.getSettingVal("thermostats")
 	def foundTstats
 	if(tstats) {
-		foundTstats = tstats?.collect { dni ->
+		foundTstats = tstats?.collect { String dni ->
 			def d1 = parent.getDevice(dni)
 			if(d1) {
 				inuse += d1.id
@@ -597,8 +595,8 @@ def checkCleanups() {
 	def vtstats = parent.getStateVal("vThermostats")
 	def foundvTstats
 	if(vtstats) {
-		foundvTstats = vtstats?.collect { dni ->
-			def mydni = parent.getNestvStatDni(dni).toString()
+		foundvTstats = vtstats?.collect { String dni ->
+			String mydni = parent.getNestvStatDni(dni).toString()
 			def d1 = parent.getDevice(mydni)
 			if(d1) {
 				inuse += d1.id
@@ -610,15 +608,15 @@ def checkCleanups() {
 	def data = []
 	def regex1 = /Wtoday/
 	["Wtoday"]?.each { oi->
-		state?.each { if(it?.key?.toString().startsWith(oi)) {
-				data?.push(it?.key.replaceAll(regex1, ""))
+		state.each { if(it?.key?.toString()?.startsWith(oi)) {
+				data?.push(it.key.replaceAll(regex1, ""))
 			}
 		}
 	}
 	def regex2 = /thermStor/
 	["thermStor"]?.each { oi->
-		state?.each { if(it?.key?.toString().startsWith(oi)) {
-				data?.push(it?.key.replaceAll(regex2, ""))
+		state.each { if(it?.key?.toString()?.startsWith(oi)) {
+				data?.push(it.key.replaceAll(regex2, ""))
 			}
 		}
 	}
@@ -632,7 +630,7 @@ def checkCleanups() {
 	}
 }
 
-def cleanState(id) {
+void cleanState(id) {
 LogTrace("cleanState: ${id}")
 	stateRemove("Wtoday${id}")
 	stateRemove("WhumTblYest${id}")
@@ -658,20 +656,20 @@ LogTrace("cleanState: ${id}")
 	stateRemove("fanTbl${id}")
 }
 
-def sectionTitleStr(title)	{ return "<h3>$title</h3>" }
-def inputTitleStr(title)	{ return "<u>$title</u>" }
-def pageTitleStr(title)	 { return "<h1>$title</h1>" }
-def paraTitleStr(title)	 { return "<b>$title</b>" }
+static String sectionTitleStr(title)	{ return "<h3>$title</h3>" }
+static String inputTitleStr(title)	{ return "<u>$title</u>" }
+static String pageTitleStr(title)	 { return "<h1>$title</h1>" }
+static String paraTitleStr(title)	 { return "<b>$title</b>" }
 
-def imgTitle(imgSrc, titleStr, color=null, imgWidth=30, imgHeight=null) {
-	def imgStyle = ""
+String imgTitle(imgSrc, titleStr, color=null, imgWidth=30, imgHeight=null) {
+	String imgStyle = ""
 	imgStyle += imgWidth ? "width: ${imgWidth}px !important;" : ""
 	imgStyle += imgHeight ? "${imgWidth ? " " : ""}height: ${imgHeight}px !important;" : ""
 	if(color) { return """<div style="color: ${color}; font-weight: bold;"><img style="${imgStyle}" src="${imgSrc}"> ${titleStr}</img></div>""" }
 	else { return """<img style="${imgStyle}" src="${imgSrc}"> ${titleStr}</img>""" }
 }
 
-def icons(name, napp="App") {
+static String icons(name, napp="App") {
 	def icon_names = [
 		"i_dt": "delay_time",
 		"i_not": "notification",
@@ -689,27 +687,27 @@ def icons(name, napp="App") {
 
 	]
 	//return icon_names[name]
-	def t0 = icon_names?."${name}"
+	String t0 = icon_names?."${name}"
 	//LogAction("t0 ${t0}", "warn", true)
-	if(t0) return "https://raw.githubusercontent.com/${gitPath()}/Images/$napp/${t0}_icon.png"
-	else return "https://raw.githubusercontent.com/${gitPath()}/Images/$napp/${name}"
+	if(t0) return "https://raw.githubusercontent.com/${gitPath()}/Images/$napp/${t0}_icon.png".toString()
+	else return "https://raw.githubusercontent.com/${gitPath()}/Images/$napp/${name}".toString()
 }
 
-def gitRepo()		{ return "tonesto7/nest-manager"}
-def gitBranch()		{ return "master" }
-def gitPath()		{ return "${gitRepo()}/${gitBranch()}"}
+static String gitRepo()		{ return "tonesto7/nest-manager"}
+static String gitBranch()		{ return "master" }
+static String gitPath()		{ return gitRepo()+'/'+gitBranch() }
 
-def getAppImg(imgName, on = null) {
+String getAppImg(String imgName, Boolean on = null) {
 	//return (!disAppIcons || on) ? "https://raw.githubusercontent.com/${gitPath()}/Images/App/$imgName" : ""
 	return (!disAppIcons || on) ? icons(imgName) : ""
 }
 
-def getDevImg(imgName, on = null) {
+String getDevImg(String imgName, Boolean on = null) {
 	//return (!disAppIcons || on) ? "https://raw.githubusercontent.com/${gitPath()}/Images/Devices/$imgName" : ""
 	return (!disAppIcons || on) ? icons(imgName, "Devices") : ""
 }
 
-def logsOff() {
+void logsOff() {
 	Logger("debug logging disabled...")
 	settingUpdate("showDebug", "false", "bool")
 	settingUpdate("advAppDebug", "false", "bool")
@@ -717,22 +715,22 @@ def logsOff() {
 
 def getSettingsData() {
 	def sets = []
-	settings?.sort().each { st ->
+	settings.sort().each { st ->
 		sets << st
 	}
 	return sets
 }
 
-def getSettingVal(var) {
-	if(var == null) { return settings }
+def getSettingVal(String var) {
+	if(var == (String)null) { return settings }
 	return settings[var] ?: null
 }
 
-def getStateVal(var) {
+def getStateVal(String var) {
 	return state[var] ?: null
 }
 
-void settingUpdate(name, value, type=null) {
+void settingUpdate(String name, value, String type=(String)null) {
 	//LogTrace("settingUpdate($name, $value, $type)...")
 	if(name) {
 		if(value == "" || value == null || value == []) {
@@ -740,34 +738,34 @@ void settingUpdate(name, value, type=null) {
 			return
 		}
 	}
-	if(name && type) { app?.updateSetting("$name", [type: "$type", value: value]) }
+	if(name && type) { app?.updateSetting(name, [type: type, value: value]) }
 	else if (name && type == null) { app?.updateSetting(name.toString(), value) }
 }
 
-void settingRemove(name) {
+void settingRemove(String name) {
 	//LogTrace("settingRemove($name)...")
 	if(name) { app?.clearSetting(name.toString()) }
 }
 
-def stateUpdate(key, value) {
-	if(key) { state?."${key}" = value; return true }
+def stateUpdate(String key, value) {
+	if(key) { state."${key}" = value; return true }
 	//else { LogAction("stateUpdate: null key $key $value", "error", true); return false }
 }
 
-def stateRemove(key) {
+def stateRemove(String key) {
 	state.remove(key?.toString())
 	return true
 }
 
 String getAutomationType() {
-	return state?.autoTyp ?: null
+	return (String)state.autoTyp ?: (String)null
 }
 
-String getAutoType() { return !parent ? "" : state?.autoTyp }
+String getAutoType() { return !parent ? "" : (String)state.autoTyp }
 
-def getIsAutomationDisabled() {
-	def dis = state?.autoDisabled
-	return (dis != null && dis == true) ? true : false
+Boolean getIsAutomationDisabled() {
+	Boolean dis = state.autoDisabled
+	return (dis != null && dis)
 }
 
 def getTstatTiles() {
@@ -778,13 +776,13 @@ def getTstatTiles() {
 def getTile() {
 	LogTrace ("getTile()")
 	//log.debug "${params} ${request.requestSource}"
-	def responseMsg = ""
+	String responseMsg = ""
 
-	def dni = "${params?.dni}"
+	String dni = params?.dni?.toString()
 	if (dni) {
 		def device = parent.getDevice(dni)
 		if (device) {
-			return renderDeviceTiles(null, device)
+			return renderDeviceTiles((String)null, device)
 		} else {
 			responseMsg = "Device '${dni}' Not Found"
 		}
@@ -792,12 +790,17 @@ def getTile() {
 		responseMsg = "Invalid Parameters"
 	}
 	render contentType: "text/html",
-		data: "${responseMsg}"
+		data: responseMsg
 }
 
 def getWeatherTile() {
 	//log.debug "${params} ${request.requestSource}"
-	return renderDeviceTiles("ApiXU Weather Driver Min")
+	def weather = parent.getSettingVal("weatherDevice")
+	if( weather?.typeName in ["ApiXU Weather Driver Min", "DarkSky.net Weather Driver", "OpenWeatherMap-NWS Alerts Weather Driver" ]){
+		return renderDeviceTiles((String)weather.typeName)
+	}
+	LogAction("getWeatherTile: Invalid Option Received ${weather.typeName}", "warn", true)
+	return null
 }
 
 def getProtTiles() {
@@ -805,12 +808,12 @@ def getProtTiles() {
 	return renderDeviceTiles("Nest Protect")
 }
 
-def renderDeviceTiles(type=null, theDev=null) {
+def renderDeviceTiles(String type=null, theDev=null) {
 	//log.debug "${params} ${request.requestSource}"
 //	try {
-		def devHtml = ""
-		def navHtml = ""
-		def scrStr = ""
+		String devHtml = ""
+		String navHtml = ""
+		String scrStr = ""
 		def allDevices = []
 		if(theDev) {
 			allDevices << theDev
@@ -824,20 +827,26 @@ def renderDeviceTiles(type=null, theDev=null) {
 
 
 		def devices = allDevices
-		def devNum = 1
-		def myType = type ?: "All Devices"
+		Integer devNum = 1
+		String myType = type ?: "All Devices"
 		devices?.sort {it?.getLabel()}.each { dev ->
 			def navMap = [:]
-			def hasHtml = true // (dev?.hasHtml() == true)
-//Logger("renderDeviceTiles: ${dev.id} ${dev.name} ${theDev?.name} ${dev.typeName}")
-			if( (dev?.typeName in ["Nest Thermostat", "Nest Protect", "ApiXU Weather Driver Min"]) &&
+			Boolean hasHtml = true // (dev?.hasHtml() == true)
+//Logger("renderDeviceTiles: ${dev.id} ${dev.name} ${theDev?.name} 1${dev.typeName}1")
+//			if( dev?.typeName in ["Nest Thermostat", "Nest Protect", "ApiXU Weather Driver Min", "DarkSky.net Weather Driver"]) Logger("found in")
+//		if(		( (hasHtml && !type) || (hasHtml && type && dev?.typeName == type)) ) Logger("found new in")
+			if( (dev?.typeName in ["Nest Thermostat", "Nest Protect", "ApiXU Weather Driver Min", "DarkSky.net Weather Driver", "OpenWeatherMap-NWS Alerts Weather Driver"]) &&
 				( (hasHtml && !type) || (hasHtml && type && dev?.typeName == type)) ) {
-LogTrace("renderDeviceTiles: ${dev.id} ${dev.name} ${theDev?.name} ${dev.typeName}")
+//LogTrace("renderDeviceTiles: ${dev.id} ${dev.name} ${theDev?.name} ${dev.typeName}")
 
-				def myTile
+				String myTile
 				switch (dev.typeName) {
 					case "Nest Thermostat":
 						myTile = getTDeviceTile(devNum, dev)
+						break
+					case "OpenWeatherMap-NWS Alerts Weather Driver":
+					case "DarkSky.net Weather Driver":
+						myTile = getWDDeviceTile(devNum, dev)
 						break
 					case "ApiXU Weather Driver Min":
 						myTile = getWDeviceTile(devNum, dev)
@@ -850,15 +859,16 @@ LogTrace("renderDeviceTiles: ${dev.id} ${dev.name} ${theDev?.name} ${dev.typeNam
 						break
 				}
 
-				navMap = ["key":dev?.getLabel(), "items":[]]
-				def navItems = navHtmlBuilder(navMap, devNum)
+				String lbl= dev.getLabel() ?: dev.name
+				navMap = ["key":lbl, "items":[]]
+				Map navItems = navHtmlBuilder(navMap, devNum)
 				if(navItems?.html) { navHtml += navItems?.html }
 				if(navItems?.js) { scrStr += navItems?.js }
 
 				devHtml += """
 				<div class="panel panel-primary" style="max-width: 600px; margin: 30 auto; position: relative;">
 					<div id="key-item${devNum}" class="panel-heading">
-						<h1 class="panel-title panel-title-text">${dev?.getLabel()}</h1>
+						<h1 class="panel-title panel-title-text">${lbl}</h1>
 					</div>
 					<div class="panel-body">
 						<div style="margin: auto; position: relative;">
@@ -871,10 +881,10 @@ LogTrace("renderDeviceTiles: ${dev.id} ${dev.name} ${theDev?.name} ${dev.typeNam
 			}
 		}
 
-		def myTitle = "All Devices"
+		String myTitle = "All Devices"
 		myTitle = type ? "${type}s" : myTitle
 		myTitle = theDev ? "${theDev.typeName}" : myTitle
-		def html = """
+		String html = """
 		<html lang="en">
 			<head>
 				${getWebHeaderHtml(myType, true, true, true, true)}
@@ -959,10 +969,10 @@ LogTrace("renderDeviceTiles: ${dev.id} ${dev.name} ${theDev?.name} ${dev.typeNam
 //	} catch (ex) { log.error "renderDeviceData Exception:", ex }
 }
 
-def navHtmlBuilder(navMap, idNum) {
-	def res = [:]
-	def htmlStr = ""
-	def jsStr = ""
+Map navHtmlBuilder(navMap, idNum) {
+	Map res = [:]
+	String htmlStr = ""
+	String jsStr = ""
 	if(navMap?.key) {
 		htmlStr += """
 			<div class="nav-cont-bord-div nav-menu">
@@ -984,22 +994,22 @@ def navHtmlBuilder(navMap, idNum) {
 	return res
 }
 
-def navJsBuilder(btnId, divId) {
-	def res = """
+String navJsBuilder(String btnId, String divId) {
+	String res = """
 			\$("#${btnId}").click(function() {
 				\$("html, body").animate({scrollTop: \$("#${divId}").offset().top - hdrHeight - 20},500);
 				closeNavMenu();
 				toggleMenuBtn();
 			});
 	"""
-	return "\n${res}"
+	return '\n'+res
 }
 
 
 
-def getTodaysUsage(dev) {
-	def hm = getHistoryStore(dev)
-	def timeMap = [:]
+Map getTodaysUsage(dev) {
+	Map hm = getHistoryStore(dev)
+	Map timeMap = [:]
 	timeMap << ["cooling":["tData":secToTimeMap(hm?."OpSt_Day${hm.cDy}_c"), "tSec":hm?."OpSt_Day${hm.cDy}_c"]]
 	timeMap << ["heating":["tData":secToTimeMap(hm?."OpSt_Day${hm.cDy}_h"), "tSec":hm?."OpSt_Day${hm.cDy}_h"]]
 	timeMap << ["idle":["tData":secToTimeMap(hm?."OpSt_Day${hm.cDy}_i"), "tSec":hm?."OpSt_Day${hm.cDy}_i"]]
@@ -1009,16 +1019,16 @@ def getTodaysUsage(dev) {
 	return timeMap
 }
 
-def getWeeksUsage(dev) {
-	def hm = getHistoryStore(dev)
-	def timeMap = [:]
-	def coolVal = 0L
-	def heatVal = 0L
-	def idleVal = 0L
-	def fanonlyVal = 0L
-	def fanOnVal = 0L
-	def fanAutoVal = 0L
-	for(int i = 1; i <= 7; i++) {
+Map getWeeksUsage(dev) {
+	Map hm = getHistoryStore(dev)
+	Map timeMap = [:]
+	Long coolVal = 0L
+	Long heatVal = 0L
+	Long idleVal = 0L
+	Long fanonlyVal = 0L
+	Long fanOnVal = 0L
+	Long fanAutoVal = 0L
+	for(Integer i = 1; i <= 7; i++) {
 		coolVal = coolVal + hm?."OpSt_Day${i}_c"?.toInteger()
 		heatVal = heatVal + hm?."OpSt_Day${i}_h"?.toInteger()
 		idleVal = idleVal + hm?."OpSt_Day${i}_i"?.toInteger()
@@ -1036,11 +1046,11 @@ def getWeeksUsage(dev) {
 	return timeMap
 }
 
-def getMonthsUsage(monNum,dev) {
+Map getMonthsUsage(monNum,dev) {
 	LogTrace("getMonthsUsage ${monNum}")
-	def hm = getHistoryStore(dev)
-	def timeMap = [:]
-	def mVal = (monNum >= 1 && monNum <= 12) ? monNum : hm?.curMon
+	Map hm = getHistoryStore(dev)
+	Map timeMap = [:]
+	Integer mVal = (monNum >= 1 && monNum <= 12) ? monNum : hm?.curMon
 	timeMap << ["cooling":["tData":secToTimeMap(hm?."OpSt_M${mVal}_c"), "tSec":hm?."OpSt_M${mVal}_c"]]
 	timeMap << ["heating":["tData":secToTimeMap(hm?."OpSt_M${mVal}_h"), "tSec":hm?."OpSt_M${mVal}_h"]]
 	timeMap << ["idle":["tData":secToTimeMap(hm?."OpSt_M${mVal}_i"), "tSec":hm?."OpSt_M${mVal}_i"]]
@@ -1051,15 +1061,15 @@ def getMonthsUsage(monNum,dev) {
 	return timeMap
 }
 
-def getLast3MonthsUsageMap(dev) {
-	def hm = getHistoryStore(dev)
-	def timeMap = [:]
-	def cnt = 1
-	def mVal = (int) hm?.curMon
+Map getLast3MonthsUsageMap(dev) {
+	Map hm = getHistoryStore(dev)
+	Map timeMap = [:]
+	Integer cnt = 1
+	Integer mVal = (Integer) hm?.curMon
 	if(mVal) {
-		for(int i=1; i<=3; i++) {
-			def newMap = [:]
-			def mName = getMonthNumToStr(mVal)
+		for(Integer i=1; i<=3; i++) {
+			Map newMap = [:]
+			String mName = getMonthNumToStr(mVal)
 			//log.debug "$mName Usage - Idle: (${hm?."OpSt_M${mVal}_i"}) | Heat: (${hm?."OpSt_M${mVal}_h"}) | Cool: (${hm?."OpSt_M${mVal}_c"})"
 			newMap << ["cooling":["tSec":(hm?."OpSt_M${mVal}_c" ?: 0L), "iNum":cnt, "mName":mName]]
 			newMap << ["heating":["tSec":(hm?."OpSt_M${mVal}_h" ?: 0L), "iNum":cnt, "mName":mName]]
@@ -1075,15 +1085,15 @@ def getLast3MonthsUsageMap(dev) {
 	return timeMap
 }
 
-def getMonthNumToStr(val) {
-	def mons = [1:"Jan", 2:"Feb", 3:"Mar", 4:"Apr", 5:"May", 6:"June", 7:"July", 8:"Aug", 9:"Sept", 10:"Oct", 11:"Nov", 12:"Dec"]
+String getMonthNumToStr(val) {
+	Map mons = [1:"Jan", 2:"Feb", 3:"Mar", 4:"Apr", 5:"May", 6:"June", 7:"July", 8:"Aug", 9:"Sept", 10:"Oct", 11:"Nov", 12:"Dec"]
 	def res = mons?.find { key, value -> key.toInteger() == val?.toInteger() }
-	return res ? res?.value : "unknown"
+	return res ? (String)res.value : "unknown"
 }
 
 /*
 def getYearsUsage(dev) {
-	def hm = getHistoryStore(dev)
+	Map hm = getHistoryStore(dev)
 	def timeMap = [:]
 	def coolVal = 0L
 	def heatVal = 0L
@@ -1120,7 +1130,7 @@ def doSomething() {
 
 Map getHistoryStore(dev) {
 	LogTrace("getHistoryStore(${dev.id})...")
-	Map thm = state?."thermStor${dev.id}"
+	Map thm = state."thermStor${dev.id}"
 	if(thm == null || thm == [:]) {
 		log.error "thm is null"
 		return
@@ -1128,12 +1138,12 @@ Map getHistoryStore(dev) {
 //Logger("getHistoryStore:	thm: ${thm}")
 	Map hm = thm.clone()
 
-	long Op_cusage = getSumUsage(state."oprStTbl${dev.id}", "cooling")
-	long Op_husage = getSumUsage(state."oprStTbl${dev.id}", "heating")
-	long OpIdle = getSumUsage(state."oprStTbl${dev.id}", "idle")
-	long Op_fo = getSumUsage(state."oprStTbl${dev.id}", "fan only")
-	long FanOn = getSumUsage(state."fanTbl${dev.id}", "on")
-	long FanAuto = getSumUsage(state."fanTbl${dev.id}", "auto")
+	Long Op_cusage = getSumUsage(state."oprStTbl${dev.id}", "cooling")
+	Long Op_husage = getSumUsage(state."oprStTbl${dev.id}", "heating")
+	Long OpIdle = getSumUsage(state."oprStTbl${dev.id}", "idle")
+	Long Op_fo = getSumUsage(state."oprStTbl${dev.id}", "fan only")
+	Long FanOn = getSumUsage(state."fanTbl${dev.id}", "on")
+	Long FanAuto = getSumUsage(state."fanTbl${dev.id}", "auto")
 
 	//log.info "FanOn ${FanOn} FanAuto: ${FanAuto} OpIdle: ${OpIdle} cool: ${Op_cusage} heat: ${Op_husage}"
 	//log.debug "cDy ${hm.cDy} | curMon ${hm.curMon} | curYr: ${hm.curYr}"
@@ -1145,7 +1155,7 @@ Map getHistoryStore(dev) {
 	hm."FanM_Day${hm.cDy}_On" = FanOn
 	hm."FanM_Day${hm.cDy}_auto" = FanAuto
 
-	long t1 = hm?."OpSt_M${hm.curMon}_c"?.toInteger() ?: 0L
+	Long t1 = hm?."OpSt_M${hm.curMon}_c"?.toInteger() ?: 0L
 	hm."OpSt_M${hm.curMon}_c" = t1 + Op_cusage
 	t1 = hm?."OpSt_M${hm.curMon}_h"?.toInteger() ?: 0L
 	hm."OpSt_M${hm.curMon}_h" = t1 + Op_husage
@@ -1174,10 +1184,10 @@ Map getHistoryStore(dev) {
 	return hm
 }
 
-def getIntListAvg(itemList) {
+Integer getIntListAvg(itemList) {
 	//log.debug "itemList: ${itemList}"
 	def avgRes = 0
-	def iCnt = itemList?.size()
+	Integer iCnt = itemList?.size()
 	if(iCnt >= 1) {
 		if(iCnt > 1) {
 			avgRes = (itemList?.sum().toDouble() / iCnt.toDouble()).round(0)
@@ -1187,53 +1197,53 @@ def getIntListAvg(itemList) {
 	return avgRes.toInteger()
 }
 
-def secToTimeMap(long seconds) {
-	long sec = (seconds % 60) ?: 0L
-	long minutes = ((seconds % 3600) / 60) ?: 0L
-	long hours = ((seconds % 86400) / 3600) ?: 0L
-	long days = (seconds / 86400) ?: 0L
-	long years = (days / 365) ?: 0L
-	def res = ["m":minutes, "h":hours, "d":days, "y":years]
+Map secToTimeMap(Long seconds) {
+	Long sec = (seconds % 60) ?: 0L
+	Long minutes = ((seconds % 3600) / 60) ?: 0L
+	Long hours = ((seconds % 86400) / 3600) ?: 0L
+	Long days = (seconds / 86400) ?: 0L
+	Long years = (days / 365) ?: 0L
+	Map res = ["m":minutes, "h":hours, "d":days, "y":years]
 	return res
 }
 
-def extWeatTempAvail() {
+Boolean extWeatTempAvail() {
 	//def weather = parent.getSettingVal("weatherDevice")
-	if(state?.haveWeather == null) {
+	if(state.haveWeather == null) {
 		state.haveWeather = parent.getSettingVal("weatherDevice") ? true : false
 	}
-	return state?.haveWeather ? true : false
+	return (Boolean)state.haveWeather
 }
 
-def getTDeviceTile(devNum, dev) {
-	LogTrace("getTDeviceTile ${dev.label} ${dev.id}")
+String getTDeviceTile(Integer devNum, dev) {
+	LogTrace("getTDeviceTile ${dev?.label} ${dev.id}")
 //	try {
-		def tempStr = getTempUnitStr()
+		String tempStr = getTempUnitStr()
 		//LogAction("State Size: ${getStateSize()} (${getStateSizePerc()}%)")
 //Logger("T1")
-		def canHeat = getCanHeat(dev)
-		def canCool = getCanCool(dev)
-		def hasFan = getHasFan(dev)
-		def leafImg = getHasLeaf(dev) ? getDevImg("nest_leaf_on.gif") : getDevImg("nest_leaf_off.gif")
+		Boolean canHeat = getCanHeat(dev)
+		Boolean canCool = getCanCool(dev)
+		Boolean hasFan = getHasFan(dev)
+		String leafImg = getHasLeaf(dev) ? getDevImg("nest_leaf_on.gif") : getDevImg("nest_leaf_off.gif")
 //Logger("T2")
 
 		def timeToTarget = dev.currentState("timeToTarget").value
 //Logger("3")
-		def sunCorrectStr = dev.currentState("sunlightCorrectionEnabled").value.toBoolean() ? "Enabled (${dev.currentState("sunlightCorrectionActive").value.toBoolean() == true ? "Active" : "Inactive"})" : "Disabled"
-		def refreshBtnHtml = true /* parent.getStateVal("mobileClientType") == "ios" */ ?
+		String sunCorrectStr = dev.currentState("sunlightCorrectionEnabled").value.toBoolean() ? "Enabled (${dev.currentState("sunlightCorrectionActive").value.toBoolean() == true ? "Active" : "Inactive"})" : "Disabled"
+		String refreshBtnHtml = true /* parent.getStateVal("mobileClientType") == "ios" */ ?
 				"""<div class="pageFooterBtn"><button type="button" class="btn btn-info pageFooterBtn" onclick="reloadTstatPage()"><span>&#10227;</span> Refresh</button></div>""" : ""
 //Logger("4")
-		def chartHtml = (
-//				state?.showGraphs &&
-				state?."tempTbl${dev.id}"?.size() > 0 &&
-				state?."oprStTbl${dev.id}"?.size() > 0 &&
-				state?."tempTblYest${dev.id}"?.size() > 0 &&
-				state?."humTbl${dev.id}"?.size() > 0 &&
-				state?."cspTbl${dev.id}"?.size() > 0 &&
-				state?."hspTbl${dev.id}"?.size() > 0) ? showChartHtml(devNum, dev) : (true /* state?.showGraphs */ ? hideChartHtml() : "")
+		String chartHtml = (
+//				state.showGraphs &&
+				state."tempTbl${dev.id}"?.size() > 0 &&
+				state."oprStTbl${dev.id}"?.size() > 0 &&
+				state."tempTblYest${dev.id}"?.size() > 0 &&
+				state."humTbl${dev.id}"?.size() > 0 &&
+				state."cspTbl${dev.id}"?.size() > 0 &&
+				state."hspTbl${dev.id}"?.size() > 0) ? showChartHtml(devNum, dev) : (true /* state.showGraphs */ ? hideChartHtml() : "")
 
-		def schedData = state?.curAutoSchedData
-		def schedHtml = ""
+		Map schedData = state.curAutoSchedData
+		String schedHtml = ""
 //Logger("5")
 		if(schedData) {
 			schedHtml = """
@@ -1260,7 +1270,7 @@ def getTDeviceTile(devNum, dev) {
 						<tbody class="sched">
 							<tr>
 								<td>${schedData?.tempSrcDesc}</td>
-								<td>${schedData?.curZoneTemp}&deg;${state?.tempUnit}</td>
+								<td>${schedData?.curZoneTemp}&deg;${state.tempUnit}</td>
 							</tr>
 						</tbody>
 					</table>
@@ -1273,8 +1283,8 @@ def getTDeviceTile(devNum, dev) {
 						</thead>
 						<tbody>
 							<tr>
-								<td>${schedData?.reqSenHeatSetPoint ? "${schedData?.reqSenHeatSetPoint}&deg;${state?.tempUnit}": "Not Available"}</td>
-								<td>${schedData?.reqSenCoolSetPoint ? "${schedData?.reqSenCoolSetPoint}&deg;${state?.tempUnit}": "Not Available"}</td>
+								<td>${schedData?.reqSenHeatSetPoint ? "${schedData?.reqSenHeatSetPoint}&deg;${state.tempUnit}": "Not Available"}</td>
+								<td>${schedData?.reqSenCoolSetPoint ? "${schedData?.reqSenCoolSetPoint}&deg;${state.tempUnit}": "Not Available"}</td>
 							</tr>
 						</tbody>
 					</table>
@@ -1283,12 +1293,12 @@ def getTDeviceTile(devNum, dev) {
 			"""
 		}
 
-		def chgDescHtml = ""
+		String chgDescHtml = ""
 //Logger("6")
 		def onlineStatus = dev.currentState("onlineStatus").value
 		def apiStatus = dev.currentState("apiStatus").value
 
-		def html = """
+		String html = """
 			<div class="device">
 				<div class="swiper-container-${devNum}" style="max-width: 100%; overflow: hidden;">
 					<!-- Additional required wrapper -->
@@ -1342,8 +1352,8 @@ def getTDeviceTile(devNum, dev) {
 								  <tr>
 									<td>${dev.currentState("softwareVer").value?.toString()}</td>
 									<td class="dateTimeTextTile">${dev.currentState("lastConnection").value?.toString()}</td>
-			<!--						<td>${state?.debugStatus}</td>		-->
-			<!--						<td>${state?.devTypeVer?.toString()}</td>	-->
+			<!--						<td>${state.debugStatus}</td>		-->
+			<!--						<td>${state.devTypeVer?.toString()}</td>	-->
 								  </tr>
 								</tbody>
 							  </table>
@@ -1420,8 +1430,8 @@ def getTDeviceTile(devNum, dev) {
 */
 }
 
-def getWebHeaderHtml(title, clipboard=true, vex=false, swiper=false, charts=false) {
-	def html = """
+String getWebHeaderHtml(String title, Boolean clipboard=true, Boolean vex=false, Boolean swiper=false, Boolean charts=false) {
+	String html = """
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 		<meta name="description" content="NST Graphs">
@@ -1459,8 +1469,8 @@ def getWebHeaderHtml(title, clipboard=true, vex=false, swiper=false, charts=fals
 	return html
 }
 
-def hideChartHtml() {
-	def data = """
+static String hideChartHtml() {
+	String data = """
 		<div class="swiper-slide">
 			<section class="sectionBg" style="min-height: 250px;">
 				<h3>Event History</h3>
@@ -1480,42 +1490,42 @@ String getDataTString(Integer seriesIndex,dev) {
 	def dataTable = []
 	switch (seriesIndex) {
 		case 1:
-			dataTable = state?."tempTblYest${dev.id}"
+			dataTable = state."tempTblYest${dev.id}"
 			break
 		case 2:
-			dataTable = state?."tempTbl${dev.id}"
+			dataTable = state."tempTbl${dev.id}"
 			break
 		case 3:
-			dataTable = state?."oprStTbl${dev.id}"
+			dataTable = state."oprStTbl${dev.id}"
 			break
 		case 4:
-			dataTable = state?."humTbl${dev.id}"
+			dataTable = state."humTbl${dev.id}"
 			break
 		case 5:
-			dataTable = state?."cspTbl${dev.id}"
+			dataTable = state."cspTbl${dev.id}"
 			break
 		case 6:
-			dataTable = state?."hspTbl${dev.id}"
+			dataTable = state."hspTbl${dev.id}"
 			break
 		case 7:
-			dataTable = state?."eTempTbl"
+			dataTable = state."eTempTbl"
 			break
 		case 8:
-			dataTable = state?."fanTbl${dev.id}"
+			dataTable = state."fanTbl${dev.id}"
 			break
 	}
 
-	def lastVal = 200
+	Integer lastVal = 200
 
 	//LogAction("getDataTString ${seriesIndex} ${dataTable}")
 	//LogAction("getDataTString ${seriesIndex}")
 
-	def lastAdded = false
+	Boolean lastAdded = false
 	def dataArray
 	def myval
-	def myindex
+	Integer myindex
 	def lastdataArray = null
-	def dataString = ""
+	String dataString = ""
 
 	if(seriesIndex == 5) {
 	// state.can_cool
@@ -1524,21 +1534,21 @@ String getDataTString(Integer seriesIndex,dev) {
 		// state.can_heat
 	}
 	if(seriesIndex == 8) {
-		//state?.has_fan
+		//state.has_fan
 	}
-	def myhas_fan = getHasFan(dev) && false ? true : false	// false because not graphing fan operation now
+	Boolean myhas_fan = getHasFan(dev) && false ? true : false	// false because not graphing fan operation now
 
-	def has_weather = extWeatTempAvail()
-	//if( !(state?.curWeatData == null || state?.curWeatData == [:])) { has_weather = true }
-	def canHeat = getCanHeat(dev)
-	def canCool = getCanCool(dev)
+	Boolean has_weather = extWeatTempAvail()
+	//if( !(state.curWeatData == null || state.curWeatData == [:])) { has_weather = true }
+	Boolean canHeat = getCanHeat(dev)
+	Boolean canCool = getCanCool(dev)
 
-	def datacolumns
+	Integer datacolumns
 
 	myindex = seriesIndex
 //ERSERS
 	datacolumns = 8
-	//if(state?.can_heat && state?.can_cool && myhas_fan && has_weather) { datacolumns = 8 }
+	//if(state.can_heat && state.can_cool && myhas_fan && has_weather) { datacolumns = 8 }
 	if(!myhas_fan) {
 		datacolumns -= 1
 	}
@@ -1649,16 +1659,16 @@ String getDataTString(Integer seriesIndex,dev) {
 	presence		"presence"			getPresence			true				present  not present
 */
 
-void getSomeData(dev, devpoll = false) {
-	//LogTrace("getSomeData ${app} ${dev.label} ${dev.id}")
+void getSomeData(dev, Boolean devpoll = false) {
+	//LogTrace("getSomeData ${app} ${dev?.label} ${dev.id}")
 
 
 //ERS
-	def today = new Date()
-	def todayDay = today.format("dd",location.timeZone)
+	Date today = new Date()
+	String todayDay = today.format("dd",location.timeZone)
 //Logger("getSomeData: ${today} ${todayDay} ${dev.id}")
 
-	if(state?."tempTbl${dev.id}" == null) {
+	if(state."tempTbl${dev.id}" == null) {
 
 		state."tempTbl${dev.id}" = []
 		state."oprStTbl${dev.id}" = []
@@ -1670,13 +1680,13 @@ void getSomeData(dev, devpoll = false) {
 		addNewData(dev)
 	}
 
-	def tempTbl = state?."tempTbl${dev.id}"
-	def oprStTbl = state?."oprStTbl${dev.id}"
-	def humTbl = state?."humTbl${dev.id}"
-	def cspTbl = state?."cspTbl${dev.id}"
-	def hspTbl = state?."hspTbl${dev.id}"
-	def eTempTbl = state?."eTempTbl"
-	def fanTbl = state?."fanTbl${dev.id}"
+	def tempTbl = state."tempTbl${dev.id}"
+	def oprStTbl = state."oprStTbl${dev.id}"
+	def humTbl = state."humTbl${dev.id}"
+	def cspTbl = state."cspTbl${dev.id}"
+	def hspTbl = state."hspTbl${dev.id}"
+	def eTempTbl = state."eTempTbl"
+	def fanTbl = state."fanTbl${dev.id}"
 
 
 /*
@@ -1688,12 +1698,12 @@ void getSomeData(dev, devpoll = false) {
 	}
 */
 
-	def hm = state?."thermStor${dev.id}"
+	Map hm = state."thermStor${dev.id}"
 	if(hm == null) {
 		initHistoryStore(dev)
 	}
 
-	if(state?."tempTblYest${dev.id}"?.size() == 0) {
+	if(state."tempTblYest${dev.id}"?.size() == 0) {
 		state."tempTblYest${dev.id}" = tempTbl
 		state."oprStTblYest${dev.id}" = oprStTbl
 		state."humTblYest${dev.id}" = humTbl
@@ -1704,7 +1714,7 @@ void getSomeData(dev, devpoll = false) {
 	}
 
 // DAY CHANGE
-	if(!state?."today${dev.id}" || state."today${dev.id}" != todayDay) {
+	if(!state."today${dev.id}" || state."today${dev.id}" != todayDay) {
 		state."today${dev.id}" = todayDay
 		state."tempTblYest${dev.id}" = tempTbl
 		state."oprStTblYest${dev.id}" = oprStTbl
@@ -1730,22 +1740,22 @@ void getSomeData(dev, devpoll = false) {
 	//def bb = getHistoryStore(dev)	// ERSTODO DEBUGGING
 }
 
-def getCanHeat(dev) {
+Boolean getCanHeat(dev) {
 	def t0 = dev.currentState("canHeat")?.value
 	return t0?.toString() == "false" ? false : true
 }
 
-def getCanCool(dev) {
+Boolean getCanCool(dev) {
 	def t0 = dev.currentState("canCool")?.value
 	return t0?.toString() == "false" ? false : true
 }
 
-def getHasFan(dev) {
+Boolean getHasFan(dev) {
 	def t0 = dev.currentState("hasFan")?.value
 	return t0?.toString() == "false" ? false : true
 }
 
-def getHasLeaf(dev) {
+String getHasLeaf(dev) {
 	def t0 = dev.currentState("hasLeaf")?.value
 	return !t0 ? "unknown" : t0?.toString()
 }
@@ -1753,57 +1763,51 @@ def getHasLeaf(dev) {
 private cast(value, dataType) {
 	switch(dataType) {
 		case "number":
-			if (value == null) return (int) 0
+			if (value == null) return (Integer) 0
 			if (value instanceof String) {
 				if (value.isInteger())
 					return value.toInteger()
 				if (value.isFloat())
-					return (int) Math.floor(value.toFloat())
+					return (Integer) Math.floor(value.toFloat())
 				if (value in trueStrings)
-					return (int) 1
+					return (Integer) 1
 			}
-			def result = (int) 0
+			Integer result = (Integer) 0
 			try {
-				result = (int) value
+				result = (Integer) value
 			} catch(all) {
-				result = (int) 0
+				result = (Integer) 0
 			}
-			return result ? result : (int) 0
+			return result ? result : (Integer) 0
 		case "decimal":
-			if (value == null) return (float) 0
+			if (value == null) return (Float) 0
 			if (value instanceof String) {
 				if (value.isFloat())
-					return (float) value.toFloat()
+					return (Float) value.toFloat()
 				if (value.isInteger())
-					return (float) value.toInteger()
+					return (Float) value.toInteger()
 				if (value in trueStrings)
-					return (float) 1
+					return (Float) 1
 			}
-			def result = (float) 0
+			Float result = (Float) 0
 			try {
-				result = (float) value
+				result = (Float) value
 			} catch(all) {
 			}
-			return result ? result : (float) 0
+			return result ? result : (Float) 0
 	}
-}
-
-def getTemp(dev) {
-	def t0 = dev.currentState("temperature")?.value
-	int t1 = cast(t0, "decimal")
-	return t1
 }
 
 def getApiXUData(dev) {
 	def obs = [:]
-	if(state?.obs) {
+	if(state.obs) {
 		obs = state.obs
-		def t0 = "${obs.current.last_updated}"
-		def t1 = formatDt(Date.parse("yyyy-MM-dd HH:mm", t0))
+		String t0 = "${obs.current.last_updated}"
+		String t1 = formatDt(Date.parse("yyyy-MM-dd HH:mm", t0))
 //	def start = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
 //	def localMidNight = Date.parse("yyyy-MM-dd HH:mm", t0).getTime()
 //	def localMidNightf = Date.parse("yyyy-MM-dd hh:mm a", t0)
-		def s = GetTimeDiffSeconds(t1, null, "getApiXUData").toInteger()
+		Integer s = GetTimeDiffSeconds(t1, null, "getApiXUData").toInteger()
 		if(s > (60*60*4)) {  // we are doing this primarily for forecasts
 			stateRemove("obs")
 		} else return obs
@@ -1826,12 +1830,6 @@ def getApiXUData(dev) {
 	return obs
 }
 
-def getDewpoint(dev) {
-	def t0 = dev.currentState("dewpoint")?.value
-	int t1 = cast(t0, "decimal")
-	return t1
-}
-
 def getCoolTemp(dev) {
 	def t0 = dev.currentState("coolingSetpoint")?.value
 	return t0 ? t0 : 0
@@ -1842,7 +1840,7 @@ def getHeatTemp(dev) {
 	return t0 ? t0 : 0
 }
 
-def getHvacState(dev) {
+String getHvacState(dev) {
 	def t0 = dev.currentState("thermostatOperatingState")?.value
 	return !t0 ? "unknown" : t0?.toString()
 }
@@ -1852,14 +1850,14 @@ def getHumidity(dev) {
 	return t0 ? t0 : 0
 }
 
-def getFanMode(dev) {
+String getFanMode(dev) {
 	def t0 = dev.currentState("thermostatFanMode")?.value
 	return !t0 ? "unknown" : t0?.toString()
 }
 
-def getTZ(dev) {
+String getTZ(dev) {
 	def t0 = dev.currentState("tz_id")?.value
-	return !t0 ? null : t0?.toString()
+	return !t0 ? (String)null : t0?.toString()
 }
 
 /*
@@ -1880,7 +1878,7 @@ def getDeviceTempAvg(items) {
 */
 
 
-def addNewData(dev) {
+void addNewData(dev) {
 	def currentTemperature = getTemp(dev)
 	def currentcoolSetPoint = getCoolTemp(dev)
 	def currentheatSetPoint = getHeatTemp(dev)
@@ -1895,18 +1893,18 @@ def addNewData(dev) {
 	}
 	def currentExternal = temp0
 
-	def tempTbl = state?."tempTbl${dev.id}"
-	def oprStTbl = state?."oprStTbl${dev.id}"
-	def humTbl = state?."humTbl${dev.id}"
-	def cspTbl = state?."cspTbl${dev.id}"
-	def hspTbl = state?."hspTbl${dev.id}"
-	def eTempTbl = state?."eTempTbl"
-	def fanTbl = state?."fanTbl${dev.id}"
+	def tempTbl = state."tempTbl${dev.id}"
+	def oprStTbl = state."oprStTbl${dev.id}"
+	def humTbl = state."humTbl${dev.id}"
+	def cspTbl = state."cspTbl${dev.id}"
+	def hspTbl = state."hspTbl${dev.id}"
+	def eTempTbl = state."eTempTbl"
+	def fanTbl = state."fanTbl${dev.id}"
 
 	// add latest coolSetpoint & temperature readings for the graph
-	def newDate = new Date()
-	def hr = newDate.format("H", location.timeZone) as Integer
-	def mins = newDate.format("m", location.timeZone) as Integer
+	Date newDate = new Date()
+	Integer hr = newDate.format("H", location.timeZone) as Integer
+	Integer mins = newDate.format("m", location.timeZone) as Integer
 
 //Logger("addNewData currentTemp: ${currentTemperature}	tempTbl: ${tempTbl}", "trace")
 //Logger("addNewData ${dev.id} hr: ${hr} mins: ${mins}", "trace")
@@ -1925,17 +1923,17 @@ def addNewData(dev) {
 def updateOperatingHistory(today, dev) {
 	LogTrace("updateOperatingHistory(${today}, ${dev.id})...", "trace")
 
-	def dayChange = false
-	def monthChange = false
-	def yearChange = false
+	Boolean dayChange = false
+	Boolean monthChange = false
+	Boolean yearChange = false
 
-	def hm = state?."thermStor${dev.id}"
+	Map hm = state."thermStor${dev.id}"
 	if(hm == null) {
 		log.error "hm is null"
 		return
 	}
-	def dayNum = today.format("u", location.timeZone).toInteger() // 1 = Monday,... 7 = Sunday
-	def monthNum = today.format("MM", location.timeZone).toInteger()
+	Integer dayNum = today.format("u", location.timeZone).toInteger() // 1 = Monday,... 7 = Sunday
+	Integer monthNum = today.format("MM", location.timeZone).toInteger()
 	def yearNum = today[Calendar.YEAR]
 	//def yearNum = today.format("YYYY", location.timeZone).toInteger()  DOES NOT WORK
 
@@ -1970,12 +1968,12 @@ def updateOperatingHistory(today, dev) {
 	if(dayChange) {
 			stateRemove("obs") // get new forecasts
 //		try {
-			long Op_cusage = getSumUsage(state."oprStTblYest${dev.id}", "cooling")
-			long Op_husage = getSumUsage(state."oprStTblYest${dev.id}", "heating")
-			long OpIdle = getSumUsage(state."oprStTblYest${dev.id}", "idle")
-			long Op_fo = getSumUsage(state."oprStTblYest${dev.id}", "fan only")
-			long FanOn = getSumUsage(state."fanTblYest${dev.id}", "on")
-			long FanAuto = getSumUsage(state."fanTblYest${dev.id}", "auto")
+			Long Op_cusage = getSumUsage(state."oprStTblYest${dev.id}", "cooling")
+			Long Op_husage = getSumUsage(state."oprStTblYest${dev.id}", "heating")
+			Long OpIdle = getSumUsage(state."oprStTblYest${dev.id}", "idle")
+			Long Op_fo = getSumUsage(state."oprStTblYest${dev.id}", "fan only")
+			Long FanOn = getSumUsage(state."fanTblYest${dev.id}", "on")
+			Long FanAuto = getSumUsage(state."fanTblYest${dev.id}", "auto")
 
 			Logger("FanOn ${FanOn} FanAuto: ${FanAuto} OpIdle: ${OpIdle} cool: ${Op_cusage} heat: ${Op_husage} fanonly: ${Op_fo}")
 
@@ -2000,7 +1998,7 @@ def updateOperatingHistory(today, dev) {
 			hm."FanM_Day${hm.cDy}_On" = 0L
 			hm."FanM_Day${hm.cDy}_auto" = 0L
 
-			long t1 = hm?."OpSt_M${hm.curMon}_c"?.toInteger() ?: 0L
+			Long t1 = hm?."OpSt_M${hm.curMon}_c"?.toInteger() ?: 0L
 			hm."OpSt_M${hm.curMon}_c" = t1 + Op_cusage
 			t1 = hm?."OpSt_M${hm.curMon}_h"?.toInteger() ?: 0L
 			hm."OpSt_M${hm.curMon}_h" = t1 + Op_husage
@@ -2072,18 +2070,18 @@ def updateOperatingHistory(today, dev) {
 
 def getSumUsage(table, String strtyp) {
 	//log.trace "getSumUsage...$strtyp Table size: ${table?.size()}"
-	long totseconds = 0L
-	long newseconds = 0L
+	Long totseconds = 0L
+	Long newseconds = 0L
 
-	def hr
-	def mins
-	def myval
-	def lasthr = 0
-	def lastmins = 0
-	def counting = false
-	def firsttime = true
-	def strthr
-	def strtmin
+	Integer hr
+	Integer mins
+	String myval
+	Integer lasthr = 0
+	Integer lastmins = 0
+	Boolean counting = false
+	Boolean firsttime = true
+	Integer strthr
+	Integer strtmin
 	table.sort { a, b ->
 		a[0] as Integer <=> b[0] as Integer ?: a[1] as Integer <=> b[1] as Integer ?: a[2] <=> b[2]
 	}
@@ -2108,7 +2106,7 @@ def getSumUsage(table, String strtyp) {
 		firsttime = false
 	}
 	if(counting) {
-		def newDate = new Date()
+		Date newDate = new Date()
 		lasthr = newDate.format("H", location.timeZone).toInteger()
 		lastmins = newDate.format("m", location.timeZone).toInteger()
 		if( (hr*60+mins > lasthr*60+lastmins) ) {
@@ -2130,16 +2128,16 @@ void initHistoryStore(dev) {
 
 	def mytimeZone = location.timeZone
 
-	def today = new Date()
-	def dayNum = today.format("u", mytimeZone) as Integer // 1 = Monday,... 7 = Sunday
-	def monthNum = today.format("MM", mytimeZone) as Integer
-	def yearNum = today[Calendar.YEAR]
+	Date today = new Date()
+	Integer dayNum = today.format("u", mytimeZone) as Integer // 1 = Monday,... 7 = Sunday
+	Integer monthNum = today.format("MM", mytimeZone) as Integer
+	Integer yearNum = today[Calendar.YEAR]
 	//def yearNum = today.format("YYYY", mytimeZone) as Integer DOES NOT WORK
 
 	LogTrace("initHIstoryStore: dayNum: ${dayNum} | monthNum: ${monthNum} | yearNum: ${yearNum} ")
 	//dayNum = 6	// ERSTODO DEBUGGING
 
-	def thermStor = [ "cDy": dayNum, "curMon": monthNum, "curYr": yearNum, //"tz": mytimeZone,
+	Map thermStor = [ "cDy": dayNum, "curMon": monthNum, "curYr": yearNum, //"tz": mytimeZone,
 		OpSt_DWago_c: 0L, OpSt_DWago_h: 0L, OpSt_DWago_i: 0L, OpSt_DWago_fo: 0L,
 		OpSt_MYago_c: 0L, OpSt_MYago_h: 0L, OpSt_MYago_i: 0L, OpSt_MYago_fo: 0L,
 		OpSt_thisY_c: 0L, OpSt_thisY_h: 0L, OpSt_thisY_i: 0L, OpSt_thisY_fo: 0L,
@@ -2150,12 +2148,12 @@ void initHistoryStore(dev) {
 		FanM_lastY_On: 0L, FanM_lastY_auto: 0L
 	]
 
-	for(int i = 1; i <= 7; i++) {
+	for(Integer i = 1; i <= 7; i++) {
 		thermStor << ["OpSt_Day${i}_c": 0L, "OpSt_Day${i}_h": 0L, "OpSt_Day${i}_i": 0L, "OpSt_Day${i}_fo": 0L]
 		thermStor << ["FanM_Day${i}_On": 0L, "FanM_Day${i}_auto": 0L]
 	}
 
-	for(int i = 1; i <= 12; i++) {
+	for(Integer i = 1; i <= 12; i++) {
 		thermStor << ["OpSt_M${i}_c": 0L, "OpSt_M${i}_h": 0L, "OpSt_M${i}_i": 0L, "OpSt_M${i}_fo": 0L]
 		thermStor << ["FanM_M${i}_On": 0L, "FanM_M${i}_auto": 0L]
 	}
@@ -2164,28 +2162,28 @@ void initHistoryStore(dev) {
 	state."thermStor${dev.id}" = thermStor
 }
 
-def showChartHtml(devNum="", dev) {
-	def tempStr = getTempUnitStr()
+String showChartHtml(Integer devNum, dev) {
+	String tempStr = getTempUnitStr()
 
-	def canHeat = getCanHeat(dev)
+	Boolean canHeat = getCanHeat(dev)
 //Logger("showChart 0")
-	def canCool = getCanCool(dev)
-	def hasFan = getHasFan(dev)
-	def has_weather = extWeatTempAvail()
-	def commastr = has_weather ? "," : ""
+	Boolean canCool = getCanCool(dev)
+	Boolean hasFan = getHasFan(dev)
+	Boolean has_weather = extWeatTempAvail()
+	String commastr = has_weather ? "," : ""
 //Logger("showChart 1")
-	def coolstr1
-	def coolstr2
-	def coolstr3
+	String coolstr1
+	String coolstr2
+	String coolstr3
 	if(canCool) {
 		coolstr1 = "data.addColumn('number', 'CoolSP');"
 		coolstr2 = getDataTString(5,dev)
 		coolstr3 = "4: {targetAxisIndex: 1, type: 'line', color: '#85AAFF', lineWidth: 1},"
 	}
 
-	def heatstr1
-	def heatstr2
-	def heatstr3
+	String heatstr1
+	String heatstr2
+	dString heatstr3
 //Logger("showChart 2")
 	if(canHeat) {
 		heatstr1 = "data.addColumn('number', 'HeatSP');"
@@ -2193,10 +2191,10 @@ def showChartHtml(devNum="", dev) {
 		heatstr3 = "5: {targetAxisIndex: 1, type: 'line', color: '#FF4900', lineWidth: 1}${commastr}"
 	}
 
-	def weathstr1 = "data.addColumn('number', 'ExtTmp');"
-	def weathstr2 = getDataTString(7,dev)
-	def weathstr3 = "6: {targetAxisIndex: 1, type: 'line', color: '#000000', lineWidth: 1}"
-	if(state?.has_weather) {
+	String weathstr1 = "data.addColumn('number', 'ExtTmp');"
+	String weathstr2 = getDataTString(7,dev)
+	String weathstr3 = "6: {targetAxisIndex: 1, type: 'line', color: '#000000', lineWidth: 1}"
+	if(state.has_weather) {
 		weathstr1 = "data.addColumn('number', 'ExtTmp');"
 		weathstr2 = getDataTString(7,dev)
 		weathstr3 = "6: {targetAxisIndex: 1, type: 'line', color: '#000000', lineWidth: 1}"
@@ -2262,11 +2260,11 @@ def showChartHtml(devNum="", dev) {
 	def mfaData = (uData?.fanAuto?.tSec.toLong()/3600).toDouble().round(0)
 //Logger("showChart 5a")
 
-	def useTabListSize = 0
+	Integer useTabListSize = 0
 	if(canHeat) { useTabListSize = useTabListSize+1 }
 	if(canCool) { useTabListSize = useTabListSize+1 }
 	if(hasFan) { useTabListSize = useTabListSize+1 }
-	def lStr = ""
+	String lStr = ""
 	//Last 3 Months and Today Section
 	def grpUseData = getLast3MonthsUsageMap(dev)
 	def m1Data = []
@@ -2284,7 +2282,7 @@ def showChartHtml(devNum="", dev) {
 		def fanAuto = data?.fanAuto ? (data?.fanAuto?.tSec.toLong()/3600).toDouble().round(0) : 0
 		def mName = getMonthNumToStr(mon?.key)
 		lStr += "\n$mName Usage - Idle: ($idle) | Heat: ($heat) | Cool: ($cool) | Fanonly: (${fanonly}) FanOn: ($fanOn) | FanAuto: ($fanAuto)"
-		def iNum = 1
+		Integer iNum = 1
 		if(data?.idle?.iNum) { iNum = data?.idle?.iNum.toInteger() }
 		else if(data?.heating?.iNum) {iNum = data?.heating?.iNum.toInteger() }
 		else if(data?.cooling?.iNum == 1) { iNum = data?.cooling?.iNum.toInteger() }
@@ -2326,7 +2324,7 @@ def showChartHtml(devNum="", dev) {
 
 	LogTrace("showChart: " + lStr)
 
-	def data = """
+	String data = """
 		<script type="text/javascript">
 			google.charts.load('current', {packages: ['corechart']});
 			google.charts.setOnLoadCallback(drawHistoryGraph${devNum});
@@ -2468,17 +2466,18 @@ def showChartHtml(devNum="", dev) {
   		  </div>
 	  """
 	return data
+/* """ */
 }
 
 
 //ERS
 
-def getAppEndpointUrl(subPath) { return "${getFullApiServerUrl()}${subPath ? "/${subPath}" : ""}?access_token=${state?.access_token}" }
-def getLocalEndpointUrl(subPath) { return "${getFullLocalApiServerUrl()}${subPath ? "/${subPath}" : ""}?access_token=${state?.access_token}" }
+String getAppEndpointUrl(subPath) { return "${getFullApiServerUrl()}${subPath ? "/${subPath}" : ""}?access_token=${state.access_token}" }
+String getLocalEndpointUrl(subPath) { return "${getFullLocalApiServerUrl()}${subPath ? "/${subPath}" : ""}?access_token=${state.access_token}" }
 
-def getAccessToken() {
+Boolean getAccessToken() {
 	try {
-		if(!state?.access_token) { state?.access_token = createAccessToken() }
+		if(!state.access_token) { state.access_token = createAccessToken() }
 		else { return true }
 	}
 	catch (ex) {
@@ -2490,7 +2489,7 @@ def getAccessToken() {
 	}
 }
 
-def enableOauth() {
+void enableOauth() {
 	def params = [
 			uri: "http://localhost:8080/app/edit/update?_action_update=Update&oauthEnabled=true&id=${app.appTypeId}",
 			headers: ['Content-Type':'text/html;charset=utf-8']
@@ -2508,8 +2507,8 @@ void resetAppAccessToken(reset) {
 	if(reset != true) { return }
 	LogAction("Resetting Access Token....", "info", true)
 	//revokeAccessToken()
-	state?.access_token = null
-	state?.accessToken = null
+	state.access_token = null
+	state.accessToken = null
 	if(getAccessToken()) {
 		LogAction("Reset Access Token... Successful", "info", true)
 		settingUpdate("resetAppAccessToken", "false", "bool")
@@ -2517,7 +2516,7 @@ void resetAppAccessToken(reset) {
 }
 
 def getSomeWData(dev, devpoll = false) {
-	//LogTrace("getSomeWData ${app} ${dev.label} ${dev.id}")
+	//LogTrace("getSomeWData ${app} ${dev?.label} ${dev.id}")
 
 	//def todayDay = new Date().format("dd",getTimeZone())
 	def mytz = getTZ(dev)
@@ -2527,7 +2526,7 @@ def getSomeWData(dev, devpoll = false) {
 
 //Logger("getSomeWData: todayDay: ${todayDay} ${dev.id} ${tZ}")
 
-	if (state?."WtempTbl${dev.id}" == null) {
+	if (state."WtempTbl${dev.id}" == null) {
 		//getSomeOldData(devpoll)
 
 		state."WtempTbl${dev.id}" = []
@@ -2536,17 +2535,17 @@ def getSomeWData(dev, devpoll = false) {
 		addNewWData(dev, tZ)
 	}
 
-	def tempTbl = state?."WtempTbl${dev.id}"
-	def dewTbl = state?."WdewTbl${dev.id}"
-	def humTbl = state?."WhumTbl${dev.id}"
+	def tempTbl = state."WtempTbl${dev.id}"
+	def dewTbl = state."WdewTbl${dev.id}"
+	def humTbl = state."WhumTbl${dev.id}"
 
-	if (state?."WtempTblYest${dev.id}"?.size() == 0) {
+	if (state."WtempTblYest${dev.id}"?.size() == 0) {
 		state."WtempTblYest${dev.id}" = tempTbl
 		state."WdewTblYest${dev.id}" = dewTbl
 		state."WhumTblYest${dev.id}" = humTbl
 	}
 
-	if (!state?."Wtoday${dev.id}" || state."Wtoday${dev.id}" != todayDay) {
+	if (!state."Wtoday${dev.id}" || state."Wtoday${dev.id}" != todayDay) {
 		state."Wtoday${dev.id}" = todayDay
 		state."WdewTblYest${dev.id}" = dewTbl
 		state."WtempTblYest${dev.id}" = tempTbl
@@ -2565,27 +2564,27 @@ def addNewWData(dev, tZ) {
 	def currentDewpoint = getDewpoint(dev)
 	def currentHumidity = getHumidity(dev)
 
-	def tempTbl = state?."WtempTbl${dev.id}"
-	def dewTbl = state?."WdewTbl${dev.id}"
-	def humTbl = state?."WhumTbl${dev.id}"
+	def tempTbl = state."WtempTbl${dev.id}"
+	def dewTbl = state."WdewTbl${dev.id}"
+	def humTbl = state."WhumTbl${dev.id}"
 
 
-	def newDate = new Date()
+	Date newDate = new Date()
 	if(newDate == null) { Logger("got null for new Date()") }
 
-	def hr = newDate.format("H", location.timeZone) as Integer
-	def mins = newDate.format("m", location.timeZone) as Integer
+	Integer hr = newDate.format("H", location.timeZone) as Integer
+	Integer mins = newDate.format("m", location.timeZone) as Integer
 
 //Logger("addNewWData currentTemp: ${currentTemperature}	WtempTbl: ${tempTbl}", "trace")
 //Logger("addNewWData ${dev.id} ${tZ} hr: ${hr} mins: ${mins}", "trace")
 
 	state."WtempTbl${dev.id}" =	addValue(tempTbl, hr, mins, currentTemperature)
 	state."WdewTbl${dev.id}" =	addValue(dewTbl, hr, mins, currentDewpoint)
-	state?."WhumTbl${dev.id}" =	addValue(humTbl, hr, mins, currentHumidity)
+	state."WhumTbl${dev.id}" =	addValue(humTbl, hr, mins, currentHumidity)
 }
 
-def addValue(table, hr, mins, val) {
-	def newTable = table
+List addValue(List table, Integer hr, Integer mins, val) {
+	List newTable = table
 	if(table?.size() > 2) {
 		def last = table.last()[2]
 		def secondtolast = table[-2][2]
@@ -2598,12 +2597,12 @@ def addValue(table, hr, mins, val) {
 }
 
 // getStartTime("dewTbl", "dewTblYest"))
-def getStartTime(tbl1, tbl2) {
-	def startTime = 24
-	if (state?."${tbl1}"?.size()) {
+Integer getStartTime(tbl1, tbl2) {
+	Integer startTime = 24
+	if (state."${tbl1}"?.size()) {
 		startTime = state."${tbl1}".min{it[0].toInteger()}[0].toInteger()
 	}
-	if (state?."${tbl2}"?.size()) {
+	if (state."${tbl2}"?.size()) {
 		startTime = Math.min(startTime, state."${tbl2}".min{it[0].toInteger()}[0].toInteger())
 	}
 	return startTime
@@ -2612,10 +2611,10 @@ def getStartTime(tbl1, tbl2) {
 // getMinTemp("tempTblYest", "tempTbl", "dewTbl", "dewTblYest"))
 def getMinTemp(tbl1, tbl2, tbl3=null, tbl4=null) {
 	def list = []
-	if (state?."${tbl1}"?.size() > 0) { list.add(state?."${tbl1}"?.min { it[2] }[2]) }
-	if (state?."${tbl2}"?.size() > 0) { list.add(state?."${tbl2}".min { it[2] }[2]) }
-	if (state?."${tbl3}"?.size() > 0) { list.add(state?."${tbl3}".min { it[2] }[2]) }
-	if (state?."${tbl4}"?.size() > 0) { list.add(state?."${tbl4}".min { it[2] }[2]) }
+	if (state."${tbl1}"?.size() > 0) { list.add(state."${tbl1}"?.min { it[2] }[2]) }
+	if (state."${tbl2}"?.size() > 0) { list.add(state."${tbl2}".min { it[2] }[2]) }
+	if (state."${tbl3}"?.size() > 0) { list.add(state."${tbl3}".min { it[2] }[2]) }
+	if (state."${tbl4}"?.size() > 0) { list.add(state."${tbl4}".min { it[2] }[2]) }
 	//LogAction("getMinTemp: ${list.min()} result: ${list}", "trace")
 	return list?.min()
 }
@@ -2623,30 +2622,110 @@ def getMinTemp(tbl1, tbl2, tbl3=null, tbl4=null) {
 // getMaxTemp("tempTblYest", "tempTbl", "dewTbl", "dewTblYest"))
 def getMaxTemp(tbl1, tbl2, tbl3=null, tbl4=null) {
 	def list = []
-	if (state?."${tbl1}"?.size() > 0) { list.add(state?."${tbl1}".max { it[2] }[2]) }
-	if (state?."${tbl2}"?.size() > 0) { list.add(state?."${tbl2}".max { it[2] }[2]) }
-	if (state?."${tbl3}"?.size() > 0) { list.add(state?."${tbl3}".max { it[2] }[2]) }
-	if (state?."${tbl4}"?.size() > 0) { list.add(state?."${tbl4}".max { it[2] }[2]) }
+	if (state."${tbl1}"?.size() > 0) { list.add(state."${tbl1}".max { it[2] }[2]) }
+	if (state."${tbl2}"?.size() > 0) { list.add(state."${tbl2}".max { it[2] }[2]) }
+	if (state."${tbl3}"?.size() > 0) { list.add(state."${tbl3}".max { it[2] }[2]) }
+	if (state."${tbl4}"?.size() > 0) { list.add(state."${tbl4}".max { it[2] }[2]) }
 	//LogAnction("getMaxTemp: ${list.max()} result: ${list}", "trace")
 	return list?.max()
 }
 
+String getWDDeviceTile(Integer devNum, dev) {
+//log.warn "in getWDDeviceTile"
+	def obs //= getApiXUData(dev)
+//	try {
+/*
+		if(!obs) { //state.curWeather || !state.curForecast) {
+			return hideWeatherHtml()
+		}
+*/
+//Logger("W1")
+		String updateAvail = !state.updateAvailable ? "" : """<div class="greenAlertBanner">Device Update Available!</div>"""
+		String clientBl = state.clientBl ? """<div class="brightRedAlertBanner">Your Manager client has been blacklisted!\nPlease contact the Nest Manager developer to get the issue resolved!!!</div>""" : ""
+		String obsrvTime = "Last Updated:\n${dev.getDataValue("fotime")}"
+//Logger("W2")
+//log.warn "obs $obsrvTime"
+		String mainHtml = """
+			<div class="device">
+				<div class="container">
+					<h4>Current Weather Conditions</h4>
+					<h1 class="bottomBorder"> ${dev.getDataValue("city")} </h1>
+					<div class="row">
+						<div class="six columns">
+							<b>Feels Like:</b> ${getFeelslike(dev)} <br>
+							<b>Precip: </b> ${getPrecip(dev)} <br>
+							<b>Humidity:</b> ${getHumidity(dev)}% <br>
+							<b>Dew Point: </b>${getDewpoint(dev)}${getTempUnitStr()}<br>
+							<b>Pressure: </b> ${getPressure(dev)} <br>
+							<b>UV Index: </b>${dev.currentState("ultravioletIndex")?.value}<br>
+							<b>Visibility:</b> ${getVisibility(dev)} <br>
+							<b>Lux:</b> ${getLux(dev)}<br>
+							<b>Sunrise:</b> ${getSunrise(dev, obs)} <br> <b>Sunset: </b> ${getSunset(dev, obs)} <br>
+							<b>Wind:</b> ${getWind(dev)} <br>
+							<b>Moon Phase:</b> ${getMoonPhase(0, obs, dev)} <br>
+						</div>
+						<div class="six columns">
+							<img class="offset-by-two eight columns" src="${getConditionUrl(obs,dev)}"> <br>
+							<h2>${getTemp(dev)}</h2>
+							<h1 class ="offset-by-two topBorder">${getConditionText(obs,dev)}</h1>
+						</div>
+					</div>
+					<div class="row topBorder">
+						<div class="centerText four columns">${forecastDay(0, obs, dev)}</div>
+						<div class="centerText four columns">${forecastDay(1, obs, dev)}</div>
+						<div class="centerText four columns">${forecastDay(2, obs, dev)}</div>
+					</div>
+					<div class="row">
+						<div class="centerText four columns">${forecastDay(3, obs, dev)}</div>
+						<div class="centerText four columns">${forecastDay(4, obs, dev)}</div>
+						<div class="centerText four columns">${forecastDay(5, obs, dev)}</div>
+					</div>
+					<p style="font-size: 12px; font-weight: normal; text-align: center;">Tap Icon to View Forecast</p>
 
+
+					${historyGraphHtml(devNum,dev)}
+
+					<div class="row topBorder">
+						<div class="centerText offset-by-three six columns">
+<!--							<b class="wStation">${state.curWeather?.validTimeLocal}</b> -->
+						</div>
+					</div>
+				</div>
+			</div>
+
+		"""
+//		Logger("getMoonPhase: ${getMoonPhase(0, obs, dev)}")
+//		Logger("getMoonPhase: ${getMoonPhase(1, obs, dev)}")
+//		Logger("getMoonPhase: ${getMoonPhase(2, obs, dev)}")
+//		Logger("getMoonPhase: ${getMoonPhase(3, obs, dev)}")
+//		Logger("getMoonPhase: ${getMoonPhase(4, obs, dev)}")
+//		Logger("getMoonPhase: ${getMoonPhase(5, obs, dev)}")
+//		Logger("getMoonPhase: ${getMoonPhase(6, obs, dev)}")
+/* """ */
+//		render contentType: "text/html", data: mainHtml, status: 200
+/*
+	}
+	catch (ex) {
+		log.error "getDeviceTile Exception:", ex
+		//exceptionDataHandler(ex?.message, "getDeviceTile")
+	}
+*/
+}
 // weather ERS
 
-def getWDeviceTile(devNum="", dev) {
+String getWDeviceTile(Integer devNum, dev) {
 	def obs = getApiXUData(dev)
 //	try {
-		if(!obs) { //state?.curWeather || !state?.curForecast) {
+		if(!obs) { //state.curWeather || !state.curForecast) {
 			return hideWeatherHtml()
 		}
 //Logger("W1")
-		def updateAvail = !state.updateAvailable ? "" : """<div class="greenAlertBanner">Device Update Available!</div>"""
-		def clientBl = state?.clientBl ? """<div class="brightRedAlertBanner">Your Manager client has been blacklisted!\nPlease contact the Nest Manager developer to get the issue resolved!!!</div>""" : ""
-		def obsrvTime = "Last Updated:\n${dev?.currentState("last_updated").value}"
+		String updateAvail = !state.updateAvailable ? "" : """<div class="greenAlertBanner">Device Update Available!</div>"""
+		String clientBl = state.clientBl ? """<div class="brightRedAlertBanner">Your Manager client has been blacklisted!\nPlease contact the Nest Manager developer to get the issue resolved!!!</div>""" : ""
+		String obsrvTime = "Last Updated:\n${dev?.currentState("last_updated").value}"
 //Logger("W2")
 
-		def mainHtml = """
+		String mainHtml = """
 			<div class="device">
 				<div class="container">
 					<h4>Current Weather Conditions</h4>
@@ -2654,22 +2733,21 @@ def getWDeviceTile(devNum="", dev) {
 					<div class="row">
 						<div class="six columns">
 							<b>Feels Like:</b> ${getFeelslike(dev)} <br>
-	<!--						<b>Precip %: </b> ${dev.currentState("percentPrecip")?.value}% <br> -->
 							<b>Precip: </b> ${getPrecip(dev)} <br>
 							<b>Humidity:</b> ${getHumidity(dev)}% <br>
-							<b>Dew Point: </b>${getDewpoint(dev)}<br>
+							<b>Dew Point: </b>${getDewpoint(dev)}${getTempUnitStr()}<br>
 							<b>Pressure: </b> ${getPressure(dev)} <br>
 							<b>UV Index: </b>${dev.currentState("ultravioletIndex")?.value}<br>
 							<b>Visibility:</b> ${getVisibility(dev)} <br>
 							<b>Lux:</b> ${getLux(dev)}<br>
-							<b>Sunrise:</b> ${obs.forecast.forecastday[0].astro.sunrise} <br> <b>Sunset: </b> ${obs.forecast.forecastday[0].astro.sunset} <br>
+							<b>Sunrise:</b> ${getSunrise(dev, obs)} <br> <b>Sunset: </b> ${getSunset(dev, obs)} <br>
 							<b>Wind:</b> ${getWind(dev)} <br>
 							<b>Moon Phase:</b> ${getMoonPhase(0, obs)} <br>
 						</div>
 						<div class="six columns">
-							<img class="offset-by-two eight columns" src="${getWeatherImg(obs.current.condition.code)}"> <br>
+							<img class="offset-by-two eight columns" src="${getConditionUrl(obs)}"> <br>
 							<h2>${getTemp(dev)}</h2>
-							<h1 class ="offset-by-two topBorder">${obs?.current?.condition?.text}</h1>
+							<h1 class ="offset-by-two topBorder">${getConditionText(obs,dev)}</h1>
 						</div>
 					</div>
 					<div class="row topBorder">
@@ -2689,7 +2767,7 @@ def getWDeviceTile(devNum="", dev) {
 
 					<div class="row topBorder">
 						<div class="centerText offset-by-three six columns">
-<!--							<b class="wStation">${state?.curWeather?.validTimeLocal}</b> -->
+<!--							<b class="wStation">${state.curWeather?.validTimeLocal}</b> -->
 						</div>
 					</div>
 				</div>
@@ -2714,41 +2792,51 @@ def getWDeviceTile(devNum="", dev) {
 */
 }
 
-def getMoonPhase(day, obs) {
+String getMoonPhase(Integer day, obs, dev) {
+	if( dev?.typeName in ["ApiXU Weather Driver Min"] ){
+		return getMoonPhase1(day, obs)
+	}else{
+		//if( dev?.typeName in ["Nest Thermostat", "Nest Protect", "ApiXU Weather Driver Min", "DarkSky.net Weather Driver"]) Logger("found in")
+		return dev.getDataValue("moonPhase")
+	}
+}
+
+String getMoonPhase1(Integer day, obs) {
 //Logger("getMoon")
-	def astro = obs.forecast.forecastday[day].astro
+	if(!obs) { return "no data"}
+	def astro = obs?.forecast?.forecastday[day]?.astro
 	LogTrace("day $day  astro: ${astro}")
 
-	def t0 = "${obs.forecast.forecastday[day].date} ${astro.sunrise}"
-	def sunRise = Date.parse("yyyy-MM-dd hh:mm a", t0).getTime()
+	String t0 = "${obs?.forecast?.forecastday[day]?.date} ${astro?.sunrise}"
+	Long sunRise = Date.parse("yyyy-MM-dd hh:mm a", t0).getTime()
 
-	t0 = "${obs.forecast.forecastday[day].date} ${astro.sunset}"
-	def sunSet = Date.parse("yyyy-MM-dd hh:mm a", t0).getTime()
+	t0 = "${obs.forecast.forecastday[day].date} ${astro?.sunset}"
+	Long sunSet = Date.parse("yyyy-MM-dd hh:mm a", t0).getTime()
 
-	def moonRise
-	if(astro.moonrise == "No moonrise") {
-		t0 = "${obs.forecast.forecastday[day].date} 00:01 AM"
+	Long moonRise
+	if(astro?.moonrise == "No moonrise") {
+		t0 = "${obs?.forecast?.forecastday[day]?.date} 00:01 AM"
 		moonRise = Date.parse("yyyy-MM-dd hh:mm a", t0).getTime() - 30*60*1000 // subtract 30 mins
 	} else {
-		t0 = "${obs.forecast.forecastday[day].date} ${astro.moonrise}"
+		t0 = "${obs?.forecast?.forecastday[day]?.date} ${astro.moonrise}"
 		moonRise = Date.parse("yyyy-MM-dd hh:mm a", t0).getTime()
 	}
 
-	def moonSet
+	Long moonSet
 	if(astro.moonset == "No moonset") {
-		t0 = "${obs.forecast.forecastday[day].date} 11:59 PM"
+		t0 = "${obs?.forecast?.forecastday[day]?.date} 11:59 PM"
 		moonSet = Date.parse("yyyy-MM-dd hh:mm a", t0).getTime() + 30*60*1000 // add 30 mins
 	} else {
-		t0 = "${obs.forecast.forecastday[day].date} ${astro.moonset}"
+		t0 = "${obs?.forecast?.forecastday[day]?.date} ${astro?.moonset}"
 		moonSet = Date.parse("yyyy-MM-dd hh:mm a", t0).getTime()
 	}
 
-	t0 = "${obs.forecast.forecastday[day].date} 00:00 AM"
-	def localMidNight = Date.parse("yyyy-MM-dd hh:mm a", t0).getTime()
+	t0 = "${obs?.forecast?.forecastday[day]?.date} 00:00 AM"
+	Long localMidNight = Date.parse("yyyy-MM-dd hh:mm a", t0).getTime()
 //	def localMidNightf = formatDt(Date.parse("yyyy-MM-dd hh:mm a", t0))
 //	Logger("localMidNight: ${localMidNightf}")
 
-	t0 = "${obs.forecast.forecastday[day].date} 12:00 PM"
+	t0 = "${obs?.forecast?.forecastday[day]?.date} 12:00 PM"
 	def localNoon = Date.parse("yyyy-MM-dd hh:mm a", t0).getTime()
 
 	t0 =  24/8*3600*1000
@@ -2764,9 +2852,9 @@ def getMoonPhase(day, obs) {
 			Math.abs(localMidNight + t0 + t1 - moonRise)/(1000) 	// Waning cresent
 	]
 	def nearest = compare.min()
-	def indx = compare.indexOf(nearest)
-	def tstr
-	def brightness
+	Integer indx = compare.indexOf(nearest)
+	String tstr
+	Integer brightness
 	switch (indx) {
 		case 0:
 			tstr = "New Moon"
@@ -2805,22 +2893,22 @@ def getMoonPhase(day, obs) {
 	return tstr
 }
 
-def getWeatherImg(cond) {
+String getWeatherImg(Integer cond) {
 	def aa = getWUIconName(cond,1)
 		//def newCond = getWeatCondFromUrl(cond)
 		//def url = "https://cdn.rawgit.com/tonesto7/nest-manager/master/Images/Weather/icons/black/${getWeatCondFromUrl(cond) ?: "unknown"}.svg"
 // https://console.bluemix.net/docs/api/content/services/Weather/images/30.png
-		def url = "https://cdn.rawgit.com/tonesto7/nest-manager/master/Images/Weather/icons/black/${aa ? "${aa}" : "unknown"}.svg"
+		String url = "https://cdn.rawgit.com/tonesto7/nest-manager/master/Images/Weather/icons/black/${aa ? "${aa}" : "unknown"}.svg".toString()
 		return url
 }
 
-def forecastDay(day, obs) {
+String forecastDay(day, obs, dev=null) {
 //Logger("forecastDay $day")
 	if(!obs) { return "no data"}
-	def dayName = "<b>${obs.forecast.forecastday[day].date} </b><br>"
-	def foreImgB64 = getWeatherImg(obs.forecast.forecastday[day].day.condition.code)
-	def forecastImageLink = """<a class=\"${day}-modal\"><img src="${foreImgB64}" style="width:64px;height:64px;"></a><br>"""
-	def forecastTxt = "<p>${obs.forecast.forecastday[day].day.condition.text}"
+	String dayName = "<b>${obs.forecast.forecastday[day].date} </b><br>"
+	String foreImgB64 = getWeatherImg(obs.forecast.forecastday[day].day.condition.code)
+	String forecastImageLink = """<a class=\"${day}-modal\"><img src="${foreImgB64}" style="width:64px;height:64px;"></a><br>"""
+	String forecastTxt = "<p>${obs.forecast.forecastday[day].day.condition.text}"
 	def t0 = (!wantMetric() ? obs.forecast.forecastday[day].day.mintemp_f : obs.forecast.forecastday[day].day.mintemp_c)
 	def t1 = (!wantMetric() ? obs.forecast.forecastday[day].day.maxtemp_f : obs.forecast.forecastday[day].day.maxtemp_c)
 	forecastTxt += "<br>Temp low: ${t0}	Temp high: ${t1}"
@@ -2828,21 +2916,21 @@ def forecastDay(day, obs) {
 	forecastTxt += "<br>Wind: ${t0}"
 	t0 = (!wantMetric() ? obs.forecast.forecastday[day].day.totalprecip_in : obs.forecast.forecastday[day].day.totalprecip_mm)
 	forecastTxt += "<br>Precipitation: ${t0}"
-	t0 = "<br>Moon Phase: ${getMoonPhase(day, obs)}"
-	forecastTxt += "${t0}"
+	t0 = "<br>Moon Phase: ${getMoonPhase(day, obs, dev)}"
+	forecastTxt += t0
 
-	def modalHead = "<script> \$('.${day}-modal').click(function(){vex.dialog.alert({unsafeMessage: ' "
-	def modalTitle = " <h2>${obs.forecast.forecastday[day].date}</h2>"
-	def forecastImage = """<div class=\"centerText\"><img src="${foreImgB64}" style="width:64px;height:64px;"></div>"""
+	String modalHead = "<script> \$('.${day}-modal').click(function(){vex.dialog.alert({unsafeMessage: ' "
+	String modalTitle = " <h2>${obs.forecast.forecastday[day].date}</h2>"
+	String forecastImage = """<div class=\"centerText\"><img src="${foreImgB64}" style="width:64px;height:64px;"></div>"""
 	forecastTxt += "</p>"
-	def modalClose = "' }); }); </script>"
+	String modalClose = "' }); }); </script>"
 
 	return dayName + forecastImageLink + modalHead + modalTitle + forecastImage + forecastTxt + modalClose
 }
 
-def getWUIconName(condition_code, is_day)	{
-	def cC = condition_code.toInteger()
-	def wuIcon = (conditionFactor[cC] ? conditionFactor[cC][2] : '')
+String getWUIconName(Integer condition_code, Integer is_day)	{
+	Integer cC = condition_code
+	String wuIcon = (conditionFactor[cC] ? conditionFactor[cC][2] : '')
 	if (is_day != 1 && wuIcon) wuIcon = 'nt_' + wuIcon;
 	return wuIcon
 }
@@ -2874,32 +2962,55 @@ def getWUIconName(condition_code, is_day)	{
 	1279: ['Patchy light snow with thunder', 0.5, 'tstorms'],		1282: ['Moderate or heavy snow with thunder', 0.3, 'tstorms']
 ]
 
-def wantMetric() { return (getTemperatureScale() == "C") }
+Boolean wantMetric() { return (getTemperatureScale() == "C") }
 
-def getTempUnitStr() {
-	def tempStr = "\u00b0F"
+String getTempUnitStr() {
+	String tempStr = "\u00b0F"
 	if ( wantMetric() ) {
 		tempStr = "\u00b0C"
 	}
 	return tempStr
 }
 
-def getFeelslike(dev) {
-	return "${dev.currentState("feelsLike")?.value}${getTempUnitStr()}"
+Float getTemp(dev) {
+	def t0 = dev.currentState("temperature")?.value
+	Float t1 = cast(t0, "decimal")
+	return t1
 }
 
-def getPrecip(dev) {
-	def tstr = dev.currentState("precip_today")?.value.toString()
-	if(wantMetric()) {
-		return "${tstr} mm"
-	} else {
-		return "${tstr} in"
+Integer getDewpoint(dev) {
+	def t0 = dev.currentState("dewpoint")?.value
+	Integer t1 = cast(t0, "number")
+	return t1
+}
+
+String getFeelslike(dev) {
+	if( dev?.typeName in ["ApiXU Weather Driver Min"] ){
+		return "${dev.currentState("feelsLike")?.value}${getTempUnitStr()}"
+	}else{
+		//if( dev?.typeName in ["Nest Thermostat", "Nest Protect", "ApiXU Weather Driver Min", "DarkSky.net Weather Driver"]) Logger("found in")
+		return "${dev.getDataValue("feelsLike")}${getTempUnitStr()}"
 	}
 }
 
-def getPressure(dev) {
-	def tstr = "" //	" " + device.currentState("pressure_trend")?.value.toString()
-	def tstr1 = dev.currentState("pressure")?.value.toString()
+String getPrecip(dev) {
+	if( dev?.typeName in ["ApiXU Weather Driver Min"] ){
+		String tstr = dev.currentState("precip_today")?.value.toString()
+		if(wantMetric()) {
+			return "${tstr} mm"
+		} else {
+			return "${tstr} in"
+		}
+	}else{
+		//if( dev?.typeName in ["Nest Thermostat", "Nest Protect", "ApiXU Weather Driver Min", "DarkSky.net Weather Driver"]) Logger("found in")
+		tstr = dev.getDataValue("percentPrecip")
+		return tstr+'%'
+	}
+}
+
+String getPressure(dev) {
+	String tstr = "" //	" " + device.currentState("pressure_trend")?.value.toString()
+	String tstr1 = dev.currentState("pressure")?.value.toString()
 	if(wantMetric()) {
 		return "${tstr1} mb ${tstr}"
 	} else {
@@ -2907,8 +3018,14 @@ def getPressure(dev) {
 	}
 }
 
-def getVisibility(dev) {
-	def tstr = dev.currentState("visibility")?.value.toString()
+String getVisibility(dev) {
+	String tstr
+	if( dev?.typeName in ["ApiXU Weather Driver Min"] ){
+		tstr = dev.currentState("visibility")?.value.toString()
+	}else{
+		//if( dev?.typeName in ["Nest Thermostat", "Nest Protect", "ApiXU Weather Driver Min", "DarkSky.net Weather Driver"]) Logger("found in")
+		tstr = dev.getDataValue("vis")
+	}
 	if(wantMetric()) {
 		return "${tstr} km"
 	} else {
@@ -2916,44 +3033,88 @@ def getVisibility(dev) {
 	}
 }
 
-def getLux(dev) {
-	def cur = dev.currentState("illuminance")?.value.toString()
+String getLux(dev) {
+	String cur = dev.currentState("illuminance")?.value.toString()
 	return cur
 }
 
-def getWind(dev) {
-	def cur = dev.currentState("wind")?.value.toString()
-	def cur1 = dev.currentState("wind_dir")?.value.toString()
+String getSunrise(dev, obs){
+	String cur
+	if( dev?.typeName in ["ApiXU Weather Driver Min"] ){
+		return obs ? "${obs?.forecast?.forecastday[0]?.astro?.sunrise}" : ""
+	}else{
+		//if( dev?.typeName in ["Nest Thermostat", "Nest Protect", "ApiXU Weather Driver Min", "DarkSky.net Weather Driver"]) Logger("found in")
+		return dev.getDataValue("riseTime")
+	}
+}
+
+String getSunset(dev, obs){
+	String cur
+	if( dev?.typeName in ["ApiXU Weather Driver Min"] ){
+		return obs ? "${obs?.forecast?.forecastday[0]?.astro?.sunset}" : ""
+	}else{
+		//if( dev?.typeName in ["Nest Thermostat", "Nest Protect", "ApiXU Weather Driver Min", "DarkSky.net Weather Driver"]) Logger("found in")
+		return dev.getDataValue("setTime")
+	}
+}
+
+String getWind(dev) {
+	String cur = dev.currentState("wind")?.value.toString()
+	String cur1
+	if( dev?.typeName in ["ApiXU Weather Driver Min"] ){
+		cur1 = dev.currentState("wind_dir")?.value.toString()
+	}else{
+		//if( dev?.typeName in ["Nest Thermostat", "Nest Protect", "ApiXU Weather Driver Min", "DarkSky.net Weather Driver"]) Logger("found in")
+		cur1 = dev.getDataValue("wind_cardinal")
+	}
 	return "${cur1} at ${cur} ${wantMetric() ? "Kph" : "Mph"}"
 }
 
+String getConditionUrl(obs, dev=null){
+	if( dev?.typeName in ["ApiXU Weather Driver Min"] ){
+		return getWeatherImg(obs?.current?.condition?.code)
+	}else{
+		//if( dev?.typeName in ["Nest Thermostat", "Nest Protect", "ApiXU Weather Driver Min", "DarkSky.net Weather Driver"]) Logger("found in")
+		return dev.getDataValue("condition_icon_url")
+	}
+}
+
+String getConditionText(obs, dev){
+	if( dev?.typeName in ["ApiXU Weather Driver Min"] ){
+		return objs ? obs?.current?.condition?.text : ""
+	}else{
+		//if( dev?.typeName in ["Nest Thermostat", "Nest Protect", "ApiXU Weather Driver Min", "DarkSky.net Weather Driver"]) Logger("found in")
+		return dev.getDataValue("condition_text")
+	}
+}
+
 String getDataString(Integer seriesIndex, dev) {
-	def dataString = ""
+	String dataString = ""
 	def dataTable = []
 	switch (seriesIndex) {
 		case 1:
-//			dataTable = state?."WtempTblYest${dev.id}"
-			dataTable = state?."WtempTbl${dev.id}"
+//			dataTable = state."WtempTblYest${dev.id}"
+			dataTable = state."WtempTbl${dev.id}"
 			break
 		case 2:
-//			dataTable = state?."WdewTblYest${dev.id}"
-			dataTable = state?."WdewTbl${dev.id}"
+//			dataTable = state."WdewTblYest${dev.id}"
+			dataTable = state."WdewTbl${dev.id}"
 			break
 		case 3:
-//			dataTable = state?."WtempTbl${dev.id}"
-			dataTable = state?."WhumTbl${dev.id}"
+//			dataTable = state."WtempTbl${dev.id}"
+			dataTable = state."WhumTbl${dev.id}"
 			break
 		case 4:
-//			dataTable = state?."WdewTbl${dev.id}"
-			dataTable = state?."WtempTblYest${dev.id}"
+//			dataTable = state."WdewTbl${dev.id}"
+			dataTable = state."WtempTblYest${dev.id}"
 			break
 		case 5:
-//			dataTable = state?."WhumTblYest${dev.id}"
-			dataTable = state?."WdewTblYest${dev.id}"
+//			dataTable = state."WhumTblYest${dev.id}"
+			dataTable = state."WdewTblYest${dev.id}"
 			break
 		case 6:
-//			dataTable = state?."WhumTbl${dev.id}"
-			dataTable = state?."WhumTblYest${dev.id}"
+//			dataTable = state."WhumTbl${dev.id}"
+			dataTable = state."WhumTblYest${dev.id}"
 			break
 	}
 	dataTable.each() {
@@ -2964,18 +3125,18 @@ String getDataString(Integer seriesIndex, dev) {
 	return dataString
 }
 
-String historyGraphHtml(String devNum="", dev) {
+String historyGraphHtml(Integer devNum, dev) {
 //Logger("HistoryG 1")
 	String html = ""
 	if(true) {
-		if (state?."WtempTbl${dev.id}"?.size() > 0 && state?."WdewTbl${dev.id}"?.size() > 0) {
-			def tempStr = getTempUnitStr()
+		if (state."WtempTbl${dev.id}"?.size() > 0 && state."WdewTbl${dev.id}"?.size() > 0) {
+			String tempStr = getTempUnitStr()
 			def minval = getMinTemp("WtempTblYest${dev.id}", "WtempTbl${dev.id}", "WdewTbl${dev.id}", "WdewTblYest${dev.id}")
-			def minstr = "minValue: ${minval},"
+			String minstr = "minValue: ${minval},"
 //Logger("HistoryG 1a")
 
 			def maxval = getMaxTemp("WtempTblYest${dev.id}", "WtempTbl${dev.id}", "WdewTbl${dev.id}", "WdewTblYest${dev.id}")
-			def maxstr = "maxValue: ${maxval},"
+			String maxstr = "maxValue: ${maxval},"
 //Logger("HistoryG 1b")
 
 			def differ = maxval - minval
@@ -3078,8 +3239,8 @@ String historyGraphHtml(String devNum="", dev) {
 	}
 }
 
-def hideWeatherHtml() {
-	def data = """
+String hideWeatherHtml() {
+	String data = """
 		<br></br><br></br>
 		<h3 style="font-size: 22px; font-weight: bold; text-align: center; background: #00a1db; color: #f5f5f5;">The Required Weather data is not available yet...</h3>
 		<br></br><h3 style="font-size: 22px; font-weight: bold; text-align: center; background: #00a1db; color: #f5f5f5;">Please refresh this page after a couple minutes...</h3>
@@ -3089,13 +3250,13 @@ def hideWeatherHtml() {
 
 
 
-def getCarbonImg(b64=true, dev) {
+Map getCarbonImg(b64=true, dev) {
 	def carbonVal = dev.currentState("nestCarbonMonoxide")?.value
 	//values in ST are tested, clear, detected
 	//values from nest are ok, warning, emergency
-	def img = ""
-	def caption = "${carbonVal ? carbonVal?.toString().toUpperCase() : ""}"
-	def captionClass = ""
+	String img = ""
+	String caption = "${carbonVal ? carbonVal?.toString().toUpperCase() : ""}".toString()
+	String captionClass = ""
 	switch(carbonVal) {
 		case "warning":
 			img = getImg("co2_warn_status.png")
@@ -3113,13 +3274,13 @@ def getCarbonImg(b64=true, dev) {
 	return ["img":img, "caption": caption, "captionClass":captionClass]
 }
 
-def getSmokeImg(b64=true, dev) {
+Map getSmokeImg(b64=true, dev) {
 	def smokeVal = dev.currentState("nestSmoke")?.value
 	//values in ST are tested, clear, detected
 	//values from nest are ok, warning, emergency
-	def img = ""
-	def caption = "${smokeVal ? smokeVal?.toString().toUpperCase() : ""}"
-	def captionClass = ""
+	String img = ""
+	String caption = "${smokeVal ? smokeVal?.toString().toUpperCase() : ""}".toString()
+	String captionClass = ""
 	switch(smokeVal) {
 		case "warning":
 			img = getImg("smoke_warn_status.png")
@@ -3138,33 +3299,33 @@ def getSmokeImg(b64=true, dev) {
 }
 
 
-def getImg(imgName) {
+String getImg(String imgName) {
 	if(imgName) {
-		return imgName ? "https://cdn.rawgit.com/tonesto7/nest-manager/master/Images/Devices/$imgName" : ""
+		return imgName ? "https://cdn.rawgit.com/tonesto7/nest-manager/master/Images/Devices/$imgName".toString() : ""
 	} else {
 		log.error "getImg Error: Missing imgName value..."
 	}
 }
 
 
-String getProtDeviceTile(devNum, dev) {
+String getProtDeviceTile(Integer devNum, dev) {
 //	try {
-		def battImg = (dev.currentState("batteryState")?.value == "replace") ? """<img class="battImg" src="${getImg("battery_low_h.png")}">""" : """<img class="battImg" src="${getImg("battery_ok_h.png")}">"""
-		//def battImg = (state?.battVal == "low") ? """<img class="battImg" src="${getImg("battery_low_h.png")}">""" : """<img class="battImg" src="${getImg("battery_ok_h.png")}">"""
+		String battImg = (dev.currentState("batteryState")?.value == "replace") ? """<img class="battImg" src="${getImg("battery_low_h.png")}">""" : """<img class="battImg" src="${getImg("battery_ok_h.png")}">"""
+		//def battImg = (state.battVal == "low") ? """<img class="battImg" src="${getImg("battery_low_h.png")}">""" : """<img class="battImg" src="${getImg("battery_ok_h.png")}">"""
 
 		def testVal = dev.currentState("isTesting")?.value
-		def testModeHTML = (testVal.toString() == "true") ? "<h3>Test Mode</h3>" : ""
-		def updateAvail = !state.updateAvailable ? "" : """<div class="greenAlertBanner">Device Update Available!</div>"""
-		def clientBl = state?.clientBl ? """<div class="brightRedAlertBanner">Your Manager client has been blacklisted!\nPlease contact the Nest Manager developer to get the issue resolved!!!</div>""" : ""
+		String testModeHTML = (testVal.toString() == "true") ? "<h3>Test Mode</h3>" : ""
+		String updateAvail = !state.updateAvailable ? "" : """<div class="greenAlertBanner">Device Update Available!</div>"""
+		String clientBl = state.clientBl ? """<div class="brightRedAlertBanner">Your Manager client has been blacklisted!\nPlease contact the Nest Manager developer to get the issue resolved!!!</div>""" : ""
 
-		def smokeImg = getSmokeImg(false, dev)
-		def carbonImg = getCarbonImg(false, dev)
-		def onlineStatus = dev.currentState("onlineStatus")?.value
-		def powerSource = dev.currentState("powerSource")?.value
-		def apiStatus =	 dev.currentState("apiStatus")?.value
-		def softwareVer = dev.currentState("softwareVer")?.value
-		def lastConnection = dev.currentState("lastConnection")?.value
-		def html = """
+		Map smokeImg = getSmokeImg(false, dev)
+		Map carbonImg = getCarbonImg(false, dev)
+		String onlineStatus = dev.currentState("onlineStatus")?.value
+		String powerSource = dev.currentState("powerSource")?.value
+		String apiStatus =	 dev.currentState("apiStatus")?.value
+		String softwareVer = dev.currentState("softwareVer")?.value
+		String lastConnection = dev.currentState("lastConnection")?.value
+		String html = """
 		  ${testModeHTML}
 		  ${clientBl}
 		  ${updateAvail}
@@ -3251,11 +3412,11 @@ def getTimeZone() {
 }
 
 String getDtNow() {
-	def now = new Date()
+	Date now = new Date()
 	return formatDt(now)
 }
 
-String formatDt(dt) {
+String formatDt(Date dt) {
 	def tf = new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
 	if(getTimeZone()) { tf.setTimeZone(getTimeZone()) }
 	else {
@@ -3264,15 +3425,15 @@ String formatDt(dt) {
 	return tf.format(dt)
 }
 
-def GetTimeDiffSeconds(String strtDate, stpDate=null, methName=null) {
+Long GetTimeDiffSeconds(String strtDate, String stpDate=(String)null, String methName=(String)null) {
 	//LogTrace("[GetTimeDiffSeconds] StartDate: $strtDate | StopDate: ${stpDate ?: "Not Sent"} | MethodName: ${methName ?: "Not Sent"})")
 	if((strtDate && !stpDate) || (strtDate && stpDate)) {
 		//if(strtDate?.contains("dtNow")) { return 10000 }
-		def now = new Date()
-		def stopVal = stpDate ? stpDate.toString() : formatDt(now)
-		long start = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
-		long stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
-		long diff = (int) (long) (stop - start) / 1000
+		Date now = new Date()
+		String stopVal = stpDate ? stpDate.toString() : formatDt(now)
+		Long start = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
+		Long stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
+		Long diff = (Long) (stop - start) / 1000L
 		LogTrace("[GetTimeDiffSeconds] Results for '$methName': ($diff seconds)")
 		return diff
 	} else { return null }
@@ -3287,65 +3448,65 @@ String lastN(String input, n) {
 }
 
 void LogTrace(String msg, String logSrc=(String)null) {
-	boolean trOn = (settings?.showDebug && settings?.advAppDebug) ? true : false
+	Boolean trOn = (settings.showDebug && settings.advAppDebug)
 	if(trOn) {
-		boolean logOn = (settings?.enRemDiagLogging && state?.enRemDiagLogging) ? true : false
+		Boolean logOn = (settings.enRemDiagLogging && state.enRemDiagLogging)
 		//def theId = lastN(app?.id.toString(),5)
 		//def theLogSrc = (logSrc == null) ? (parent ? "Automation-${theId}" : "NestManager") : logSrc
 		Logger(msg, "trace", logSrc, logOn)
 	}
 }
 
-void LogAction(String msg, String type="debug", boolean showAlways=false, String logSrc=null) {
-	boolean isDbg = settings?.showDebug ? true : false
+void LogAction(String msg, String type="debug", Boolean showAlways=false, String logSrc=(String)null) {
+	Boolean isDbg = settings.showDebug
 //	def theId = lastN(app?.id.toString(),5)
 //	def theLogSrc = (logSrc == null) ? (parent ? "Automation-${theId}" : "NestManager") : logSrc
 	if(showAlways || (isDbg && !showAlways)) { Logger(msg, type, logSrc) }
 }
 
-void Logger(String msg, String type="debug", String logSrc=null, boolean noLog=false) {
+void Logger(String msg, String type="debug", String logSrc=(String)null, Boolean noLog=false) {
 	if(msg && type) {
 		String labelstr = ""
-		if(state?.dbgAppndName == null) {
-			def tval = parent ? parent.getSettingVal("dbgAppndName") : settings?.dbgAppndName
-			state?.dbgAppndName = (tval || tval == null) ? true : false
+		if(state.dbgAppndName == null) {
+			def tval = parent ? parent.getSettingVal("dbgAppndName") : settings.dbgAppndName
+			state.dbgAppndName = (tval || tval == null) ? true : false
 		}
 		String t0 = app.label
-		if(state?.dbgAppndName) { labelstr = "${t0} | " }
-		String themsg = "${labelstr}${msg}"
+		if(state.dbgAppndName) { labelstr = t0+' | ' }
+		String themsg = labelstr+msg
 		//log.debug "Logger remDiagTest: $msg | $type | $logSrc"
 
-		if(state?.enRemDiagLogging == null) {
-			state?.enRemDiagLogging = parent?.getStateVal("enRemDiagLogging")
-			if(state?.enRemDiagLogging == null) {
-				state?.enRemDiagLogging = false
+		if(state.enRemDiagLogging == null) {
+			state.enRemDiagLogging = parent?.getStateVal("enRemDiagLogging")
+			if(state.enRemDiagLogging == null) {
+				state.enRemDiagLogging = false
 			}
-			//log.debug "set enRemDiagLogging to ${state?.enRemDiagLogging}"
+			//log.debug "set enRemDiagLogging to ${state.enRemDiagLogging}"
 		}
-		if(state?.enRemDiagLogging) {
+		if(state.enRemDiagLogging) {
 			String theId = lastN(app?.id.toString(),5)
-			String theLogSrc = (logSrc == null) ? (parent ? "Automation-${theId}" : "NestManager") : logSrc
+			String theLogSrc = (logSrc == (String)null) ? (parent ? "Automation-${theId}" : "NestManager") : logSrc
 			parent?.saveLogtoRemDiagStore(themsg, type, theLogSrc)
 		} else {
 			if(!noLog) {
 			switch(type) {
 				case "debug":
-					log.debug "${themsg}"
+					log.debug themsg
 					break
 				case "info":
-					log.info "| ${themsg}"
+					log.info '| '+themsg
 					break
 				case "trace":
-					log.trace "| ${themsg}"
+					log.trace '| '+themsg
 					break
 				case "error":
-					log.error "| ${themsg}"
+					log.error '| '+themsg
 					break
 				case "warn":
-					log.warn "|| ${themsg}"
+					log.warn '|| '+themsg
 					break
 				default:
-					log.debug "${themsg}"
+					log.debug themsg
 					break
 			}
 			}
