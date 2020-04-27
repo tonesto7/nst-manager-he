@@ -5,7 +5,7 @@
 |    Contributors: Ben W. (@desertblade)                                                    |
 |    A few code methods are modeled from those in CoRE by Adrian Caramaliu                  |
 |                                                                                           |
-|    April 17, 2020                                                                         |
+|    April 27, 2020                                                                         |
 |    License Info: https://github.com/tonesto7/nest-manager/blob/master/app_license.txt     |
 |********************************************************************************************/
 
@@ -5266,7 +5266,7 @@ def schMotModePage(){
 				String tDesc=(isTstatSchedConfigured() || state.activeSchedData?.size()) ? "Tap to modify Schedules" : null
 				href "tstatConfigAutoPage1", title: imgTitle(getAppImg("schedule_icon.png"), inputTitleStr("Use Schedules to adjust Temp Setpoints and HVAC mode?")), description: (tDesc != null ? tDesc : ""), state: (tDesc != null ? "complete" : "")//, params: ["configType":"tstatSch"]
 				if(actSch){
-					String schInfo=getScheduleDesc()
+					def schInfo=getScheduleDesc()
 					Integer curSch=getCurrentSchedule()
 					if(schInfo?.size()){
 						schInfo?.each { schItem ->
