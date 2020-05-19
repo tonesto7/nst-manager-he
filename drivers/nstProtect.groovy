@@ -2,14 +2,14 @@
  *  Nest Protect
  *	Copyright (C) 2018, 2019 Anthony Santilli.
  *	Author: Anthony Santilli (@tonesto7), Eric Schott (@imnotbob)
- *  Modified: 04/07/2019
+ *  Modified: 05/10/2020
  */
 
 import java.text.SimpleDateFormat
 
 preferences { }
 
-def devVer() { return "2.0.2" }
+String devVer() { return "2.0.3" }
 
 metadata {
 	definition (name: "Nest Protect", author: "Anthony S.", namespace: "tonesto7", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstProtect.groovy") {
@@ -48,12 +48,12 @@ metadata {
 	}
 }
 
-def logsOff(){
+void logsOff(){
 	log.warn "${device?.displayName} debug logging disabled..."
 	device.updateSetting("logEnable",[value:"false",type:"bool"])
 }
 
-def initialize() {
+void initialize() {
 	log.trace "Device Initialized: (${device?.displayName})..."
 	if (!state.updatedLastRanAt || now() >= state.updatedLastRanAt + 2000) {
 		state.updatedLastRanAt = now()
@@ -81,7 +81,7 @@ void uninstalled() {
 	log.trace "Device Removed: (${device?.displayName})..."
 }
 
-def verifyDataAttr() {
+void verifyDataAttr() {
 	if(!device?.getDataValue("manufacturer")) {
 		updateDataValue("manufacturer", "Nest")
 	}
@@ -135,8 +135,8 @@ void generateEvent(eventData) {
 	}
 }
 
-def getDtNow() {
-	def now = new Date()
+String getDtNow() {
+	Date now = new Date()
 	return formatDt(now)
 }
 
@@ -145,21 +145,21 @@ def getSettingVal(var) {
 	return settings[var] ?: null
 }
 
-String formatDt(dt) {
+String formatDt(Date dt) {
 	def tf = new java.text.SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
 	if(getTimeZone()) { tf.setTimeZone(getTimeZone()) }
 	return tf.format(dt)
 }
 
-def getTimeDiffSeconds(strtDate, stpDate=null, methName=null) {
+Long getTimeDiffSeconds(String strtDate, String stpDate=null, String methName=null) {
 	//LogTrace("[GetTimeDiffSeconds] StartDate: $strtDate | StopDate: ${stpDate ?: "Not Sent"} | MethodName: ${methName ?: "Not Sent"})")
 	try {
 		if((strtDate && !stpDate) || (strtDate && stpDate)) {
-			def now = new Date()
-			String stopVal = stpDate ? stpDate.toString() : formatDt(now)
-			long start = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
-			long stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
-			long diff = (stop - start) / 1000
+			Date now = new Date()
+			String stopVal = stpDate ? stpDate : formatDt(now)
+			Long start = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
+			Long stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
+			Long diff = (stop - start) / 1000L
 			return diff
 		} else { return null }
 	} catch (ex) {
@@ -167,8 +167,8 @@ def getTimeDiffSeconds(strtDate, stpDate=null, methName=null) {
 	}
 }
 
-def getStateSize()      { return state?.toString().length() }
-def getStateSizePerc()  { return (int) ((stateSize/100000)*100).toDouble().round(0) }
+Integer getStateSize()      { return state?.toString().length() }
+Integer getStateSizePerc()  { return (Integer) Math.round((stateSize/100000)*100) }
 def getDevTypeId() 		{ return device?.getDevTypeId() }
 
 def getDataByName(String name) {
@@ -195,52 +195,52 @@ void lastCheckinEvent(checkin, isOnline) {
 	String t0 = checkin.replaceAll(regex1, "-0000")
 	tf.setTimeZone(getTimeZone())
 
-	def prevOnlineStat = device.currentState("onlineStatus")?.value
+	String prevOnlineStat = device.currentState("onlineStatus")?.value
 
 	//def curConn = t0 ? "${tf.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0))}" : "Not Available"
-	String curConnFmt = t0 ? "${formatDt(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0))}" : "Not Available"
+	String curConnFmt = t0 ? formatDt(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0)) : "Not Available"
 	//Logger("curConn: ${curConn}   curConnFmt: ${curConnFmt}  timeDiff: ${getTimeDiffSeconds(curConnFmt)}", "debug")
 	//def curConnSeconds = (t0 && curConnFmt != "Not Available") ? getTimeDiffSeconds(curConnFmt) : 3000
 
 	String onlineStat = isOnline.toString() == "true" ? "online" : "offline"
 
-	if(isStateChange(device, "lastConnection", curConnFmt.toString())) {
-		def lastChk = device.currentState("lastConnection")?.value
-		def lastConnSeconds = lastChk ? getTimeDiffSeconds(lastChk) : 9000   // try not to disrupt running average for pwr determination
+	if(isStateChange(device, "lastConnection", curConnFmt)) {
+		String lastChk = device.currentState("lastConnection")?.value
+		Long lastConnSeconds = lastChk ? getTimeDiffSeconds(lastChk) : 9000L   // try not to disrupt running average for pwr determination
 
 		// Logger("Last Nest Check-in was: (${curConnFmt}) | Original State: (${lastChk})")
-		sendEvent(name: 'lastConnection', value: curConnFmt?.toString(), displayed: state?.showProtActEvts, isStateChange: true)
-		if(lastConnSeconds >= 0 && onlineStat == "online") { addCheckinTime(lastConnSeconds) }
+		sendEvent(name: 'lastConnection', value: curConnFmt, displayed: state?.showProtActEvts, isStateChange: true)
+		if(lastConnSeconds >= 0L && onlineStat == "online") { addCheckinTime(lastConnSeconds) }
 	}
 
-	state?.onlineStatus = onlineStat
-	if(isStateChange(device, "onlineStatus", onlineStat.toString())) {
+	state.onlineStatus = onlineStat
+	if(isStateChange(device, "onlineStatus", onlineStat)) {
 		Logger("Online Status is: (${onlineStat}) | Original State: (${prevOnlineStat})")
 		sendEvent(name: "onlineStatus", value: onlineStat, descriptionText: "Online Status is: ${onlineStat}", displayed: state?.showProtActEvts, isStateChange: true, state: onlineStat)
 	}
 }
 
-def addCheckinTime(val) {
-	def list = state?.checkinTimeList ?: []
-	def listSize = 12
+void addCheckinTime(val) {
+	List list = state?.checkinTimeList ?: []
+	Integer listSize = 12
 	if(list?.size() < listSize) {
 		list.push(val)
 	}
 	else if(list?.size() > listSize) {
-		def nSz = (list?.size()-listSize) + 1
-		def nList = list?.drop(nSz)
+		Integer nSz = (list?.size()-listSize) + 1
+		List nList = list?.drop(nSz)
 		nList?.push(val)
 		list = nList
 	}
 	else if(list?.size() == listSize) {
-		def nList = list?.drop(1)
+		List nList = list?.drop(1)
 		nList?.push(val)
 		list = nList
 	}
-	if(list) { state?.checkinTimeList = list }
+	if(list) { state.checkinTimeList = list }
 }
 
-def determinePwrSrc() {
+void determinePwrSrc() {
 	if(!state?.checkinTimeList) { state?.checkinTimeList = [] }
 	def checkins = state?.checkinTimeList
 	def checkinAvg = checkins?.size() ? ( checkins?.sum()?.div(checkins?.size()))?.toDouble()?.round(0).toInteger() : null //
@@ -252,10 +252,10 @@ def determinePwrSrc() {
 	//log.debug "checkins: $checkins | Avg: $checkinAvg"
 }
 
-void powerTypeEvent(wired=false) {
-	def curVal = device.currentState("powerSourceNest")?.value
-	def newValSt = wired == true ? "wired" : "battery"
-	def newVal = wired == true ? "mains" : "battery"
+void powerTypeEvent(Boolean wired=false) {
+	String curVal = device.currentState("powerSourceNest")?.value
+	String newValSt = wired == true ? "wired" : "battery"
+	String newVal = wired == true ? "mains" : "battery"
 	if(isStateChange(device, "powerSource", newVal) || isStateChange(device, "powerSourceNest", newValSt)) {
 		Logger("The Device's Power Source is: (${newVal}) | Original State: (${curVal})")
 		sendEvent(name: 'powerSource', value: newVal, displayed: true, isStateChange: true)
@@ -264,46 +264,46 @@ void powerTypeEvent(wired=false) {
 }
 
 void lastTestedEvent(dt) {
-	def lastTstVal = device.currentState("lastTested")?.value
+	String lastTstVal = device.currentState("lastTested")?.value
 	def tf = new SimpleDateFormat("MMM d, yyyy - h:mm:ss a")
 	tf.setTimeZone(getTimeZone())
 	def regex1 = /Z/
 	String t0 = dt ? dt.replaceAll(regex1, "-0000") : dt
-	String lastTest = !t0 ? "No Test Recorded" : "${tf?.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0))}"
-	if(isStateChange(device, "lastTested", lastTest.toString())) {
+	String lastTest = !t0 ? "No Test Recorded" : tf?.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0))
+	if(isStateChange(device, "lastTested", lastTest)) {
 		Logger("Last Manual Test was: (${lastTest}) | Original State: (${lastTstVal})")
 		sendEvent(name: 'lastTested', value: lastTest, displayed: true, isStateChange: true)
 	}
 }
 
-void softwareVerEvent(ver) {
-	def verVal = device.currentState("softwareVer")?.value
-	if(isStateChange(device, "softwareVer", ver.toString())) {
+void softwareVerEvent(String ver) {
+	String verVal = device.currentState("softwareVer")?.value
+	if(isStateChange(device, "softwareVer", ver)) {
 		Logger("Firmware Version: (${ver}) | Original State: (${verVal})")
 		sendEvent(name: 'softwareVer', value: ver, descriptionText: "Firmware Version is now v${ver}", displayed: false)
 	}
 }
 
 void apiStatusEvent(issueDesc) {
-	def curStat = device.currentState("apiStatus")?.value
-	def newStat = issueDesc
-	if(isStateChange(device, "apiStatus", newStat.toString())) {
-		Logger("API Status is: (${newStat.toString().capitalize()}) | Previous State: (${curStat.toString().capitalize()})")
+	String curStat = device.currentState("apiStatus")?.value
+	String newStat = issueDesc
+	if(isStateChange(device, "apiStatus", newStat)) {
+		Logger("API Status is: (${newStat.capitalize()}) | Previous State: (${curStat.capitalize()})")
 		sendEvent(name: "apiStatus", value: newStat, descriptionText: "API Status is: ${newStat}", displayed: true, isStateChange: true, state: newStat)
 	}
 }
 
-void lastUpdatedEvent(sendEvt=false) {
+void lastUpdatedEvent(Boolean sendEvt=false) {
 	//def now = new Date()
 	//def tf = new SimpleDateFormat("MMM d, yyyy - h:mm:ss a")
 	//tf.setTimeZone(getTimeZone())
-	def lastDt = getDtNow()	//"${tf?.format(now)}"
-	state?.lastUpdatedDt = lastDt?.toString()
+	String lastDt = getDtNow()	//"${tf?.format(now)}"
+	state.lastUpdatedDt = lastDt
 	//state?.lastUpdatedDtFmt = formatDt(now)
 	if(sendEvt) {
 		//def lastUpd = device.currentState("lastUpdatedDt")?.value
 		// Logger("Last Parent Refresh time: (${lastDt}) | Previous Time: (${lastUpd})")
-		sendEvent(name: 'lastUpdatedDt', value: lastDt?.toString(), displayed: false, isStateChange: true)
+		sendEvent(name: 'lastUpdatedDt', value: lastDt, displayed: false, isStateChange: true)
 	}
 }
 
@@ -315,11 +315,11 @@ void uiColorEvent(color) {
 	}
 }
 
-void batteryStateEvent(batt) {
-	def stbattery = (batt == "replace") ? 5 : 100
-	def battVal = device.currentState("batteryState")?.value
+void batteryStateEvent(String batt) {
+	Integer stbattery = (batt == "replace") ? 5 : 100
+	String battVal = device.currentState("batteryState")?.value
 	def stbattVal = device.currentState("battery")?.value
-	if(isStateChange(device, "batteryState", batt.toString()) || !stbattVal) {
+	if(isStateChange(device, "batteryState", batt) || !stbattVal) {
 		Logger("Battery is: ${batt} | Original State: (${battVal})")
 		sendEvent(name:'batteryState', value: batt, descriptionText: "Nest Battery status is: ${batt}", displayed: true, isStateChange: true)
 		sendEvent(name:'battery', value: stbattery, descriptionText: "Battery is: ${stbattery}", displayed: true, isStateChange: true)
@@ -327,7 +327,7 @@ void batteryStateEvent(batt) {
 }
 
 void testingStateEvent(test) {
-	def testVal = device.currentState("isTesting")?.value
+	String testVal = device.currentState("isTesting")?.value
 	if(isStateChange(device, "isTesting", test.toString())) {
 		Logger("Testing State: (${test}) | Original State: (${testVal})")
 		sendEvent(name:'isTesting', value: test, descriptionText: "Manual test: ${test}", displayed: true, isStateChange: true)
@@ -337,9 +337,9 @@ void testingStateEvent(test) {
 void carbonSmokeStateEvent(coState, smokeState) {
 	//values in Hubitat are tested, clear, detected
 	//values from nest are ok, warning, emergency
-	def carbonVal = device.currentState("nestCarbonMonoxide")?.value
-	def smokeVal = device.currentState("nestSmoke")?.value
-	def testVal = device.currentState("isTesting")?.value
+	String carbonVal = device.currentState("nestCarbonMonoxide")?.value
+	String smokeVal = device.currentState("nestSmoke")?.value
+	String testVal = device.currentState("isTesting")?.value
 
 	String alarmStateHE = "ok"
 	String smokeValStr = "clear"
@@ -380,16 +380,16 @@ String lastN(String input, n) {
 
 void Logger(String msg, String logType = "debug") {
 	if(!logEnable || !msg) { return }
-	def smsg = "${device.displayName} (v${devVer()}) | ${msg}"
+	String smsg = "${device.displayName} (v${devVer()}) | ${msg}"
 	if(state?.enRemDiagLogging == null) {
-		state?.enRemDiagLogging = parent?.getStateVal("enRemDiagLogging")
+		state.enRemDiagLogging = parent?.getStateVal("enRemDiagLogging")
 		if(state?.enRemDiagLogging == null) {
-			state?.enRemDiagLogging = false
+			state.enRemDiagLogging = false
 		}
 		//log.debug "set enRemDiagLogging to ${state?.enRemDiagLogging}"
 	}
         if(state?.enRemDiagLogging) {
-		def theId = lastN(device.getId().toString(),5)
+		String theId = lastN(device.getId().toString(),5)
                 parent.saveLogtoRemDiagStore(smsg, logType, "Protect-${theId}")
         } else {
 	switch (logType) {

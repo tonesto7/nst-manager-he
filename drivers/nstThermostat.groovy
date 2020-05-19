@@ -2,13 +2,13 @@
  *  Nest Thermostat
  *	Copyright (C) 2018, 2019 Anthony Santilli.
  *	Author: Anthony Santilli (@tonesto7), Eric Schott (@imnotbob)
- *  Modified: 04/17/2020
+ *  Modified: 05/9/2020
  */
 
 import java.text.SimpleDateFormat
 import groovy.time.*
 
-static String devVer() { return "2.0.6" }
+static String devVer() { return "2.0.7" }
 metadata {
 	definition (name: "Nest Thermostat", namespace: "tonesto7", author: "Anthony S.", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstThermostat.groovy") {
 		capability "Actuator"
@@ -179,56 +179,56 @@ void generateEvent(eventData) {
 
 	//Logger("processEvent Parsing data ${eventData}", "trace")
 	try {
-		if(eventData) {
+		if(eventData && eventData.data) {
 			if(eventData.virt) { state.virtual = eventData.virt }
 			if(virtType()) { nestTypeEvent("virtual") } else { nestTypeEvent("physical") }
 			state.childWaitVal = eventData.childWaitVal?.toInteger()
 			state.nestTimeZone = eventData.tz ?: null
 			tempUnitEvent(getTemperatureScale())
-			//if(eventData?.data?.is_locked != null) { tempLockOnEvent(eventData?.data?.is_locked.toString() == "true" ? "true" : "false") }
-			tempLockOnEvent( eventData.data?.is_locked ? (eventData.data.is_locked.toString() == "true" ? "true" : "false") : "false")
-			//tempLockOnEvent( !eventData?.data?.is_locked ? "false" : (eventData?.data?.is_locked.toString() == "true" ? "true" : "false") ) }
-			canHeatCool(eventData.data?.can_heat, eventData?.data?.can_cool)
-			hasFan(eventData.data?.has_fan?.toString())
+			//if(eventData.data.is_locked != null) { tempLockOnEvent(eventData.data.is_locked.toString() == "true" ? "true" : "false") }
+			tempLockOnEvent( eventData.data.is_locked ? (eventData.data.is_locked.toString() == "true" ? "true" : "false") : "false")
+			//tempLockOnEvent( !eventData.data.is_locked ? "false" : (eventData.data.is_locked.toString() == "true" ? "true" : "false") ) }
+			canHeatCool(eventData.data.can_heat, eventData.data.can_cool)
+			hasFan(eventData.data.has_fan?.toString())
 			presenceEvent(eventData.pres)
 			etaEvent(eventData.etaBegin)
 
-			String curMode = device?.currentState("nestThermostatMode")?.value?.toString()
-			hvacModeEvent(eventData.data?.hvac_mode?.toString())
+			String curMode = device.currentState("nestThermostatMode")?.value?.toString()
+			hvacModeEvent(eventData.data.hvac_mode?.toString())
 			String newMode = device?.currentState("nestThermostatMode")?.value?.toString()
 
-			hvacPreviousModeEvent(eventData.data?.previous_hvac_mode?.toString())
-			hasLeafEvent(eventData.data?.has_leaf)
-			humidityEvent(eventData.data?.humidity?.toString())
+			hvacPreviousModeEvent(eventData.data.previous_hvac_mode?.toString())
+			hasLeafEvent(eventData.data.has_leaf)
+			humidityEvent(eventData.data.humidity?.toString())
 
-			nestoperatingStateEvent(eventData.data?.hvac_state?.toString())
-			fanModeEvent(eventData.data?.fan_timer_active?.toString())
-			operatingStateEvent(eventData.data?.hvac_state?.toString())
+			nestoperatingStateEvent(eventData.data.hvac_state?.toString())
+			fanModeEvent(eventData.data.fan_timer_active?.toString())
+			operatingStateEvent(eventData.data.hvac_state?.toString())
 
-			if(!eventData?.data?.last_connection) { lastCheckinEvent(null,null) }
-			else { lastCheckinEvent(eventData.data?.last_connection, eventData.data?.is_online?.toString()) }
-			sunlightCorrectionEnabledEvent(eventData.data?.sunlight_correction_enabled)
-			sunlightCorrectionActiveEvent(eventData.data?.sunlight_correction_active)
-			timeToTargetEvent(eventData.data?.time_to_target, eventData.data?.time_to_target_training)
-			softwareVerEvent(eventData.data?.software_version?.toString())
-			//onlineStatusEvent(eventData.data?.is_online?.toString())
+			if(!eventData.data.last_connection) { lastCheckinEvent(null,null) }
+			else { lastCheckinEvent(eventData.data.last_connection, eventData.data.is_online?.toString()) }
+			sunlightCorrectionEnabledEvent(eventData.data.sunlight_correction_enabled)
+			sunlightCorrectionActiveEvent(eventData.data.sunlight_correction_active)
+			timeToTargetEvent(eventData.data.time_to_target, eventData.data.time_to_target_training)
+			softwareVerEvent(eventData.data.software_version?.toString())
+			//onlineStatusEvent(eventData.data.is_online?.toString())
 			apiStatusEvent(eventData.apiIssues)
 			// safetyTempsEvent(eventData.safetyTemps)
 			// comfortHumidityEvent(eventData.comfortHumidity)
 			// comfortDewpointEvent(eventData.comfortDewpoint)
-			emergencyHeatEvent(eventData.data?.is_using_emergency_heat)
+			emergencyHeatEvent(eventData.data.is_using_emergency_heat)
 
 			String hvacMode = state.nestHvac_mode
 			String tempUnit = state.tempUnit
 			switch (tempUnit) {
 				case "C":
-					if(eventData.data?.locked_temp_min_c && eventData.data?.locked_temp_max_c) { lockedTempEvent(eventData?.data?.locked_temp_min_c, eventData?.data?.locked_temp_max_c) }
-					def temp = eventData.data?.ambient_temperature_c?.toDouble()
+					if(eventData.data.locked_temp_min_c && eventData.data.locked_temp_max_c) { lockedTempEvent(eventData.data.locked_temp_min_c, eventData.data.locked_temp_max_c) }
+					Double temp = eventData.data.ambient_temperature_c?.toDouble()
 					temperatureEvent(temp)
 
-					def heatingSetpoint = 0.0
-					def coolingSetpoint = 0.0
-					def targetTemp = eventData.data?.target_temperature_c?.toDouble()
+					Double heatingSetpoint = 0.0
+					Double coolingSetpoint = 0.0
+					Double targetTemp = eventData.data.target_temperature_c?.toDouble()
 
 					if(hvacMode == "cool") {
 						coolingSetpoint = targetTemp
@@ -237,14 +237,14 @@ void generateEvent(eventData) {
 						heatingSetpoint = targetTemp
 					}
 					else if(hvacMode == "auto") {
-						coolingSetpoint = Math.round(eventData.data?.target_temperature_high_c?.toDouble())
-						heatingSetpoint = Math.round(eventData.data?.target_temperature_low_c?.toDouble())
+						coolingSetpoint = Math.round(eventData.data.target_temperature_high_c?.toDouble())
+						heatingSetpoint = Math.round(eventData.data.target_temperature_low_c?.toDouble())
 					}
 					if(hvacMode == "eco") {
-						if(eventData?.data?.eco_temperature_high_c) { coolingSetpoint = eventData?.data?.eco_temperature_high_c.toDouble() }
-						else if(eventData?.data?.away_temperature_high_c) { coolingSetpoint = eventData?.data?.away_temperature_high_c.toDouble() }
-						if(eventData?.data?.eco_temperature_low_c) { heatingSetpoint = eventData?.data?.eco_temperature_low_c.toDouble() }
-						else if(eventData?.data?.away_temperature_low_c) { heatingSetpoint = eventData?.data?.away_temperature_low_c.toDouble() }
+						if(eventData.data.eco_temperature_high_c) { coolingSetpoint = eventData.data.eco_temperature_high_c.toDouble() }
+						else if(eventData.data.away_temperature_high_c) { coolingSetpoint = eventData.data.away_temperature_high_c.toDouble() }
+						if(eventData.data.eco_temperature_low_c) { heatingSetpoint = eventData.data.eco_temperature_low_c.toDouble() }
+						else if(eventData.data.away_temperature_low_c) { heatingSetpoint = eventData.data.away_temperature_low_c.toDouble() }
 					}
 
 					if(hvacMode in ["cool", "auto", "eco"] && state?.can_cool) {
@@ -270,13 +270,13 @@ void generateEvent(eventData) {
 					break
 
 				case "F":
-					if(eventData?.data?.locked_temp_min_f && eventData?.data?.locked_temp_max_f) { lockedTempEvent(eventData?.data?.locked_temp_min_f, eventData?.data?.locked_temp_max_f) }
-					def temp = eventData?.data?.ambient_temperature_f
+					if(eventData.data.locked_temp_min_f && eventData.data.locked_temp_max_f) { lockedTempEvent(eventData.data.locked_temp_min_f, eventData.data.locked_temp_max_f) }
+					def temp = eventData.data.ambient_temperature_f
 					temperatureEvent(temp)
 
 					def heatingSetpoint = 0
 					def coolingSetpoint = 0
-					def targetTemp = eventData?.data?.target_temperature_f
+					def targetTemp = eventData.data.target_temperature_f
 
 					if(hvacMode == "cool") {
 						coolingSetpoint = targetTemp
@@ -285,14 +285,14 @@ void generateEvent(eventData) {
 						heatingSetpoint = targetTemp
 					}
 					else if(hvacMode == "auto") {
-						coolingSetpoint = eventData?.data?.target_temperature_high_f
-						heatingSetpoint = eventData?.data?.target_temperature_low_f
+						coolingSetpoint = eventData.data.target_temperature_high_f
+						heatingSetpoint = eventData.data.target_temperature_low_f
 					}
 					else if(hvacMode == "eco") {
-						if(eventData?.data?.eco_temperature_high_f) { coolingSetpoint = eventData?.data?.eco_temperature_high_f }
-						else if(eventData?.data?.away_temperature_high_f) { coolingSetpoint = eventData?.data?.away_temperature_high_f }
-						if(eventData?.data?.eco_temperature_low_f)  { heatingSetpoint = eventData?.data?.eco_temperature_low_f }
-						else if(eventData?.data?.away_temperature_low_f)  { heatingSetpoint = eventData?.data?.away_temperature_low_f }
+						if(eventData.data.eco_temperature_high_f) { coolingSetpoint = eventData.data.eco_temperature_high_f }
+						else if(eventData.data.away_temperature_high_f) { coolingSetpoint = eventData.data.away_temperature_high_f }
+						if(eventData.data.eco_temperature_low_f)  { heatingSetpoint = eventData.data.eco_temperature_low_f }
+						else if(eventData.data.away_temperature_low_f)  { heatingSetpoint = eventData.data.away_temperature_low_f }
 					}
 
 					if(hvacMode in ["cool", "auto", "eco"] && state?.can_cool) {
@@ -354,8 +354,8 @@ String tUnitStr() {
 void ecoDesc(val) { }
 
 void pauseEvent(String val = "false") {
-	def curData = device.currentState("pauseUpdates")?.value
-	if(isStateChange(device, "pauseUpdates", val.toString())) {
+	String curData = device.currentState("pauseUpdates")?.value
+	if(isStateChange(device, "pauseUpdates", val)) {
 		Logger("Pause Updates is: (${val}) | Previous State: (${curData})")
 		sendEvent(name: 'pauseUpdates', value: val, displayed: false)
 	}

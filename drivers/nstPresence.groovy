@@ -2,12 +2,12 @@
  *  Nest Presence
  *	Copyright (C) 2018, 2019 Anthony Santilli.
  *	Author: Anthony Santilli (@tonesto7), Eric Schott (@imnotbob)
- *  Modified: 04/16/2019
+ *  Modified: 05/10/2020
  */
 
 import java.text.SimpleDateFormat
 
-def devVer() { return "2.0.2" }
+String devVer() { return "2.0.3" }
 
 metadata {
 	definition (name: "Nest Presence", namespace: "tonesto7", author: "Anthony S.", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstPresence.groovy") {
@@ -38,7 +38,7 @@ metadata {
 	}
 }
 
-def logsOff(){
+void logsOff(){
 	log.warn "${device?.displayName} debug logging disabled..."
 	device.updateSetting("logEnable",[value:"false",type:"bool"])
 }
@@ -49,7 +49,7 @@ void installed() {
 	runIn(5, "initialize", [overwrite: true])
 }
 
-def initialize() {
+void initialize() {
 	log.trace "Device Initialized: (${device?.displayName})..."
 	if (!state.updatedLastRanAt || now() >= state.updatedLastRanAt + 2000) {
 		state.updatedLastRanAt = now()
@@ -71,7 +71,7 @@ void uninstalled() {
 	log.trace "Device Removed: (${device?.displayName})..."
 }
 
-def verifyDataAttr() {
+void verifyDataAttr() {
 	if(!device?.getDataValue("manufacturer")) {
 		updateDataValue("manufacturer", "Nest")
 	}
@@ -138,109 +138,109 @@ def getTimeZone() {
 	return tz
 }
 
-def lastUpdatedEvent(sendEvt=false) {
+void lastUpdatedEvent(Boolean sendEvt=false) {
 	//def now = new Date()
 	//def tf = new SimpleDateFormat("MMM d, yyyy - h:mm:ss a")
 	//tf.setTimeZone(getTimeZone())
-	def lastUpd = device.currentState("lastUpdatedDt")?.value
-	def lastDt = getDtNow() //"${tf?.format(now)}"
-	state?.lastUpdatedDt = lastDt?.toString()
+	String lastUpd = device.currentState("lastUpdatedDt")?.value
+	String lastDt = getDtNow() //"${tf?.format(now)}"
+	state.lastUpdatedDt = lastDt
 	//state?.lastUpdatedDtFmt = formatDt(now)
 	if(sendEvt) {
 		Logger("Last Parent Refresh time: (${lastDt}) | Previous Time: (${lastUpd})")
-		sendEvent(name: 'lastUpdatedDt', value: lastDt?.toString(), displayed: false, isStateChange: true)
+		sendEvent(name: 'lastUpdatedDt', value: lastDt, displayed: false, isStateChange: true)
 	}
 }
 
-def lastConnectionEvent(checkin, sendEvt=false) {
+void lastConnectionEvent(String checkin, Boolean sendEvt=false) {
 	def tf = new java.text.SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
 	def regex1 = /Z/
 	checkin = checkin.replaceAll(regex1, "-0000")
 	tf.setTimeZone(getTimeZone())
 
 	//def curConn = checkin ? "${tf.format(Date.parse("E MMM dd HH:mm:ss z yyyy", checkin))}" : "Not Available"
-	def curConnFmt = checkin ? "${formatDt(Date.parse("E MMM dd HH:mm:ss z yyyy", checkin))}" : "Not Available"
-	state?.lastConnection = curConnFmt?.toString()
+	String curConnFmt = checkin ? formatDt(Date.parse("E MMM dd HH:mm:ss z yyyy", checkin)) : "Not Available"
+	state?.lastConnection = curConnFmt
 
 	if(sendEvt) {
 		//def curConnSeconds = (checkin && curConnFmt != "Not Available") ? getTimeDiffSeconds(curConnFmt) : 3000
 
-		def lastChk = device.currentState("lastConnection")?.value
+		String lastChk = device.currentState("lastConnection")?.value
 		//def lastConnSeconds = (lastChk && lastChk != "Not Available") ? getTimeDiffSeconds(lastChk) : 3000
 
-		 if(isStateChange(device, "lastConnection", curConnFmt.toString())) {
+		 if(isStateChange(device, "lastConnection", curConnFmt)) {
 			Logger("Last Nest Check-in was: (${curConnFmt}) | Previous Check-in: (${lastChk})")
 			sendEvent(name: 'lastConnection', value: curConnFmt?.toString(), isStateChange: true)
 		}
 	}
 }
 
-def presenceEvent(presence) {
-	def val = device.currentState("presence")?.value
-	def pres = (presence == "home") ? "present" : "not present"
-	def nestPres = !device.currentState("nestPresence") ? null : device.currentState("nestPresence")?.value.toString()
-	def newNestPres = (presence == "home") ? "home" : ((presence == "auto-away") ? "auto-away" : "away")
+void presenceEvent(presence) {
+	String val = device.currentState("presence")?.value
+	String pres = (presence == "home") ? "present" : "not present"
+	String nestPres = !device.currentState("nestPresence") ? null : device.currentState("nestPresence")?.value.toString()
+	String newNestPres = (presence == "home") ? "home" : ((presence == "auto-away") ? "auto-away" : "away")
 	// def statePres = state?.present
 	// state?.present = (pres == "present") ? true : false
 	// state?.nestPresence = newNestPres
-	if(isStateChange(device, "presence", pres.toString()) || isStateChange(device, "nestPresence", newNestPres.toString()) || !nestPres) {
+	if(isStateChange(device, "presence", pres) || isStateChange(device, "nestPresence", newNestPres) || !nestPres) {
 		Logger("Presence is: ${pres} | Previous State: ${val}")
 		sendEvent(name: 'nestPresence', value: newNestPres, descriptionText: "Nest Presence is: ${newNestPres}", displayed: true, isStateChange: true )
 		sendEvent(name: 'presence', value: pres, descriptionText: "Device is: ${pres}", displayed: true, isStateChange: true )
 	}
 }
 
-def etaEvent(String eta) {
-	def oeta = device.currentState("etaBegin")?.value
-	if(isStateChange(device, "etaBegin", eta.toString())) {
+void etaEvent(String eta) {
+	String oeta = device.currentState("etaBegin")?.value
+	if(isStateChange(device, "etaBegin", eta)) {
 		Logger("Eta Begin is (${eta}) | Previous State: (${oeta})")
 		sendEvent(name:'etaBegin', value: eta, descriptionText: "Eta is ${eta}", displayed: true, isStateChange: true)
 	}
 }
 
-def securityStateEvent(sec) {
-	def val = ""
-	def oldState = device.currentState("securityState")?.value
+void securityStateEvent(sec) {
+	String val = ""
+	String oldState = device.currentState("securityState")?.value
 	if(sec) { val = sec }
-	if(isStateChange(device, "securityState", val.toString())) {
+	if(isStateChange(device, "securityState", val)) {
 		Logger("Security State is (${val}) | Previous State: (${oldState})")
 		sendEvent(name: "securityState", value: val, descriptionText: "Location Security State is: ${val}", displayed: true, isStateChange: true, state: val)
 	}
 }
 
-def peakEvent(start, end) {
+void peakEvent(start, end) {
 	if(start && end) {
 		def tf = new java.text.SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
 		tf.setTimeZone(getTimeZone())
 
 		def regex1 = /Z/
-		def tstart = start.replaceAll(regex1, "-0000")
-		def tend = end.replaceAll(regex1, "-0000")
-		def startFmt = tstart ? "${formatDt(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", tstart))}" : "Not Available"
-		def endFmt = tend ? "${formatDt(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", tend))}" : "Not Available"
+		String tstart = start.replaceAll(regex1, "-0000")
+		String tend = end.replaceAll(regex1, "-0000")
+		String startFmt = tstart ? formatDt(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", tstart)) : "Not Available"
+		String endFmt = tend ? formatDt(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", tend)) : "Not Available"
 
-			def lastChk = device.currentState("peakStart")?.value
+			String lastChk = device.currentState("peakStart")?.value
 
-			 if(isStateChange(device, "peakStart", startFmt.toString())) {
+			 if(isStateChange(device, "peakStart", startFmt)) {
 				Logger("Peak Start: (${startFmt}) | Previous: (${lastChk})")
-				sendEvent(name: 'peakStart', value: startFmt?.toString(), isStateChange: true)
+				sendEvent(name: 'peakStart', value: startFmt, isStateChange: true)
 			}
 
 			lastChk = device.currentState("peakEnd")?.value
 			//def lastConnSeconds = (lastChk && lastChk != "Not Available") ? getTimeDiffSeconds(lastChk) : 3000
 
-			 if(isStateChange(device, "peakEnd", endFmt.toString())) {
+			 if(isStateChange(device, "peakEnd", endFmt)) {
 				Logger("Peak End: (${endFmt}) | Previous: (${lastChk})")
-				sendEvent(name: 'peakEnd', value: endFmt?.toString(), isStateChange: true)
+				sendEvent(name: 'peakEnd', value: endFmt, isStateChange: true)
 			}
 	}
 }
 
-def apiStatusEvent(issueDesc) {
-	def curStat = device.currentState("apiStatus")?.value
-	def newStat = issueDesc
-	if(isStateChange(device, "apiStatus", newStat.toString())) {
-		Logger("API Status is: (${newStat.toString().capitalize()}) | Previous State: (${curStat.toString().capitalize()})")
+void apiStatusEvent(issueDesc) {
+	String curStat = device.currentState("apiStatus")?.value
+	String newStat = issueDesc
+	if(isStateChange(device, "apiStatus", newStat)) {
+		Logger("API Status is: (${newStat.capitalize()}) | Previous State: (${curStat.capitalize()})")
 		sendEvent(name: "apiStatus", value: newStat, descriptionText: "API Status is: ${newStat}", displayed: true, isStateChange: true, state: newStat)
 	}
 }
@@ -306,13 +306,13 @@ def cancelNestEta(tripId){
  |										LOGGING FUNCTIONS										|
  *************************************************************************************************/
 
-def lastN(String input, n) {
+String lastN(String input, n) {
 	return n > input?.size() ? input : input[-n..-1]
 }
 
-void Logger(msg, logType = "debug") {
+void Logger(String msg, String logType = "debug") {
 	if(!logEnable || !msg) { return }
-	def smsg = "${device.displayName} (v${devVer()}) | ${msg}"
+	String smsg = "${device.displayName} (v${devVer()}) | ${msg}"
 	if(state?.enRemDiagLogging == null) {
 		state?.enRemDiagLogging = parent?.getStateVal("enRemDiagLogging")
 		if(state?.enRemDiagLogging == null) {
@@ -321,7 +321,7 @@ void Logger(msg, logType = "debug") {
 		//log.debug "set enRemDiagLogging to ${state?.enRemDiagLogging}"
 	}
         if(state?.enRemDiagLogging) {
-		def theId = lastN(device.getId().toString(),5)
+		String theId = lastN(device.getId().toString(),5)
                 parent.saveLogtoRemDiagStore(smsg, logType, "Thermostat-${theId}")
         } else {
 	switch (logType) {
@@ -353,8 +353,8 @@ def log(message, level = "trace") {
 	return null // always child interface call with a return value
 }
 
-def getDtNow() {
-	def now = new Date()
+String getDtNow() {
+	Date now = new Date()
 	return formatDt(now)
 }
 
@@ -363,23 +363,21 @@ def getSettingVal(var) {
 	return settings[var] ?: null
 }
 
-def formatDt(dt) {
+String formatDt(Date dt) {
 	def tf = new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
 	if(getTimeZone()) { tf.setTimeZone(getTimeZone()) }
 	return tf.format(dt)
 }
 
-def getTimeDiffSeconds(strtDate, stpDate=null, methName=null) {
+Long getTimeDiffSeconds(String strtDate, String stpDate=null, String methName=null) {
 	//LogTrace("[GetTimeDiffSeconds] StartDate: $strtDate | StopDate: ${stpDate ?: "Not Sent"} | MethodName: ${methName ?: "Not Sent"})")
 	if(strtDate) {
 		//if(strtDate?.contains("dtNow")) { return 10000 }
-		def now = new Date()
-		def stopVal = stpDate ? stpDate.toString() : formatDt(now)
-		def startDt = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate)
-		def stopDt = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal)
-		def start = Date.parse("E MMM dd HH:mm:ss z yyyy", formatDt(startDt)).getTime()
-		def stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
-		def diff = (int) (long) (stop - start) / 1000 //
+		Date now = new Date()
+		String stopVal = stpDate ? stpDate : formatDt(now)
+		Long startDt = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
+		Long stopDt = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
+		Long diff = (stop - start) / 1000L //
 		//LogTrace("[GetTimeDiffSeconds] Results for '$methName': ($diff seconds)")
 		return diff
 	} else { return null }

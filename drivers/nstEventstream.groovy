@@ -2,7 +2,7 @@
  *  Nest Eventstream
  *	Copyright (C) 2018, 2019 Anthony S..
  *	Author: Anthony Santilli (@tonesto7)
- *  Modified: 04/17/2020
+ *  Modified: 05/9/2020
  */
 
 import java.text.SimpleDateFormat
@@ -10,7 +10,7 @@ import groovy.json.*
 import java.security.MessageDigest
 import groovy.transform.Field
 
-static def devVer() { return "2.0.6" }
+static String devVer() { return "2.0.6" }
 
 metadata {
 	definition (name: "Nest Eventstream", namespace: "tonesto7", author: "Anthony S.", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstEventstream.groovy") {
@@ -178,7 +178,7 @@ void parse(description) {
 		if (!state.blockEventStreaming && description) {
 			def data = new JsonSlurper().parseText(description as String)
 			if (data?.size()) {
-				allEventCountFLD = allEventCountFLD ? allEventCountFLD + 1 : 1L
+				allEventCountFLD = allEventCountFLD ? allEventCountFLD + 1L : 1L
 				//Logger("Stream Event Received...", "info")
 				Boolean chgd = false
 				Boolean somechg = false
@@ -460,6 +460,7 @@ void parse(description) {
 						}
 						if(camSave) {
 							//state.camSave = camSave
+							camSaveFLD = null
 							camSaveFLD = camSave
 							//Logger("updating camSave", "warn")
 						}
@@ -474,6 +475,7 @@ void parse(description) {
 					}
 
 					//state.lastEventData = theNewEvent
+					lastEventDataFLD = null
 					lastEventDataFLD = theNewEvent
 				}
 				else {
@@ -556,7 +558,7 @@ def getChanges(mapA, mapB, String headstr, String objType=null) {
 }
 
 void sendRecent(Boolean forceNull=false) {
-	def t0 = [:]
+	Map t0 = [:]
 	//t0 = state.lastEventData
 	t0 = lastEventDataFLD
 	state.runInSlowActive = false
@@ -570,10 +572,10 @@ void sendRecent(Boolean forceNull=false) {
 				Logger("Skipping Forced Null sent Event # ${eventCountFLD} / ${allEventCountFLD}", "warn")
 				return
 			}
-			eventCountFLD = eventCountFLD ? eventCountFLD + 1 : 1L
+			eventCountFLD = eventCountFLD ? eventCountFLD + 1L : 1L
 			Logger("Sent Event Data Event # ${eventCountFLD} / ${allEventCountFLD}", "info")
 		}
-		parent?.receiveEventData(t0)
+		parent.receiveEventData(t0)
 	} else {
 		Logger("No Event Data to send  Event # ${eventCountFLD} / ${allEventCountFLD}", "warn")
 	}

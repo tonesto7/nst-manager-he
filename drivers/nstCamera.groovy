@@ -2,7 +2,7 @@
  *  Nest Camera
  *	Copyright (C) 2018, 2019 Anthony S..
  *	Author: Anthony Santilli (@tonesto7)
- *  Modified: 05/01/2019
+ *  Modified: 05/10/2020
  */
 
 import java.text.SimpleDateFormat
@@ -10,7 +10,7 @@ import groovy.time.TimeCategory
 
 preferences { }
 
-def devVer() { return "2.0.4" }
+String devVer() { return "2.0.5" }
 
 metadata {
 	definition (name: "Nest Camera", author: "Anthony S.", namespace: "tonesto7", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstCamera.groovy") {
@@ -60,12 +60,12 @@ metadata {
 	}
 }
 
-def logsOff(){
+void logsOff(){
 	log.warn "${device?.displayName} debug logging disabled..."
 	device.updateSetting("logEnable",[value:"false",type:"bool"])
 }
 
-def initialize() {
+void initialize() {
 	log.trace "Device Initialized: (${device?.displayName})..."
 	if (!state.updatedLastRanAt || now() >= state.updatedLastRanAt + 2000) {
 		state.updatedLastRanAt = now()
@@ -93,7 +93,7 @@ void uninstalled() {
 	log.trace "Device Removed: (${device?.displayName})..."
 }
 
-def verifyDataAttr() {
+void verifyDataAttr() {
 	if(!device?.getDataValue("manufacturer")) {
 		updateDataValue("manufacturer", "Nest")
 	}
@@ -121,7 +121,7 @@ void refresh() {
 }
 
 void generateEvent(eventData) {
-	def dtNow = getDtNow()
+	String dtNow = getDtNow()
 	//log.trace("processEvent Parsing data ${eventData}")
 	try {
 		// Logger("------------START OF API RESULTS DATA------------", "warn")
@@ -171,8 +171,8 @@ void generateEvent(eventData) {
 	}
 }
 
-def getStateSize()      { return state?.toString().length() }
-def getStateSizePerc()  { return (int) ((stateSize/100000)*100).toDouble().round(0) }
+Integer getStateSize()      { return state?.toString().length() }
+Integer getStateSizePerc()  { return (Integer)Math.round((stateSize/100000)*100) }
 def getDevTypeId() 		{ return device?.getDevTypeId() }
 
 def getDataByName(String name) {
@@ -190,138 +190,138 @@ def getTimeZone() {
 	return tz
 }
 
-def lastCheckinEvent(checkin, sendEvt=false) {
+void lastCheckinEvent(String checkin, sendEvt=false) {
 	def tf = new SimpleDateFormat("MMM d, yyyy - h:mm:ss a")
 	tf.setTimeZone(getTimeZone())
 	//Logger("lastCheckin: checkin: ${checkin}", "debug")
 	def regex1 = /Z/
-	def t0 = checkin.replaceAll(regex1, "-0000")
+	String t0 = checkin.replaceAll(regex1, "-0000")
 
-	def lastConn = t0 ? tf?.format(Date.parse("E MMM dd HH:mm:ss z yyyy", t0.toString())) : "Not Available"
-	state.lastConnection = lastConn.toString()
+	String lastConn = t0 ? tf?.format(Date.parse("E MMM dd HH:mm:ss z yyyy", t0)) : "Not Available"
+	state.lastConnection = lastConn
 	if(sendEvt) {
 		def lastChk = device.currentState("lastConnection")?.value
-		if(isStateChange(device, "lastConnection", lastConn?.toString())) {
+		if(isStateChange(device, "lastConnection", lastConn)) {
 			// Logger("Last Nest Check-in was: (${lastConn}) | Previous State: (${lastChk})")
 			sendEvent(name: 'lastConnection', value: lastConn?.toString(), displayed: false)
 		}
 	}
 }
 
-def lastOnlineEvent(dt) {
-	def lastOnlVal = device.currentState("lastOnlineChange")?.value
+void lastOnlineEvent(String dt) {
+	String lastOnlVal = device.currentState("lastOnlineChange")?.value
 	def tf = new SimpleDateFormat("MMM d, yyyy - h:mm:ss a")
 	tf.setTimeZone(getTimeZone())
 	//Logger("lastOnlineEvent: dt: ${dt}", "debug")
 	def regex1 = /Z/
-	def t0 = dt.replaceAll(regex1, "-0000")
-	def lastOnl = !t0 ? "Nothing To Show..." : tf?.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0.toString()))
-	if(isStateChange(device, "lastOnlineChange", lastOnl?.toString())) {
+	String t0 = dt.replaceAll(regex1, "-0000")
+	String lastOnl = !t0 ? "Nothing To Show..." : tf?.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0))
+	if(isStateChange(device, "lastOnlineChange", lastOnl)) {
 		Logger("Last Online Change was: (${lastOnl}) | Previous State: (${lastOnlVal})")
 		sendEvent(name: 'lastOnlineChange', value: lastOnl, displayed: true, isStateChange: true)
 	}
 }
 
-def onlineStatusEvent(isOnline) {
+void onlineStatusEvent(String isOnline) {
 	//Logger("onlineStatusEvent($isOnline)")
-	def prevOnlineStat = device.currentState("onlineStatus")?.value
-	def onlineStat = isOnline.toString() == "true" ? "online" : "offline"
-	if(isStateChange(device, "onlineStatus", onlineStat.toString())) {
+	String prevOnlineStat = device.currentState("onlineStatus")?.value
+	String onlineStat = isOnline == "true" ? "online" : "offline"
+	if(isStateChange(device, "onlineStatus", onlineStat)) {
 		Logger("Online Status is: (${onlineStat}) | Previous State: (${prevOnlineStat})")
 		sendEvent(name: "onlineStatus", value: onlineStat.toString(), descriptionText: "Online Status is: ${onlineStat}", displayed: true, isStateChange: true, state: onlineStat)
 	}
 }
 
-def securityStateEvent(sec) {
-	def val = ""
-	def oldState = device.currentState("securityState")?.value
+void securityStateEvent(String sec) {
+	String val = ""
+	String oldState = device.currentState("securityState")?.value
 	if(sec) { val = sec }
-	if(isStateChange(device, "securityState", val.toString())) {
+	if(isStateChange(device, "securityState", val)) {
 		Logger("Security State is (${val}) | Previous State: (${oldState})")
 		sendEvent(name: "securityState", value: val, descriptionText: "Location Security State is: ${val}", displayed: true, isStateChange: true, state: val)
 	}
 }
 
-def isStreamingEvent(isStreaming, override=false) {
+void isStreamingEvent(isStreaming, override=false) {
 	//log.trace "isStreamingEvent($isStreaming)..."
-	def isOn = device.currentState("isStreaming")?.value
-	def isOnline = device.currentState("onlineStatus")?.value
-	def val = (isStreaming.toString() == "true") ? "on" : (isOnline.toString() != "online" ? "offline" : "off")
-	if(isStateChange(device, "isStreaming", val.toString())) {
+	String isOn = device.currentState("isStreaming")?.value
+	String isOnline = device.currentState("onlineStatus")?.value
+	String val = (isStreaming.toString() == "true") ? "on" : (isOnline.toString() != "online" ? "offline" : "off")
+	if(isStateChange(device, "isStreaming", val)) {
 		Logger("Camera Live Video Streaming is: (${val}) | Previous State: (${isOn})")
 		sendEvent(name: "isStreaming", value: val, descriptionText: "Camera Video Streaming is: ${val}", displayed: true, isStateChange: true, state: val)
 		sendEvent(name: "switch", value: (val == "on" ? val : "off"), displayed: false)
 	}
 }
 
-def audioInputEnabledEvent(on) {
-	def isOn = device.currentState("audioInputEnabled")?.value
-	def val = (on.toString() == "true") ? "Enabled" : "Disabled"
-	if(isStateChange(device, "audioInputEnabled", val.toString())) {
+void audioInputEnabledEvent(on) {
+	String isOn = device.currentState("audioInputEnabled")?.value
+	String val = (on.toString() == "true") ? "Enabled" : "Disabled"
+	if(isStateChange(device, "audioInputEnabled", val)) {
 		Logger("Audio Input Status is: (${val}) | Previous State: (${isOn})")
 		sendEvent(name: "audioInputEnabled", value: val, descriptionText: "Audio Input Status is: ${val}", displayed: true, isStateChange: true, state: val)
 	}
 }
 
-def videoHistEnabledEvent(on) {
-	def isOn = device.currentState("videoHistoryEnabled")?.value
-	def val = (on.toString() == "true") ? "Enabled" : "Disabled"
-	if(isStateChange(device, "videoHistoryEnabled", val.toString())) {
+void videoHistEnabledEvent(on) {
+	String isOn = device.currentState("videoHistoryEnabled")?.value
+	String val = (on.toString() == "true") ? "Enabled" : "Disabled"
+	if(isStateChange(device, "videoHistoryEnabled", val)) {
 		Logger("Video History Status is: (${val}) | Previous State: (${isOn})")
 		sendEvent(name: "videoHistoryEnabled", value: val, descriptionText: "Video History Status is: ${val}", displayed: true, isStateChange: true, state: val)
 	}
 }
 
-def publicShareEnabledEvent(on) {
-	def isOn = device.currentState("publicShareEnabled")?.value
-	def val = on ? "Enabled" : "Disabled"
-	if(isStateChange(device, "publicShareEnabled", val.toString())) {
+void publicShareEnabledEvent(on) {
+	String isOn = device.currentState("publicShareEnabled")?.value
+	String val = on ? "Enabled" : "Disabled"
+	if(isStateChange(device, "publicShareEnabled", val)) {
 		Logger("Public Sharing Status is: (${val}) | Previous State: (${isOn})")
 		sendEvent(name: "publicShareEnabled", value: val, descriptionText: "Public Sharing Status is: ${val}", displayed: true, isStateChange: true, state: val)
 	}
 }
 
-def softwareVerEvent(ver) {
-	def verVal = device.currentState("softwareVer")?.value
-	if(isStateChange(device, "softwareVer", ver.toString())) {
+void softwareVerEvent(String ver) {
+	String verVal = device.currentState("softwareVer")?.value
+	if(isStateChange(device, "softwareVer", ver)) {
 		Logger("Firmware Version: (${ver}) | Previous State: (${verVal})")
 		sendEvent(name: 'softwareVer', value: ver, descriptionText: "Firmware Version is now v${ver}", displayed: false)
 	}
 }
 
-def lastEventDataEvent(data, actZones) {
+void lastEventDataEvent(data, actZones) {
 	// log.trace "lastEventDataEvent($data)"
 	def tf = new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
 	tf.setTimeZone(getTimeZone())
 	//Logger("lastEventDataEvent 1", "debug")
-	def curStartDt = device?.currentState("lastEventStart")?.value ? tf?.format(Date.parse("E MMM dd HH:mm:ss z yyyy", device?.currentState("lastEventStart")?.value.toString())) : null
+	String curStartDt = device?.currentState("lastEventStart")?.value ? tf?.format(Date.parse("E MMM dd HH:mm:ss z yyyy", device?.currentState("lastEventStart")?.value.toString())) : null
 	//Logger("lastEventDataEvent 2 curStartDt: ${curStartDt}", "debug")
-	def curEndDt = device?.currentState("lastEventEnd")?.value ? tf?.format(Date.parse("E MMM dd HH:mm:ss z yyyy", device?.currentState("lastEventEnd")?.value.toString())) : null
+	String curEndDt = device?.currentState("lastEventEnd")?.value ? tf?.format(Date.parse("E MMM dd HH:mm:ss z yyyy", device?.currentState("lastEventEnd")?.value.toString())) : null
 	//Logger("lastEventDataEvent 2 curEndDt: ${curEndDt}", "debug")
 
 	def regex1 = /Z/
 	//Logger("lastEventData 3 data.start: ${data?.start_time}")
-	def t0 = data?.start_time ? data?.start_time.replaceAll(regex1, "-0000") : data?.start_time
-	def newStartDt = data?.start_time ? tf.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0.toString())) : "Not Available"
+	String t0 = data?.start_time ? data?.start_time.replaceAll(regex1, "-0000") : data?.start_time
+	String newStartDt = data?.start_time ? tf.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0)) : "Not Available"
 	//Logger("lastEventDataEvent 3 newStartDt: ${newStartDt}", "debug")
 
 	//Logger("lastEventData 3 data.end_time: ${data?.end_time}")
-	def t1 = data?.end_time ? data?.end_time.replaceAll(regex1, "-0000") : data?.end_time
-	def newEndDt = data?.end_time ? tf.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t1.toString())) : "Not Available"
+	String t1 = data?.end_time ? data?.end_time.replaceAll(regex1, "-0000") : data?.end_time
+	String newEndDt = data?.end_time ? tf.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t1)) : "Not Available"
 	//Logger("lastEventDataEvent 3 newEndDt: ${newEndDt}", "debug")
 
-	def hasPerson = data?.has_person ? data?.has_person?.toBoolean() : false
-	def hasMotion = data?.has_motion ? data?.has_motion?.toBoolean() : false
-	def hasSound = data?.has_sound ? data?.has_sound?.toBoolean() : false
+	Boolean hasPerson = data?.has_person ? data?.has_person?.toBoolean() : false
+	Boolean hasMotion = data?.has_motion ? data?.has_motion?.toBoolean() : false
+	Boolean hasSound = data?.has_sound ? data?.has_sound?.toBoolean() : false
 	def evtZoneIds = data?.activity_zone_ids
-	def evtZoneNames = null
+	String evtZoneNames = null
 
-	def evtType = (!hasMotion ? "Sound Event" : "Motion Event") + "${hasPerson ? " (Person)" : ""}" + "${hasSound ? " (Sound)" : ""}"
+	String evtType = (!hasMotion ? "Sound Event" : "Motion Event") + "${hasPerson ? " (Person)" : ""}" + "${hasSound ? " (Sound)" : ""}"
 	if(actZones && evtZoneIds) {
 		state?.activityZones = actZones?.collect { it?.name }
 		evtZoneNames = actZones.findAll { it?.id.toString() in evtZoneIds }.collect { it?.name }
-		def zstr = ""
-		def i = 1
+		String zstr = ""
+		Integer i = 1
 		evtZoneNames?.sort()?.each {
 			zstr += "${(i > 1 && i <= evtZoneNames?.size()) ? "<br>" : ""}${it}"
 			i = i+1
@@ -330,20 +330,20 @@ def lastEventDataEvent(data, actZones) {
 
 	//log.debug "curStartDt: $curStartDt | curEndDt: $curEndDt || newStartDt: $newStartDt | newEndDt: $newEndDt"
 
-	state.lastEventDate = formatDt2(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0.toString()), "MMMMM d, yyyy").toString()
-	state.lastEventTime = "${formatDt2(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0.toString()), "h:mm:ssa")} to ${formatDt2(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t1.toString()), "h:mm:ssa")}"
+	state.lastEventDate = formatDt2(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0), "MMMMM d, yyyy")
+	state.lastEventTime = "${formatDt2(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0), "h:mm:ssa")} to ${formatDt2(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t1), "h:mm:ssa")}"
 	if(state?.lastEventData) { state.lastEventData == null }
 
-	def tryPic = false
+	Boolean tryPic = false
 
-	if(!state?.lastCamEvtData || (curStartDt != newStartDt || curEndDt != newEndDt) || isStateChange(device, "lastEventType", evtType.toString()) || isStateChange(device, "lastEventZones", evtZoneNames.toString())) {
+	if(!state?.lastCamEvtData || (curStartDt != newStartDt || curEndDt != newEndDt) || isStateChange(device, "lastEventType", evtType) || isStateChange(device, "lastEventZones", evtZoneNames)) {
 		if(hasPerson || hasMotion || hasSound) {
 			sendEvent(name: 'lastEventStart', value: newStartDt, descriptionText: "Last Event Start is ${newStartDt}", displayed: false)
 			sendEvent(name: 'lastEventEnd', value: newEndDt, descriptionText: "Last Event End is ${newEndDt}", displayed: false)
 			sendEvent(name: 'lastEventType', value: evtType, descriptionText: "Last Event Type was ${evtType}", displayed: false)
 			sendEvent(name: 'lastEventZones', value: evtZoneNames.toString(), descriptionText: "Last Event Zones: ${evtZoneNames}", displayed: false)
 			state.lastCamEvtData = ["startDt":newStartDt, "endDt":newEndDt, "hasMotion":hasMotion, "hasSound":hasSound, "hasPerson":hasPerson, "motionOnPersonOnly":(settings?.motionOnPersonOnly == true), "actZones":(data?.activity_zone_ids ?: null)]
-			if(data?.start_time && GetTimeDiffSeconds(newStartDt) < 180) {
+			if(data?.start_time && GetTimeDiffSeconds(newStartDt) < 180L) {
 				Logger("└────────────────────────────")
 				Logger("│	HasSound: (${hasSound})")
 				Logger("│	HasPerson: (${hasPerson})")
@@ -361,7 +361,7 @@ def lastEventDataEvent(data, actZones) {
 	motionSoundEvtHandler()
 }
 
-def motionSoundEvtHandler() {
+void motionSoundEvtHandler() {
 	def data = state?.lastCamEvtData
 	if(data) {
 		motionEvtHandler(data)
@@ -373,29 +373,29 @@ def motionSoundEvtHandler() {
 void motionEvtHandler(data) {
 	def tf = new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
 	tf.setTimeZone(getTimeZone())
-	def dtNow = new Date()
-	def curMotion = device.currentState("motion")?.value?.toString()
-	def motionStat = "inactive"
-	def motionPerStat = "inactive"
+	Date dtNow = new Date()
+	String curMotion = device.currentState("motion")?.value?.toString()
+	String motionStat = "inactive"
+	String motionPerStat = "inactive"
 	if(state?.restStreaming == true && data) {
 		if(data?.endDt && data?.hasMotion && !data?.sentMUpd) {
-			int t0 = GetTimeDiffSeconds(data?.startDt, data?.endDt)
-			int t1 = state?.motionSndChgWaitVal ?: 4
-			int newDur = Math.min( Math.max(3, t0) , t1)
+			Long t0 = GetTimeDiffSeconds(data?.startDt, data?.endDt)
+			Integer t1 = state?.motionSndChgWaitVal ?: 4
+			Integer newDur = Math.min( Math.max(3, t0.toInteger()) , t1)
 
 			t0 = GetTimeDiffSeconds(data?.endDt)
-			def howRecent = Math.max(1, t0)
+			Long howRecent = Math.max(1L, t0)
 			//Logger("MOTION NewDur: ${newDur}    howRecent: ${howRecent}")
 
 			def tt0 = state?.lastCamEvtData
 			tt0.sentMUpd = true
 			state.lastCamEvtData = tt0
-			if(howRecent <= 60) {
-				def motGo = (data?.motionOnPersonOnly == true && data?.hasPerson != true) ? false : true
+			if(howRecent <= 60L) {
+				Boolean motGo = (data?.motionOnPersonOnly == true && data?.hasPerson != true) ? false : true
 				if(motGo) {
 					motionStat = "active"
 					if(data?.hasPerson) { motionPerStat = "active" }
-					runIn(newDur?.toInteger(), "motionSoundEvtHandler", [overwrite: true])
+					runIn(newDur, "motionSoundEvtHandler", [overwrite: true])
 				}
 			}
 /*
@@ -414,11 +414,11 @@ void motionEvtHandler(data) {
 */
 		}
 	}
-	if(isStateChange(device, "motion", motionStat.toString()) ) {
+	if(isStateChange(device, "motion", motionStat) ) {
 		Logger("Motion Sensor is: (${motionStat}) | Person: (${motionPerStat}) | Previous State: (${curMotion})")
 		sendEvent(name: "motion", value: motionStat, descriptionText: "Motion Sensor is: ${motionStat}", displayed: true, isStateChange: true, state: motionStat)
 	}
-	if(isStateChange(device, "motionPerson", motionPerStat?.toString())) {
+	if(isStateChange(device, "motionPerson", motionPerStat)) {
 		sendEvent(name: "motionPerson", value: motionPerStat, descriptionText: "Motion Person is: ${motionPerStat}", displayed: true, isStateChange: true, state: motionPerStat)
 	}
 }
@@ -426,25 +426,25 @@ void motionEvtHandler(data) {
 void soundEvtHandler(data) {
 	def tf = new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
 	tf.setTimeZone(getTimeZone())
-	def dtNow = new Date()
-	def curSound = device.currentState("sound")?.value?.toString()
-	def sndStat = "not detected"
+	Date dtNow = new Date()
+	String curSound = device.currentState("sound")?.value?.toString()
+	String sndStat = "not detected"
 	if(state?.restStreaming == true && data) {
 		if(data?.endDt && data?.hasSound && !data?.sentSUpd) {
-			int t0 = GetTimeDiffSeconds(data?.startDt, data?.endDt)
-			int t1 = state?.motionSndChgWaitVal ?: 4
-			int newDur = Math.min( Math.max(3, t0) , state?.motionSndChgWaitVal)
+			Long t0 = GetTimeDiffSeconds(data?.startDt, data?.endDt)
+			Integer t1 = state?.motionSndChgWaitVal ?: 4
+			Integer newDur = Math.min( Math.max(3, t0.toInteger()) , state?.motionSndChgWaitVal)
 
 			t0 = GetTimeDiffSeconds(data?.endDt)
-			def howRecent = Math.max(1, t0)
+			Long howRecent = Math.max(1L, t0)
 			//Logger("SOUND NewDur: ${newDur}    howRecent: ${howRecent}")
 
 			def tt0 = state?.lastCamEvtData
 			tt0.sentSUpd = true
 			state.lastCamEvtData = tt0
-			if(howRecent <= 60) {
+			if(howRecent <= 60L) {
 				sndStat = "detected"
-				runIn(newDur?.toInteger(), "motionSoundEvtHandler", [overwrite: true])
+				runIn(newDur, "motionSoundEvtHandler", [overwrite: true])
 			}
 
 /*
@@ -461,38 +461,38 @@ void soundEvtHandler(data) {
 */
 		}
 	}
-	if(isStateChange(device, "sound", sndStat.toString())) {
+	if(isStateChange(device, "sound", sndStat)) {
 		Logger("Sound Detector: (${sndStat}) | Previous State: (${curSound})")
 		sendEvent(name: "sound", value: sndStat, descriptionText: "Sound Sensor is: ${sndStat}", displayed: true, isStateChange: true, state: sndStat)
 	}
 }
 
 
-def apiStatusEvent(issueDesc) {
-	def curStat = device.currentState("apiStatus")?.value
-	def newStat = issueDesc
-	if(isStateChange(device, "apiStatus", newStat.toString())) {
-		Logger("API Status is: (${newStat.toString().capitalize()}) | Previous State: (${curStat.toString().capitalize()})")
+void apiStatusEvent(String issueDesc) {
+	String curStat = device.currentState("apiStatus")?.value
+	String newStat = issueDesc
+	if(isStateChange(device, "apiStatus", newStat)) {
+		Logger("API Status is: (${newStat.capitalize()}) | Previous State: (${curStat.capitalize()})")
 		sendEvent(name: "apiStatus", value: newStat, descriptionText: "API Status is: ${newStat}", displayed: true, isStateChange: true, state: newStat)
 	}
 }
 
-def lastUpdatedEvent(sendEvt=false) {
-	def now = new Date()
+void lastUpdatedEvent(Boolean sendEvt=false) {
+	Date now = new Date()
 	def tf = new SimpleDateFormat("MMM d, yyyy - h:mm:ss a")
 	tf.setTimeZone(getTimeZone())
-	def lastDt = "${tf?.format(now)}"
-	state?.lastUpdatedDt = lastDt?.toString()
+	String lastDt = tf.format(now)
+	state.lastUpdatedDt = lastDt
 	// state?.lastUpdatedDtFmt = formatDt(now)
 	if(sendEvt) {
-		def lastUpd = device.currentState("lastUpdatedDt")?.value
-		sendEvent(name: 'lastUpdatedDt', value: lastDt?.toString(), displayed: false, isStateChange: true)
+		String lastUpd = device.currentState("lastUpdatedDt")?.value
+		sendEvent(name: 'lastUpdatedDt', value: lastDt, displayed: false, isStateChange: true)
 	}
 }
 
-def publicShareUrlEvent(url) {
+void publicShareUrlEvent(String url) {
 	//log.trace "publicShareUrlEvent($url)"
-	if(isStateChange(device, "publicShareUrl", url.toString())) {
+	if(isStateChange(device, "publicShareUrl", url)) {
 		sendEvent(name: "publicShareUrl", value: url)
 	}
 }
@@ -508,8 +508,8 @@ def getPublicVidID() {
 	return id
 }
 
-def getRecTimeDesc(val) {
-	def result = null
+String getRecTimeDesc(val) {
+	String result = null
 	if(val && val instanceof Integer) {
 		if(val.toInteger() > 24) {
 			def nVal = (val/24).toDouble().round(0) //
@@ -525,7 +525,7 @@ def getRecTimeDesc(val) {
  |									DEVICE COMMANDS     										|
  *************************************************************************************************/
 void toggleStreaming() {
-	def cur = device?.currentState("isStreaming")?.value.toString()
+	String cur = device?.currentState("isStreaming")?.value.toString()
 	if(cur == "on" || cur == "unavailable" || !cur) {
 		streamingOff(true)
 	} else {
@@ -533,7 +533,7 @@ void toggleStreaming() {
 	}
 }
 
-void streamingOn(manChg=false) {
+void streamingOn(Boolean manChg=false) {
 	try {
 		Logger("Sending Camera Stream ON Command...")
 		parent?.setCamStreaming(this, "true")
@@ -542,7 +542,7 @@ void streamingOn(manChg=false) {
 	}
 }
 
-void streamingOff(manChg=false) {
+void streamingOff(Boolean manChg=false) {
 	try {
 		Logger("Sending Camera Stream OFF Command...")
 		parent?.setCamStreaming(this, "false")
@@ -575,13 +575,13 @@ void unmute() {
  |							LOGGING FUNCTIONS									|
  ********************************************************************************/
 
-def lastN(String input, n) {
+String lastN(String input, n) {
 	return n > input?.size() ? input : input[-n..-1]
 }
 
-void Logger(msg, logType = "debug") {
+void Logger(String msg, String logType = "debug") {
 	if(!logEnable || !msg) { return }
-	def smsg = "${device.displayName} (v${devVer()}) | ${msg}"
+	String smsg = "${device.displayName} (v${devVer()}) | ${msg}"
 	if(state?.enRemDiagLogging == null) {
 		state?.enRemDiagLogging = parent?.getStateVal("enRemDiagLogging")
 		if(state?.enRemDiagLogging == null) {
@@ -590,7 +590,7 @@ void Logger(msg, logType = "debug") {
 		//log.debug "set enRemDiagLogging to ${state?.enRemDiagLogging}"
 	}
 	if(state?.enRemDiagLogging) {
-		def theId = lastN(device.getId().toString(),5)
+		String theId = lastN(device.getId().toString(),5)
 		parent.saveLogtoRemDiagStore(smsg, logType, "Camera-${theId}")
 	} else {
 	switch (logType) {
@@ -622,8 +622,8 @@ def log(message, level = "trace") {
 	return null // always child interface call with a return value
 }
 
-def getDtNow() {
-	def now = new Date()
+String getDtNow() {
+	Date now = new Date()
 	return formatDt(now)
 }
 
@@ -632,29 +632,29 @@ def getSettingVal(var) {
 	return settings[var] ?: null
 }
 
-def formatDt(dt, mdy = false) {
+String formatDt(Date dt, Boolean mdy=false) {
 	//log.trace "formatDt($dt, $mdy)..."
-	def formatVal = mdy ? "MMM d, yyyy - h:mm:ss a" : "E MMM dd HH:mm:ss z yyyy"
+	String formatVal = mdy ? "MMM d, yyyy - h:mm:ss a" : "E MMM dd HH:mm:ss z yyyy"
 	def tf = new SimpleDateFormat(formatVal)
 	if(getTimeZone()) { tf.setTimeZone(getTimeZone()) }
 	return tf.format(dt)
 }
 
-def formatDt2(dt, fmt=null) {
+String formatDt2(Date dt, String fmt=null) {
 	//log.trace "formatDt($dt, $mdy)..."
 	def tf = new SimpleDateFormat(fmt)
 	if(getTimeZone()) { tf.setTimeZone(getTimeZone()) }
 	return tf.format(dt)
 }
 
-def GetTimeDiffSeconds(strtDate, stpDate=null, methName=null) {
+Long GetTimeDiffSeconds(String strtDate, String stpDate=(String)null, String methName=null) {
 	//LogTrace("[GetTimeDiffSeconds] StartDate: $strtDate | StopDate: ${stpDate ?: "Not Sent"} | MethodName: ${methName ?: "Not Sent"})")
 	if((strtDate && !stpDate) || (strtDate && stpDate)) {
-		def now = new Date()
-		def stopVal = stpDate ? stpDate.toString() : formatDt(now)
-		def start = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
-		def stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
-		def diff = (int) (long) (stop - start) / 1000 //
+		Date now = new Date()
+		String stopVal = stpDate ? stpDate : formatDt(now)
+		Long start = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
+		Long stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
+		Long diff = (stop - start) / 1000L //
 		//LogTrace("[GetTimeDiffSeconds] Results for '$methName': ($diff seconds)")
 		return diff
 	} else { return null }

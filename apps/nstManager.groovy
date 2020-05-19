@@ -2,7 +2,7 @@
  *  NST Manager
  *	Copyright (C) 2017, 2018, 2019 Anthony Santilli
  *	Author: Anthony Santilli (@tonesto7) Eric Schott (@nh.schottfam)
- * April 16, 2020
+ * May 18, 2020
  */
 
 import groovy.json.*
@@ -1195,7 +1195,7 @@ void restStreamCheck() {
 
 private static gcd(a, b) {
 	while (b > 0) {
-		long temp = b
+		Long temp = b
 		b = a % b
 		a = temp
 	}
@@ -1203,7 +1203,7 @@ private static gcd(a, b) {
 }
 
 private static gcd(input = []) {
-	long result = input[0]
+	Long result = input[0]
 	for (Integer i = 1; i < input.size; i++) {
 		result = gcd(result, input[i])
 	}
@@ -1916,37 +1916,37 @@ def eventStreamActive(Boolean val) { state.eventStreamActive = val }
 @Field static Map deviceDataFLD
 
 void receiveEventData(evtData) {
-	def status = [:]
+	Map status = [:]
 //	try {
 		// LogAction("evtData: $evtData", "trace", true)
 		Boolean devChgd = false
 		Boolean gotSomething = false
-		if(evtData && evtData?.data && restEnabled()) {
+		if(evtData && evtData.data && restEnabled()) {
 			if(!state.restStreamingOn) {
 				state.restStreamingOn = true
 			//	apiIssueEvent(false)
 			}
-			if(evtData?.data?.devices) {
+			if(evtData.data.devices) {
 				//LogTrace("API Device Resp.Data: ${evtData?.data?.devices}")
 				gotSomething = true
-				Boolean chg = didChange(deviceDataFLD, evtData?.data?.devices, "dev", "stream")
+				Boolean chg = didChange(deviceDataFLD, evtData.data.devices, "dev", "stream")
 				if(chg) {
 					devChgd = true
 				} //else { LogTrace("got deviceData") }
 			}
-			if(evtData?.data?.structures) {
+			if(evtData.data.structures) {
 				//LogTrace("API Structure Resp.Data: ${evtData?.data?.structures}")
 				gotSomething = true
-				Boolean chg = didChange(state.structData, evtData?.data?.structures, "str", "stream")
+				Boolean chg = didChange(state.structData, evtData.data.structures, "str", "stream")
 				if(chg) {
 					String newStrucName = state.structData && state.structures ? state.structData[state.structures]?.name : null
 					state.structureName = newStrucName ?: state.structureName
 				} //else { LogTrace("got structData") }
 			}
-			if(evtData?.data?.metadata) {
+			if(evtData.data.metadata) {
 				//LogTrace("API Metadata Resp.Data: ${evtData?.data?.metadata}")
 				gotSomething = true
-				Boolean chg = didChange(state.metaData, evtData?.data?.metadata, "meta", "stream")
+				Boolean chg = didChange(state.metaData, evtData.data.metadata, "meta", "stream")
 				//if(!chg) { LogTrace("got metaData") }
 			}
 		} else {
@@ -2091,6 +2091,7 @@ Boolean didChange(old, newer, String type, String src) {
 					}
 				}
 				if(devChg && (settings.showDataChgdLogs != true)) { LogAction("Nest Device Data HAS Changed ($srcStr)", "info", false) }
+				deviceDataFLD = null
 				deviceDataFLD = newer
 			}
 			else if(type == "meta") {
@@ -2191,7 +2192,7 @@ void updateChildData(Boolean force = false) {
 			if(state.pollBlocked) { return true }
 			String devId = it?.deviceNetworkId
 			if(devId && settings.thermostats && deviceDataFLD?.thermostats && deviceDataFLD?.thermostats[devId]) {
-				def tData = [data: deviceDataFLD?.thermostats[devId], tz: nestTz, apiIssues: api, pres: locPresence, childWaitVal: getChildWaitVal().toInteger(), etaBegin: locEtaBegin]
+				def tData = [data: deviceDataFLD.thermostats[devId], tz: nestTz, apiIssues: api, pres: locPresence, childWaitVal: getChildWaitVal().toInteger(), etaBegin: locEtaBegin]
 
 				String oldTstatData = state."oldTstatData${devId}"
 				String tDataChecksum = generateMD5_A(tData.toString())
@@ -2200,12 +2201,12 @@ void updateChildData(Boolean force = false) {
 
 				if(tData && (force || nforce || oldTstatData != tDataChecksum)) {
 					physDevLblHandler("thermostat", devId, it?.label, "thermostats", tData.data?.name, "tstat", overRideNames)
-					it?.generateEvent(tData)
+					it.generateEvent(tData)
 				} else { /* LogTrace("tstat ${devId} did not change") */ }
 				return true
 			}
 			else if(devId && settings.protects && deviceDataFLD?.smoke_co_alarms && deviceDataFLD?.smoke_co_alarms[devId]) {
-				def pData = [data: deviceDataFLD?.smoke_co_alarms[devId], showProtActEvts: (!showProtActEvts ? false : true), tz: nestTz, apiIssues: api ]
+				def pData = [data: deviceDataFLD.smoke_co_alarms[devId], showProtActEvts: (!showProtActEvts ? false : true), tz: nestTz, apiIssues: api ]
 				String oldProtData = state."oldProtData${devId}"
 				String pDataChecksum = generateMD5_A(pData.toString())
 				state."oldProtData${devId}" = pDataChecksum
@@ -2213,12 +2214,12 @@ void updateChildData(Boolean force = false) {
 
 				if(pData && (force || nforce || oldProtData != pDataChecksum)) {
 					physDevLblHandler("protect", devId, it?.label, "protects", pData.data?.name, "prot", overRideNames)
-					it?.generateEvent(pData)
+					it.generateEvent(pData)
 				} else { /* LogTrace("prot ${devId} did not change") */ }
 				return true
 			}
 			else if(devId && settings.cameras && deviceDataFLD?.cameras && deviceDataFLD?.cameras[devId]) {
-				def camData = [data: deviceDataFLD?.cameras[devId], tz: nestTz, apiIssues: api, motionSndChgWaitVal: motionSndChgWaitVal, secState: locSecurityState ]
+				def camData = [data: deviceDataFLD.cameras[devId], tz: nestTz, apiIssues: api, motionSndChgWaitVal: motionSndChgWaitVal, secState: locSecurityState ]
 				String oldCamData = state."oldCamData${devId}"
 				String cDataChecksum = generateMD5_A(camData.toString())
 				state."oldCamData${devId}" = cDataChecksum
@@ -2226,7 +2227,7 @@ void updateChildData(Boolean force = false) {
 
 				if(camData && (force || nforce || oldCamData != cDataChecksum)) {
 					physDevLblHandler("camera", devId, it?.label, "cameras", camData.data?.name, "cam", overRideNames)
-					it?.generateEvent(camData)
+					it.generateEvent(camData)
 				} else { /* LogTrace("cam ${devId} did not change") */ }
 				return true
 			}
@@ -2241,7 +2242,7 @@ void updateChildData(Boolean force = false) {
 
 				if(pData && (force || nforce || oldPresData != pDataChecksum)) {
 					virtDevLblHandler(devId, it?.label, "pres", "pres", overRideNames)
-					it?.generateEvent(pData)
+					it.generateEvent(pData)
 				} else { /* LogTrace("pres ${devId} did not change") */ }
 				return true
 			}
@@ -2312,7 +2313,7 @@ void updateChildData(Boolean force = false) {
 
 					if(tData && (force || nforce || oldTstatData != tDataChecksum)) {
 						physDevLblHandler("vthermostat", devId, it?.label, "vThermostats", tData.data?.name, "vtstat", overRideNames)
-						it?.generateEvent(tData)
+						it.generateEvent(tData)
 					} else { /* LogTrace("tstat ${devId} did not change") */ }
 					return true
 				}
@@ -4697,7 +4698,7 @@ Long GetTimeDiffSeconds(String strtDate, String stpDate=(String)null, String met
 		String stopVal = stpDate ? stpDate : formatDt(now)
 		Long start = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
 		Long stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
-		Long diff = (int) (long) (stop - start) / 1000L //
+		Long diff = (stop - start) / 1000L //
 		//LogTrace("[GetTimeDiffSeconds] Results for '$methName': ($diff seconds)")
 		return diff
 	} else { return null }

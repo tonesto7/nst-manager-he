@@ -5,7 +5,7 @@
 |    Contributors: Ben W. (@desertblade)						    |
 |    A few code methods are modeled from those in CoRE by Adrian Caramaliu		    |
 |											    |
-|	4/17/2020									    |
+|	5/18/2020									    |
 |    License Info: https://github.com/tonesto7/nest-manager/blob/master/app_license.txt     |
 |********************************************************************************************/
 
@@ -1441,7 +1441,7 @@ def dumpListDesc(data, level, List lastLevel, listLabel, html=false) {
 			str += dumpMapDesc(newmap, level, newLevel, !t1)
 		} else {
 			def lineStrt = "\n"
-			for(int i=0; i < level; i++) {
+			for(Integer i=0; i < level; i++) {
 				lineStrt += (i+1 < level) ? (!lastLevel[i] ? "   │" : "    " ) : "   "
 			}
 			lineStrt += (cnt == 1 && list1.size() > 1) ? "┌── " : (cnt < list1?.size() ? "├── " : "└── ")
@@ -1468,7 +1468,7 @@ def dumpMapDesc(data, level, List lastLevel, listCall=false, html=false) {
 		} else {
 			theLast == (last && thisIsLast) ? true : false
 			lineStrt = "\n"
-			for(int i=0; i < level; i++) {
+			for(Integer i=0; i < level; i++) {
 				lineStrt += (i+1 < level) ? (!newLevel[i] ? "   │" : "    " ) : "   "
 			}
 			lineStrt += ((cnt < data?.size() || listCall) && !thisIsLast) ? "├── " : "└── "
@@ -2548,54 +2548,54 @@ private cast(value, dataType) {
 			}
 			return value ? "$value" : ""
 		case "number":
-			if (value == null) return (int) 0
+			if (value == null) return (Integer) 0
 			if (value instanceof String) {
 				if (value.isInteger())
 					return value.toInteger()
 				if (value.isFloat())
-					return (int) Math.floor(value.toFloat())
+					return (Integer) Math.floor(value.toFloat())
 				if (value in trueStrings)
-					return (int) 1
+					return (Integer) 1
 			}
-			def result = (int) 0
+			def result = (Integer) 0
 			try {
-				result = (int) value
+				result = (Integer) value
 			} catch(all) {
-				result = (int) 0
+				result = (Integer) 0
 			}
-			return result ? result : (int) 0
+			return result ? result : (Integer) 0
 		case "long":
-			if (value == null) return (long) 0
+			if (value == null) return 0L
 			if (value instanceof String) {
 				if (value.isInteger())
-					return (long) value.toInteger()
+					return (Long) value.toInteger()
 				if (value.isFloat())
-					return (long) Math.round(value.toFloat())
+					return (Long) Math.round(value.toFloat())
 				if (value in trueStrings)
-					return (long) 1
+					return 1L
 			}
-			def result = (long) 0
+			def result = (Long) 0L
 			try {
-				result = (long) value
+				result = (Long) value
 			} catch(all) {
 			}
-			return result ? result : (long) 0
+			return result ? result : (Long) 0
 		case "decimal":
-			if (value == null) return (float) 0
+			if (value == null) return (Float) 0
 			if (value instanceof String) {
 				if (value.isFloat())
-					return (float) value.toFloat()
+					return (Float) value.toFloat()
 				if (value.isInteger())
-					return (float) value.toInteger()
+					return (Float) value.toInteger()
 				if (value in trueStrings)
-					return (float) 1
+					return (Float) 1
 			}
-			def result = (float) 0
+			def result = (Float) 0.0
 			try {
-				result = (float) value
+				result = (Float) value
 			} catch(all) {
 			}
-			return result ? result : (float) 0
+			return result ? result : (Float) 0.0
 		case "boolean":
 			if (value instanceof String) {
 				if (!value || (value in falseStrings))
@@ -4307,7 +4307,7 @@ def getStateSize() {
 	def resultJson = new groovy.json.JsonOutput().toJson(state)
 	return resultJson?.toString().length()
 }
-def getStateSizePerc()		{ return (int) ((stateSize / 100000)*100).toDouble().round(0) }
+def getStateSizePerc()		{ return (Integer) ((stateSize / 100000)*100).toDouble().round(0) }
 
 def getLocationModes() {
 	def result = []
@@ -4383,15 +4383,15 @@ def getTimestampVal(val) {
 }
 */
 
-def GetTimeDiffSeconds(strtDate, stpDate=null, methName=null) {
+Long GetTimeDiffSeconds(String strtDate, String stpDate=null, String methName=null) {
 	//LogTrace("[GetTimeDiffSeconds] StartDate: $strtDate | StopDate: ${stpDate ?: "Not Sent"} | MethodName: ${methName ?: "Not Sent"})")
 	if((strtDate && !stpDate) || (strtDate && stpDate)) {
 		//if(strtDate?.contains("dtNow")) { return 10000 }
-		def now = new Date()
-		def stopVal = stpDate ? stpDate.toString() : formatDt(now)
-		def start = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
-		def stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
-		def diff = (int) (long) (stop - start) / 1000
+		Date now = new Date()
+		String stopVal = stpDate ? stpDate.toString() : formatDt(now)
+		Long start = Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
+		Long stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
+		Long diff = (stop - start) / 1000L
 		LogTrace("[GetTimeDiffSeconds] Results for '$methName': ($diff seconds)")
 		return diff
 	} else { return null }

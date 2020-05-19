@@ -5,7 +5,7 @@
 |    Contributors: Ben W. (@desertblade)                                                    |
 |    A few code methods are modeled from those in CoRE by Adrian Caramaliu                  |
 |                                                                                           |
-|    April 27, 2020                                                                         |
+|    May 18, 2020                                                                         |
 |    License Info: https://github.com/tonesto7/nest-manager/blob/master/app_license.txt     |
 |********************************************************************************************/
 
@@ -670,14 +670,15 @@ void initAutoApp(){
 	stateRemove("wDevInst")   // cause Automations to re-check with parent for value after updated is called
 	stateRemove("enRemDiagLogging") // cause recheck
 
-	settingUpdate("showDebug", "true",  "bool")
+	Boolean dbgState=settings.showDebug || settings.advAppDebug
+	if(!dbgState){ settingUpdate("showDebug", "true",  "bool"); dbgState=true }
 	//settingUpdate("advAppDebug", "false", "bool")
 
 	stateRemove("detailEventHistory")
 	stateRemove("detailExecutionHistory")
 
 	scheduleAutomationEval(30)
-	if(settings.showDebug || settings.advAppDebug){ runIn(1800, logsOff) }
+	if(dbgState){ runIn(1800, logsOff) }
 }
 
 void logsOff(){
@@ -3877,7 +3878,7 @@ void conWatCheck(Boolean cTimeOut=false){
 
 void conWatContactEvt(evt){
 	Long startTime=now()
-	Long eventDelay=startTime - (long)evt.date.getTime()
+	Long eventDelay=startTime - (Long)evt.date.getTime()
 	LogAction("${evt?.name.toUpperCase()} Event | Device: ${evt?.displayName} | Value: (${strCapitalize(evt?.value)}) with a delay of ${eventDelay}ms", "debug", false)
 	if(getIsAutomationDisabled()){ return }
 	else {
