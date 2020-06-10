@@ -3,7 +3,7 @@
 |	Copyright (C) 2018, 2019								|
 |	Authors: Anthony S. (@tonesto7), Eric S. (@nh.schottfam)				|
 |												|
-|	Updated 4/19/2020									|
+|	Updated 6/10/2020									|
 |	License Info: https://github.com/tonesto7/nest-manager/blob/master/app_license.txt	|
 |************************************************************************************************/
 
@@ -27,7 +27,7 @@ definition(
 	oauth: true
 )
 
-static String appVersion() { "2.0.4" }
+static String appVersion() { "2.0.5" }
 
 preferences {
 	page(name: "startPage")
@@ -1101,7 +1101,7 @@ def getYearsUsage(dev) {
 	def fanonlyVal = 0L
 	def fanOnVal = 0L
 	def fanAutoVal = 0L
-	for(int i = 1; i <= 12; i++) {
+	for(Integer i = 1; i <= 12; i++) {
 		coolVal = coolVal + hm?."OpSt_M${i}_c"?.toInteger()
 		heatVal = heatVal + hm?."OpSt_M${i}_h"?.toInteger()
 		idleVal = idleVal + hm?."OpSt_M${i}_i"?.toInteger()
@@ -2183,7 +2183,7 @@ String showChartHtml(Integer devNum, dev) {
 
 	String heatstr1
 	String heatstr2
-	dString heatstr3
+	String heatstr3
 //Logger("showChart 2")
 	if(canHeat) {
 		heatstr1 = "data.addColumn('number', 'HeatSP');"
