@@ -5,7 +5,7 @@
 |    Contributors: Ben W. (@desertblade)						    |
 |    A few code methods are modeled from those in CoRE by Adrian Caramaliu		    |
 |											    |
-|	5/18/2020									    |
+|	6/18/2020									    |
 |    License Info: https://github.com/tonesto7/nest-manager/blob/master/app_license.txt     |
 |********************************************************************************************/
 
@@ -113,21 +113,21 @@ def notAllowedPage () {
 	}
 }
 
-private isHubitat(){
+private Boolean isHubitat(){
 	return hubUID != null
 }
 
-def installed() {
+void installed() {
 	log.debug "${app.getLabel()} Installed with settings: ${settings}"		// MUST BE log.debug
 	if(isHubitat() && !app.id) return
 	initialize()
-	return true
+	return
 }
 
-def updated() {
+void updated() {
 	log.debug "${app.getLabel()} Updated...with settings: ${settings}"
 	state.isInstalled = true
-	def appLbl = getCurAppLbl()
+	String appLbl = getCurAppLbl()
 /*
 	if(appLbl?.contains("Watchdog")) {
 		if(!state.autoTyp) { state.autoTyp = "watchDog" }
@@ -138,15 +138,15 @@ def updated() {
 	}
 	initialize()
 	state.lastUpdatedDt = getDtNow()
-	return true
+	return
 }
 
-def uninstalled() {
+void uninstalled() {
 	log.debug "uninstalled"
 	uninstAutomationApp()
 }
 
-def initialize() {
+void initialize() {
 	log.debug "${app.label} Initialize..."			// Must be log.debug
 	if(!state.isInstalled) { state.isInstalled = true }
 	Boolean settingsReset = parent.getSettingVal("resetAllData")
@@ -168,13 +168,13 @@ private adj_temp(tempF) {
 	}
 }
 
-def setMyLockId(val) {
+void setMyLockId(val) {
 	if(state.myID == null && parent && val) {
 		state.myID = val
 	}
 }
 
-def getMyLockId() {
+String getMyLockId() {
 	if(parent) { return state.myID } else { return null }
 }
 
@@ -296,7 +296,7 @@ def titles(String name, Object... args) {
 }
 
 // string table for descriptions
-def descriptions(name, Object... args) {
+static String  descriptions(String name, Object... args) {
 	def element_descriptions = [
 		"d_ttc": "Tap to configure",
 		"d_ttm": "\n\nTap to modify"
@@ -307,7 +307,7 @@ def descriptions(name, Object... args) {
 		return element_descriptions[name]
 }
 
-def icons(name, napp="App") {
+static String icons(String name, String napp="App") {
 	def icon_names = [
 		"i_dt": "delay_time",
 		"i_not": "notification",
@@ -325,20 +325,20 @@ def icons(name, napp="App") {
 
 	]
 	//return icon_names[name]
-	def t0 = icon_names?."${name}"
+	String t0 = icon_names?."${name}"
 	//LogAction("t0 ${t0}", "warn", true)
-	if(t0) return "https://raw.githubusercontent.com/${gitPath()}/Images/$napp/${t0}_icon.png"
-	else return "https://raw.githubusercontent.com/${gitPath()}/Images/$napp/${name}"
+	if(t0) return "https://raw.githubusercontent.com/${gitPath()}/Images/$napp/${t0}_icon.png".toString()
+	else return "https://raw.githubusercontent.com/${gitPath()}/Images/$napp/${name}".toString()
 }
 
-def getAppImg(imgName, on = null) {
+static String getAppImg(String imgName, Boolean on = true) {
 	//return (!disAppIcons || on) ? "https://raw.githubusercontent.com/${gitPath()}/Images/App/$imgName" : ""
-	return (!disAppIcons || on) ? icons(imgName) : ""
+	return on ? icons(imgName) : ""
 }
 
-def getDevImg(imgName, on = null) {
+static String getDevImg(String imgName, Boolean on = true) {
 	//return (!disAppIcons || on) ? "https://raw.githubusercontent.com/${gitPath()}/Images/Devices/$imgName" : ""
-	return (!disAppIcons || on) ? icons(imgName, "Devices") : ""
+	return on ? icons(imgName, "Devices") : ""
 }
 
 /*
@@ -2240,23 +2240,23 @@ private tempRangeValues() {
 }
 */
 
-private timeComparisonOptionValues() {
+private static List timeComparisonOptionValues() {
 	return ["custom time", "midnight", "sunrise", "noon", "sunset"]
 }
 
-private timeDayOfWeekOptions() {
+private static List timeDayOfWeekOptions() {
 	return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 }
 
-private getDayOfWeekName(date = null) {
+private getDayOfWeekName(Date date = null) {
 	if (!date) {
 		date = adjustTime()
 	}
-	def theDay = date.day.toInteger()
-	def list = []
+	Integer theDay = date.day
+	List list = []
 	list = timeDayOfWeekOptions()
 	//LogAction("theDay: $theDay date.date: ${date.day}")
-	return(list[theDay].toString())
+	return(list[theDay])
 /*
 	switch (date.day) {
 		case 0: return "Sunday"
@@ -2293,7 +2293,7 @@ private getDayOfWeekNumber(date = null) {
 */
 
 //adjusts the time to local timezone
-private adjustTime(time = null) {
+private Date adjustTime(time = null) {
 	if (time instanceof String) {
 		//get UTC time
 		time = timeToday(time, location.timeZone).getTime()
@@ -2306,12 +2306,13 @@ private adjustTime(time = null) {
 		time = now()
 	}
 	if (time) {
-		return new Date(time + location.timeZone.getOffset(time))
+		return new Date(time)
+//		return new Date(time + location.timeZone.getOffset(time))
 	}
 	return null
 }
 
-private formatLocalTime(time, format = "EEE, MMM d yyyy @ h:mm a z") {
+private String formatLocalTime(time, format = "EEE, MMM d yyyy @ h:mm a z") {
 	if (time instanceof Long) {
 		time = new Date(time)
 	}
@@ -2334,22 +2335,23 @@ private convertDateToUnixTime(date) {
 	if (!(date instanceof Date)) {
 		date = new Date(date)
 	}
-	return date.time - location.timeZone.getOffset(date.time)
+	//return date.time - location.timeZone.getOffset(date.time)
+	return date.time
 }
-
+/*
 private convertTimeToUnixTime(time) {
 	if (!time) {
 		return null
 	}
 	return time - location.timeZone.getOffset(time)
 }
-
-private formatTime(time, zone = null) {
+*/
+private String formatTime(time, zone = null) {
 	//we accept both a Date or a settings' Time
 	return formatLocalTime(time, "h:mm a${zone ? " z" : ""}")
 }
 
-private formatHour(h) {
+private static String formatHour(h) {
 	return (h == 0 ? "midnight" : (h < 12 ? "${h} AM" : (h == 12 ? "noon" : "${h-12} PM"))).toString()
 }
 /*
@@ -2459,16 +2461,16 @@ private checkRestriction(cnt) {
 	return restriction
 }
 
-def getActiveScheduleState() {
-	return state.activeSchedData ?: null
+public Map getActiveScheduleState() {
+	return (Map)state.activeSchedData ?: null
 }
 
-def getSchRestrictDoWOk(cnt) {
-	def apprestrict = state.activeSchedData
-	def result = true
+Boolean  getSchRestrictDoWOk(Integer cnt) {
+	Map apprestrict = (Map)state.activeSchedData
+	Boolean result = true
 	apprestrict?.each { sch ->
-		if(sch?.key.toInteger() == cnt.toInteger()) {
-			if (!(getDayOfWeekName().toString() in sch?.value?.w)) {
+		if(sch?.key.toInteger() == cnt) {
+			if (!(getDayOfWeekName() in sch?.value?.w)) {
 				result = false
 			}
 		}
@@ -2476,15 +2478,15 @@ def getSchRestrictDoWOk(cnt) {
 	return result
 }
 */
-private checkTimeCondition(timeFrom, timeFromCustom, timeFromOffset, timeTo, timeToCustom, timeToOffset) {
-	def time = adjustTime()
+private Boolean checkTimeCondition(String timeFrom, String timeFromCustom, Integer timeFromOffset, String timeTo, String timeToCustom, Integer timeToOffset) {
+	Date time = adjustTime()
 	//convert to minutes since midnight
-	def tc = time.hours * 60 + time.minutes
-	def tf
-	def tt
-	def i = 0
+	Integer tc = time.hours * 60 + time.minutes
+	Integer tf
+	Integer tt
+	Integer i = 0
 	while (i < 2) {
-		def t = null
+		Date t = null
 		def h = null
 		def m = null
 		switch(i == 0 ? timeFrom : timeTo) {
@@ -2537,7 +2539,7 @@ private checkTimeCondition(timeFrom, timeFromCustom, timeFromOffset, timeTo, tim
 	}
 }
 
-private cast(value, dataType) {
+private cast(value, String dataType) {
 	def trueStrings = ["1", "on", "open", "locked", "active", "wet", "detected", "present", "occupied", "muted", "sleeping"]
 	def falseStrings = ["0", "false", "off", "closed", "unlocked", "inactive", "dry", "clear", "not detected", "not present", "not occupied", "unmuted", "not sleeping"]
 	switch (dataType) {
@@ -4581,11 +4583,11 @@ void Logger(String msg, String type="debug", String logSrc=(String)null, boolean
 |				Application Help and License Info Variables					|
 *******************************************************************************/
 ///////////////////////////////////////////////////////////////////////////////
-String appName()		{ return "${appLabel()}" }
-String appLabel()		{ return "NST Diagnostics" }
-String gitRepo()		{ return "tonesto7/nest-manager"}
-String gitBranch()		{ return "master" }
-String gitPath()		{ return "${gitRepo()}/${gitBranch()}"}
+static String appName()		{ return appLabel() }
+static String appLabel()	{ return "NST Diagnostics" }
+static String gitRepo()		{ return "tonesto7/nest-manager"}
+static String gitBranch()	{ return "master" }
+static String gitPath()		{ return "${gitRepo()}/${gitBranch()}"}
 //def betaMarker()	{ return false }
 //def appDevType()	{ return false }
 //def appDevName()	{ return "" }

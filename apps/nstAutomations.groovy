@@ -5,12 +5,13 @@
 |    Contributors: Ben W. (@desertblade)                                                    |
 |    A few code methods are modeled from those in CoRE by Adrian Caramaliu                  |
 |                                                                                           |
-|    May 18, 2020                                                                         |
+|    June 18, 2020                                                                         |
 |    License Info: https://github.com/tonesto7/nest-manager/blob/master/app_license.txt     |
 |********************************************************************************************/
 
 import groovy.json.*
 import java.text.SimpleDateFormat
+import groovy.transform.Field
 
 definition(
 	name: "NST Automations",
@@ -155,7 +156,7 @@ private adj_temp(tempF){
 
 void setMyLockId(val){
 	if(state.myID == null && parent && val){
-		state.myID=val
+		state.myID=val.toString()
 	}
 }
 
@@ -258,7 +259,7 @@ static String imgTitle(String imgSrc, String titleStr, String color=(String)null
 }
 
 // string table for titles
-String titles(String name, Object... args){
+static String titles(String name, Object... args){
 	Map page_titles=[
 //    "page_main": "${lname} setup and management",
 //    "page_add_new_cid_confirm": "Add new CID switch : %s",
@@ -277,7 +278,7 @@ String titles(String name, Object... args){
 }
 
 // string table for descriptions
-String descriptions(String name, Object... args){
+static String descriptions(String name, Object... args){
 	Map element_descriptions=[
 		"d_ttc": "Tap to configure",
 		"d_ttm": "\n\nTap to modify"
@@ -773,14 +774,14 @@ List getAutomationsInstalled(){
 			list.push(aType)
 			break
 		case "schMot":
-			def tmp=[:]
+			Map tmp=[:]
 			tmp[aType]=[]
 			if(isLeakWatConfigured())		{ tmp[aType].push("leakWat") }
 			if(isConWatConfigured())		{ tmp[aType].push("conWat") }
 			if(isHumCtrlConfigured())		{ tmp[aType].push("humCtrl") }
 			if(isExtTmpConfigured())		{ tmp[aType].push("extTmp") }
 			if(isRemSenConfigured())		{ tmp[aType].push("remSen") }
-			if(isTstatSchedConfigured())	{ tmp[aType].push("tSched") }
+			if(isTstatSchedConfigured())		{ tmp[aType].push("tSched") }
 			if(isFanCtrlSwConfigured())		{ tmp[aType].push("fanCtrl") }
 			if(isFanCircConfigured())		{ tmp[aType].push("fanCirc") }
 			if(tmp?.size()){ list.push(tmp) }
@@ -928,7 +929,7 @@ void subscribeToEvents(){
 					state.extTmpChgWhileOffDt=getDtNow()
 				}
 			}
-			def senlist=[]
+			List senlist=[]
 			if(settings.schMotRemoteSensor){
 				if(isRemSenConfigured()){
 					if(settings.remSensorDay){
@@ -4554,7 +4555,7 @@ private static List timeDayOfWeekOptions(){
 	return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 }
 
-private String getDayOfWeekName(date=null){
+private String getDayOfWeekName(Date date=null){
 	if(!date){
 		date=adjustTime()
 	}
@@ -4588,7 +4589,7 @@ private getDayOfWeekNumber(date=null){
 
 //adjusts the time to local timezone
 // TODO HE this may not be right
-private adjustTime(time=null){
+private Date adjustTime(time=null){
 	if(time instanceof String){
 		//get UTC time
 		time=timeToday(time, location.timeZone).getTime()
@@ -4601,7 +4602,8 @@ private adjustTime(time=null){
 		time=now()
 	}
 	if(time){
-		return new Date(time + location.timeZone.getOffset(time))
+		return new Date(time)
+//		return new Date(time + location.timeZone.getOffset(time))
 	}
 	return null
 }
@@ -4629,16 +4631,18 @@ private convertDateToUnixTime(date){
 	if(!(date instanceof Date)){
 		date=new Date(date)
 	}
-	return date.time - location.timeZone.getOffset(date.time)
+	//return date.time - location.timeZone.getOffset(date.time)
+	return date.time
 }
 
+/*
 private convertTimeToUnixTime(time){
 	if(!time){
 		return null
 	}
 	return time - location.timeZone.getOffset(time)
 }
-
+*/
 private String formatTime(time, zone=null){
 	//we accept both a Date or a settings' Time
 	return formatLocalTime(time, "h:mm a${zone ? " z" : ""}")
@@ -4753,16 +4757,16 @@ private String checkRestriction(Integer cnt){
 	return restriction
 }
 
-def getActiveScheduleState(){
-	return state.activeSchedData ?: null
+public Map getActiveScheduleState(){
+	return (Map)state.activeSchedData ?: null
 }
 
-Boolean getSchRestrictDoWOk(cnt){
-	def apprestrict=state.activeSchedData
+Boolean getSchRestrictDoWOk(Integer cnt){
+	Map apprestrict=(Map)state.activeSchedData
 	Boolean result=true
 	apprestrict?.each { sch ->
-		if(sch?.key.toInteger() == cnt.toInteger()){
-			if(!(getDayOfWeekName().toString() in sch?.value?.w)){
+		if(sch?.key.toInteger() == cnt){
+			if(!(getDayOfWeekName() in sch?.value?.w)){
 				result=false
 			}
 		}
@@ -4770,17 +4774,17 @@ Boolean getSchRestrictDoWOk(cnt){
 	return result
 }
 
-Boolean checkTimeCondition(timeFrom, timeFromCustom, timeFromOffset, timeTo, timeToCustom, timeToOffset){
-	def time=adjustTime()
+Boolean checkTimeCondition(String timeFrom, String timeFromCustom, Integer timeFromOffset, String timeTo, String timeToCustom, Integer timeToOffset){
+	Date time=adjustTime()
 	//convert to minutes since midnight
-	def tc=time.hours * 60 + time.minutes
-	def tf
-	def tt
-	def i=0
+	Integer tc=time.hours * 60 + time.minutes
+	Integer tf
+	Integer tt
+	Integer i=0
 	while (i < 2){
-		def t=null
-		def h=null
-		def m=null
+		Date t=null
+		Integer h=null
+		Integer m=null
 		switch(i == 0 ? timeFrom : timeTo){
 			case "custom time":
 				t=adjustTime(i == 0 ? timeFromCustom : timeToCustom)
@@ -4831,7 +4835,7 @@ Boolean checkTimeCondition(timeFrom, timeFromCustom, timeFromOffset, timeTo, tim
 	}
 }
 
-private cast(value, dataType){
+private cast(value, String dataType){
 	def trueStrings=["1", "on", "open", "locked", "active", "wet", "detected", "present", "occupied", "muted", "sleeping"]
 	def falseStrings=["0", "false", "off", "closed", "unlocked", "inactive", "dry", "clear", "not detected", "not present", "not occupied", "unmuted", "not sleeping"]
 	switch (dataType){
@@ -4905,14 +4909,47 @@ private cast(value, dataType){
 	return value
 }
 
+@Field static Map svSunTFLD
+
+private void initSunriseAndSunset(Map rtD){
+        Map t0=svSunTFLD
+        Long t=now()
+        if(t0!=null){
+                if(t<(Long)t0.nextM){
+                        rtD.sunTimes=[:]+t0
+                }else{ t0=null; svSunTFLD=null }
+        }
+        if(t0==null){
+                Map sunTimes=app.getSunriseAndSunset()
+                if(sunTimes.sunrise==null){
+                        warn 'Actual sunrise and sunset times are unavailable; please reset the location for your hub', rtD
+                        Long t1=timeToday('00:00', location.timeZone).getTime()
+                        sunTimes.sunrise=new Date(Math.round(t1+7.0D*3600000.0D))
+                        sunTimes.sunset=new Date(Math.round(t1+19.0D*3600000.0D))
+                        t=0L
+                }
+                t0=[
+                        s: sunTimes,
+                        updated: t,
+                        nextM: timeTodayAfter('23:59', '00:00', location.timeZone).getTime()
+                ]
+                if(t!=0L){
+                        svSunTFLD=t0
+                        if(eric())log.debug 'updating global sunrise'
+                }
+        }
+}
+
 //TODO is this expensive?
-private getSunrise(){
-	def sunTimes=getSunriseAndSunset()
+private Date getSunrise(){
+	initSunriseAndSunset()
+	Map sunTimes=svSunTFLD.s
 	return adjustTime(sunTimes.sunrise)
 }
 
-private getSunset(){
-	def sunTimes=getSunriseAndSunset()
+private Date getSunset(){
+	initSunriseAndSunset()
+	Map sunTimes=svSunTFLD.s
 	return adjustTime(sunTimes.sunset)
 }
 
@@ -5263,13 +5300,13 @@ def schMotModePage(){
 			}
 
 			section("Schedule Automation:"){
-				def actSch=state.activeSchedData?.size()
-				String tDesc=(isTstatSchedConfigured() || state.activeSchedData?.size()) ? "Tap to modify Schedules" : null
+				Integer actSch=((Map)state.activeSchedData)?.size()
+				String tDesc=(isTstatSchedConfigured() || ((Map)state.activeSchedData)?.size()) ? "Tap to modify Schedules" : null
 				href "tstatConfigAutoPage1", title: imgTitle(getAppImg("schedule_icon.png"), inputTitleStr("Use Schedules to adjust Temp Setpoints and HVAC mode?")), description: (tDesc != null ? tDesc : ""), state: (tDesc != null ? "complete" : "")//, params: ["configType":"tstatSch"]
-				if(actSch){
-					def schInfo=getScheduleDesc()
-					Integer curSch=getCurrentSchedule()
+				if(actSch>0){
+					Map schInfo=getScheduleDesc()
 					if(schInfo?.size()){
+						Integer curSch=getCurrentSchedule()
 						schInfo?.each { schItem ->
 							Integer schNum=schItem?.key
 							def schDesc=schItem?.value
@@ -5466,7 +5503,7 @@ def schMotModePage(){
 String getSchedLbl(Integer num){
 	String result=""
 	if(num){
-		def schData=state.activeSchedData
+		Map schData=(Map)state.activeSchedData
 		schData?.each { sch ->
 			if(num == sch?.key.toInteger()){
 				//log.debug "Label:(${sch?.value?.lbl})"
@@ -5480,7 +5517,7 @@ String getSchedLbl(Integer num){
 def getSchedData(num){
 	if(!num){ return null }
 	def resData=[:]
-	def schData=state.activeSchedData
+	Map schData=(Map)state.activeSchedData
 	schData?.each { sch ->
 		//log.debug "sch: $sch"
 		if(sch?.key != null && num?.toInteger() == sch?.key.toInteger()){
@@ -5649,7 +5686,7 @@ def tstatConfigAutoPage(params){
 
 				if(settings."${pName}FanSwitches"){
 					String schTitle
-					if(!state.activeSchedData?.size()){
+					if(!((Map)state.activeSchedData)?.size()){
 						schTitle="Optionally create schedules to set temperatures based on schedule"
 					}else{
 						schTitle="Temperature settings based on schedule"
@@ -5749,13 +5786,13 @@ def tstatConfigAutoPage(params){
 
 							section("(Optional) Create a Virtual Nest Thermostat:"){
 								input(name: "vthermostat", type: "bool", title: imgTitle(getAppImg("thermostat_icon.png"), inputTitleStr("Create Virtual Nest Thermostat")), required: false, submitOnChange: true)
-								if(settings.vthermostat!=null && !parent.addRemoveVthermostat(tstat.deviceNetworkId, settings.vthermostat, getMyLockId())){
+								if(settings.vthermostat!=null && !parent.addRemoveVthermostat((String)tstat.deviceNetworkId, settings.vthermostat, getMyLockId())){
 									paragraph imgTitle(getAppImg("i_err"), paraTitleStr("Unable to ${(settings.vthermostat ? "enable" : "disable")} Virtual Thermostat!. Please Correct"))
 								}
 							}
 
 							String schTitle
-							if(!state.activeSchedData?.size()){
+							if(!((Map)state.activeSchedData)?.size()){
 								schTitle="Optionally create schedules to set temperatures, alternate sensors based on schedule"
 							}else{
 								schTitle="Temperature settings and optionally alternate sensors based on schedule"
@@ -5959,7 +5996,7 @@ this does not work...
 						href "setNotificationPage5", title: imgTitle(getAppImg("i_not"),inputTitleStr(titles("t_nt"))), description: pageDesc, state: (pageDesc ? "complete" : null)//, params: ["pName":"${pName}", "allowSpeech":true, "allowAlarm":true, "showSchedule":true]
 					}
 					String schTitle
-					if(!state.activeSchedData?.size()){
+					if(!((Map)state.activeSchedData)?.size()){
 						schTitle="Optionally create schedules to set temperatures based on schedule"
 					}else{
 						schTitle="Temperature settings based on schedule"
@@ -6159,8 +6196,8 @@ def editSchedule(Map schedData){
 			}
 		}
 
-		def timeFrom=settings["${sLbl}rstrctTimeFrom"]
-		def timeTo=settings["${sLbl}rstrctTimeTo"]
+		String timeFrom=settings["${sLbl}rstrctTimeFrom"]
+		String timeTo=settings["${sLbl}rstrctTimeTo"]
 		Boolean showTime=(timeFrom || timeTo || settings."${sLbl}rstrctTimeFromCustom" || settings."${sLbl}rstrctTimeToCustom") ? true : false
 		Boolean myShow=!(settings["${sLbl}rstrctMode"] || settings["${sLbl}restrictionDOW"] || showTime || settings["${sLbl}rstrctSWOn"] || settings["${sLbl}rstrctSWOff"] || settings["${sLbl}rstrctPHome"] || settings["${sLbl}rstrctPAway"] )
 		section("(${schedData?.secData?.schName ?: "Schedule ${cnt}"}) Schedule Restrictions:                                          ", hideable: true, hidden: myShow){
@@ -6190,13 +6227,13 @@ def editSchedule(Map schedData){
 	}
 }
 
-def getScheduleDesc(num=null){
-	def result=[:]
-	def schedData=state.activeSchedData
+Map getScheduleDesc(Integer num=null){
+	Map result=[:]
+	Map schedData=(Map)state.activeSchedData
 	Integer actSchedNum=getCurrentSchedule()
 	String tempScaleStr=tUnitStr()
 	Integer schNum
-	def schData
+	Map schData
 
 	Integer sCnt=1
 	def sData=schedData
@@ -6237,7 +6274,7 @@ def getScheduleDesc(num=null){
 			str += schData?.m ? "$mStr" : ""
 
 			String dayStr=getAbrevDay(schData?.w)
-			String timeDesc=getScheduleTimeDesc(schData?.tf, schData?.tfc, schData?.tfo, schData?.tt, schData?.ttc, schData?.tto, (isSw || isPres || isDayRes))
+			String timeDesc=getScheduleTimeDesc(schData?.tf, schData?.tfc, (Integer)schData?.tfo, schData?.tt, schData?.ttc, (Integer)schData?.tto, (isSw || isPres || isDayRes))
 			str += isTimeRes ?	"\n │ ${isDayRes || isPres || isSw ? "├" : "└"} ${timeDesc}" : ""
 			str += isDayRes ?	"\n │ ${isSw || isPres ? "├" : "└"} Days:${getSchRestrictDoWOk(schNum) ? " (${okSym()})" : " (${notOkSym()})"}" : ""
 			str += isDayRes ?	"\n │ ${isSw || isPres ? "│" :"    "} └ ${dayStr}" : ""
@@ -6301,13 +6338,13 @@ def getScheduleDesc(num=null){
 			str += isRemSen && schData?.sen0 ?	"\n      └ Temp${(settings["${sLbl}remSensor"]?.size() > 1) ? " (avg):" : ":"} (${getDeviceTempAvg(settings["${sLbl}remSensor"])}${tempScaleStr})" : ""
 			str += isRemSen && schData?.thres ?	"\n  └ Threshold: (${settings["${sLbl}remSenThreshold"]}${tempScaleStr})" : ""
 			//log.debug "str: \n$str"
-			if(str != ""){ result[schNum]=str }
+			if(str != ""){ result[schNum]=str.toString() }
 		}
 	}
 	return (result?.size() >= 1) ? result : null
 }
 
-String getScheduleTimeDesc(timeFrom, timeFromCustom, timeFromOffset, timeTo, timeToCustom, timeToOffset, showPreLine=false){
+String getScheduleTimeDesc(String timeFrom, String timeFromCustom, Integer timeFromOffset, String timeTo, String timeToCustom, Integer timeToOffset, showPreLine=false){
 	def tf=new SimpleDateFormat("h:mm a")
 		tf.setTimeZone(location?.timeZone)
 	String spl=showPreLine == true ? "│" : ""
@@ -6332,14 +6369,14 @@ String getScheduleTimeDesc(timeFrom, timeFromCustom, timeFromOffset, timeTo, tim
 					else { timeToVal="Sunset: (" + tf.format(Date.parse("E MMM dd HH:mm:ss z yyyy", sunTime?.sunset.toString())) + ")" }
 					break
 				case "noon":
-					def rightNow=adjustTime().time
+					Long rightNow=adjustTime().time
 					def offSet=(timeFromOffset != null || timeToOffset != null) ? (i == 0 ? (timeFromOffset * 60 * 1000) : (timeToOffset * 60 * 1000)) : 0
 					String res="Noon: " + formatTime(convertDateToUnixTime((rightNow - rightNow.mod(86400000) + 43200000) + offSet))
 					if(i == 0){ timeFromVal=res }
 					else { timeToVal=res }
 					break
 				case "midnight":
-					def rightNow=adjustTime().time
+					Long rightNow=adjustTime().time
 					def offSet=(timeFromOffset != null || timeToOffset != null) ? (i == 0 ? (timeFromOffset * 60 * 1000) : (timeToOffset * 60 * 1000)) : 0
 					String res="Midnight: " + formatTime(convertDateToUnixTime((rightNow - rightNow.mod(86400000)) + offSet))
 					if(i == 0){ timeFromVal=res }
@@ -6881,9 +6918,9 @@ def setNotificationTimePage(params){
 String getNotifSchedDesc(pName){
 	def sun=getSunriseAndSunset()
 	def startInput=settings."${pName}qStartInput"
-	def startTime=settings."${pName}qStartTime"
+	String startTime=settings."${pName}qStartTime"
 	def stopInput=settings."${pName}qStopInput"
-	def stopTime=settings."${pName}qStopTime"
+	String stopTime=settings."${pName}qStopTime"
 	def dayInput=settings."${pName}quietDays"
 	def modeInput=settings."${pName}quietModes"
 	String notifDesc=""
@@ -7146,11 +7183,11 @@ def setDayModeTimePage(params){
 }
 
 String getDayModeTimeDesc(String pName){
-	def startTime=settings."${pName}StartTime"
-	def stopTime=settings."${pName}StopTime"
+	String startTime=settings."${pName}StartTime"
+	String stopTime=settings."${pName}StopTime"
 	def dayInput=settings."${pName}Days"
 	def modeInput=settings."${pName}Modes"
-	def inverted=settings."${pName}DmtInvert" ?: null
+	Boolean inverted=settings."${pName}DmtInvert" ?: null
 	def swOnInput=settings."${pName}rstrctSWOn"
 	def swOffInput=settings."${pName}rstrctSWOff"
 	String str=""
@@ -7198,7 +7235,7 @@ Boolean autoScheduleOk(String autoType){
 		Boolean dayOk=true
 		def dayFmt=new SimpleDateFormat("EEEE")
 		dayFmt.setTimeZone(getTimeZone())
-		def today=dayFmt.format(new Date())
+		String today=dayFmt.format(new Date())
 		Boolean inDay=(today in settings."${autoType}Days") ? true : false
 		dayOk=(!settings."${autoType}Days" || ((inDay && !inverted) || (!inDay && inverted))) ? true : false
 
@@ -8117,7 +8154,7 @@ Long GetTimeDiffSeconds(String strtDate, String stpDate=(String)null, String met
 		return diff
 	}else{ return null }
 }
-
+/*
 Boolean daysOk(days){
 	if(days){
 		def dayFmt=new SimpleDateFormat("EEEE")
@@ -8125,8 +8162,8 @@ Boolean daysOk(days){
 		return days.contains(dayFmt.format(new Date())) ? false : true
 	}else{ return true }
 }
-
-String time2Str(time){
+*/
+String time2Str(String time){
 	if(time){
 		Date t=timeToday(time, getTimeZone())
 		def f=new java.text.SimpleDateFormat("h:mm a")
@@ -8134,13 +8171,13 @@ String time2Str(time){
 		f.format(t)
 	}
 }
-
-String epochToTime(tm){
+/*
+String epochToTime(Long tm){
 	def tf=new SimpleDateFormat("h:mm a")
 		tf?.setTimeZone(getTimeZone())
 	return tf.format(tm)
 }
-
+*/
 String getDtNow(){
 	Date now=new Date()
 	return formatDt(now)

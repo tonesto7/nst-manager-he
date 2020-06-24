@@ -2,7 +2,7 @@
  *  Nest Eventstream
  *	Copyright (C) 2018, 2019 Anthony S..
  *	Author: Anthony Santilli (@tonesto7)
- *  Modified: 05/9/2020
+ *  Modified: 06/21/2020
  */
 
 import java.text.SimpleDateFormat
@@ -10,7 +10,7 @@ import groovy.json.*
 import java.security.MessageDigest
 import groovy.transform.Field
 
-static String devVer() { return "2.0.6" }
+static String devVer() { return "2.0.7" }
 
 metadata {
 	definition (name: "Nest Eventstream", namespace: "tonesto7", author: "Anthony S.", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstEventstream.groovy") {
@@ -222,9 +222,11 @@ void parse(description) {
 
 					def mystruct = [:]
 					if(!mydata?.structures) { Logger("No Data in structures", "warn"); return }
-					mystruct = mydata?.structures?."${state.structure}"
+					mystruct = mydata.structures?."${state.structure}"
 					if(!mystruct) { /* Logger("No Data in structure ${state.structure}", "warn");*/ return }
-					theNewEvent.data.structures."${state.structure}" = [:] + mystruct
+
+					//theNewEvent.data.structures."${state.structure}" = [:] + mystruct
+					theNewEvent.data.structures = [:] + mydata.structures
 
 					tchksum = null
 					chgFound = true
