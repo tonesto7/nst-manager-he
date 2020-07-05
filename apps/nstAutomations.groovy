@@ -4619,7 +4619,7 @@ private String formatLocalTime(time, format="EEE, MMM d yyyy @ h:mm a z"){
 	if(!(time instanceof Date)){
 		return null
 	}
-	def formatter=new java.text.SimpleDateFormat(format)
+	SimpleDateFormat formatter=new java.text.SimpleDateFormat(format)
 	formatter.setTimeZone(location.timeZone)
 	return formatter.format(time)
 }
@@ -6344,10 +6344,10 @@ Map getScheduleDesc(Integer num=null){
 	return (result?.size() >= 1) ? result : null
 }
 
-String getScheduleTimeDesc(String timeFrom, String timeFromCustom, Integer timeFromOffset, String timeTo, String timeToCustom, Integer timeToOffset, showPreLine=false){
-	def tf=new SimpleDateFormat("h:mm a")
+String getScheduleTimeDesc(String timeFrom, String timeFromCustom, Integer timeFromOffset, String timeTo, String timeToCustom, Integer timeToOffset, Boolean showPreLine=false){
+	SimpleDateFormat tf=new SimpleDateFormat("h:mm a")
 		tf.setTimeZone(location?.timeZone)
-	String spl=showPreLine == true ? "│" : ""
+	String spl=showPreLine ? "│" : ""
 	String timeToVal=null
 	String timeFromVal=null
 	Integer i=0
@@ -6355,18 +6355,18 @@ String getScheduleTimeDesc(String timeFrom, String timeFromCustom, Integer timeF
 		while (i < 2){
 			switch(i == 0 ? timeFrom : timeTo){
 				case "custom time":
-					if(i == 0){ timeFromVal=tf.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSX", timeFromCustom)) }
-					else { timeToVal=tf.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSX", timeToCustom)) }
+					if(i == 0){ timeFromVal=(String)tf.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSX", timeFromCustom)) }
+					else { timeToVal=(String)tf.format(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSX", timeToCustom)) }
 					break
 				case "sunrise":
 					def sunTime=((timeFromOffset > 0 || timeToOffset > 0) ? getSunriseAndSunset(zipCode: location.zipCode, sunriseOffset: "00:${i == 0 ? timeFromOffset : timeToOffset}") : getSunriseAndSunset(zipCode: location.zipCode))
-					if(i == 0){ timeFromVal="Sunrise: (" + tf.format(Date.parse("E MMM dd HH:mm:ss z yyyy", sunTime?.sunrise.toString())) + ")" }
-					else { timeToVal="Sunrise: (" + tf.format(Date.parse("E MMM dd HH:mm:ss z yyyy", sunTime?.sunrise.toString())) + ")" }
+					if(i == 0){ timeFromVal="Sunrise: (" + (String)tf.format(Date.parse("E MMM dd HH:mm:ss z yyyy", sunTime?.sunrise.toString())) + ")" }
+					else { timeToVal="Sunrise: (" + (String)tf.format(Date.parse("E MMM dd HH:mm:ss z yyyy", sunTime?.sunrise.toString())) + ")" }
 					break
 				case "sunset":
 					def sunTime=((timeFromOffset > 0 || timeToOffset > 0) ? getSunriseAndSunset(zipCode: location.zipCode, sunriseOffset: "00:${i == 0 ? timeFromOffset : timeToOffset}") : getSunriseAndSunset(zipCode: location.zipCode))
-					if(i == 0){ timeFromVal="Sunset: (" + tf.format(Date.parse("E MMM dd HH:mm:ss z yyyy", sunTime?.sunset.toString())) + ")" }
-					else { timeToVal="Sunset: (" + tf.format(Date.parse("E MMM dd HH:mm:ss z yyyy", sunTime?.sunset.toString())) + ")" }
+					if(i == 0){ timeFromVal="Sunset: (" + (String)tf.format(Date.parse("E MMM dd HH:mm:ss z yyyy", sunTime?.sunset.toString())) + ")" }
+					else { timeToVal="Sunset: (" + (String)tf.format(Date.parse("E MMM dd HH:mm:ss z yyyy", sunTime?.sunset.toString())) + ")" }
 					break
 				case "noon":
 					Long rightNow=adjustTime().time
@@ -7233,7 +7233,7 @@ Boolean autoScheduleOk(String autoType){
 
 		//dayOk
 		Boolean dayOk=true
-		def dayFmt=new SimpleDateFormat("EEEE")
+		SimpleDateFormat dayFmt=new SimpleDateFormat("EEEE")
 		dayFmt.setTimeZone(getTimeZone())
 		String today=dayFmt.format(new Date())
 		Boolean inDay=(today in settings."${autoType}Days") ? true : false
@@ -8098,24 +8098,24 @@ def getTimeZone(){
 }
 
 String formatDt(Date dt){
-	def tf=new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
+	SimpleDateFormat tf=new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
 	if(getTimeZone()){ tf.setTimeZone(getTimeZone()) }
 	else {
 		LogAction("HE TimeZone is not set; Please open your location and Press Save", "warn", true)
 	}
-	return tf.format(dt)
+	return (String)tf.format(dt)
 }
 
 String getGlobTitleStr(typ){
 	return "Desired Default ${typ} Temp (${tUnitStr()})"
 }
 
-String formatDt2(tm){
+String formatDt2(String tm){
 	//def formatVal=settings.useMilitaryTime ? "MMM d, yyyy - HH:mm:ss" : "MMM d, yyyy - h:mm:ss a"
 	String formatVal="MMM d, yyyy - h:mm:ss a"
-	def tf=new SimpleDateFormat(formatVal)
+	SimpleDateFormat tf=new SimpleDateFormat(formatVal)
 	if(getTimeZone()){ tf.setTimeZone(getTimeZone()) }
-	return tf.format(Date.parse("E MMM dd HH:mm:ss z yyyy", tm.toString()))
+	return (String)tf.format(Date.parse("E MMM dd HH:mm:ss z yyyy", tm))
 }
 
 String tUnitStr(){
@@ -8157,7 +8157,7 @@ Long GetTimeDiffSeconds(String strtDate, String stpDate=(String)null, String met
 /*
 Boolean daysOk(days){
 	if(days){
-		def dayFmt=new SimpleDateFormat("EEEE")
+		SimpleDateFormat dayFmt=new SimpleDateFormat("EEEE")
 		if(getTimeZone()){ dayFmt.setTimeZone(getTimeZone()) }
 		return days.contains(dayFmt.format(new Date())) ? false : true
 	}else{ return true }
@@ -8166,14 +8166,14 @@ Boolean daysOk(days){
 String time2Str(String time){
 	if(time){
 		Date t=timeToday(time, getTimeZone())
-		def f=new java.text.SimpleDateFormat("h:mm a")
+		SimpleDateFormat f=new java.text.SimpleDateFormat("h:mm a")
 		f.setTimeZone(getTimeZone() ?: timeZone(time))
 		f.format(t)
 	}
 }
 /*
 String epochToTime(Long tm){
-	def tf=new SimpleDateFormat("h:mm a")
+	SimpleDateFormat tf=new SimpleDateFormat("h:mm a")
 		tf?.setTimeZone(getTimeZone())
 	return tf.format(tm)
 }

@@ -498,7 +498,7 @@ def debugPrefPage() {
 			section("Log Collection:") {
 /*
 				def formatVal = settings.useMilitaryTime ? "MMM d, yyyy - HH:mm:ss" : "MMM d, yyyy - h:mm:ss a"
-				def tf = new SimpleDateFormat(formatVal)
+				SimpleDateFormat tf = new SimpleDateFormat(formatVal)
 				if(getTimeZone()) { tf.setTimeZone(getTimeZone()) }
 */
 				paragraph "Logging will automatically turn off in 48 hours and all logs will be purged."
