@@ -2084,7 +2084,7 @@ Boolean didChange(Map old, Map newer, String type, String src) {
 						result = true
 						state.needChildUpd = true
 						if(t1 && old && old.cameras && newer.cameras && old.cameras[t1] && newer.cameras[t1]) {
-							if((Boolean)settings.showDataChgdLogs == true && state.enRemDiagLogging != true) {
+							if((Boolean)settings.showDataChgdLogs == true && (Boolean)state.enRemDiagLogging != true) {
 								List chgs = getChanges(old.cameras[t1], newer.cameras[t1], "/devices/cameras/${t1}".toString(), "camera")
 								if(chgs) { LogAction("CAMERA Device Changed ($srcStr) | ${getChildDeviceLabel(t1)}: ${chgs}", "info", false) }
 							} else { devChg = true }

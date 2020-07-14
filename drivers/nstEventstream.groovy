@@ -2,7 +2,7 @@
  *  Nest Eventstream
  *	Copyright (C) 2018, 2019 Anthony S..
  *	Author: Anthony Santilli (@tonesto7)
- *  Modified: 06/21/2020
+ *  Modified: 07/06/2020
  */
 
 import java.text.SimpleDateFormat
@@ -10,7 +10,7 @@ import groovy.json.*
 import java.security.MessageDigest
 import groovy.transform.Field
 
-static String devVer() { return "2.0.7" }
+static String devVer() { return "2.0.8" }
 
 metadata {
 	definition (name: "Nest Eventstream", namespace: "tonesto7", author: "Anthony S.", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstEventstream.groovy") {
@@ -103,7 +103,7 @@ def getDeviceStateData() {
 	return getState()
 }
 
-Boolean isStreamDevice() { return true }
+static Boolean isStreamDevice() { return true }
 
 // called by parent
 void blockStreaming(Boolean val) {
@@ -128,8 +128,8 @@ void streamStart() {
 	if(tkn && url && state.structure) {
 		unschedule("sendRecent")  // or runIn(6000, "sendRecent", [overwrite: true])
 		state.runInSlowActive = false
-		allEventCountFLD = 0
-		eventCountFLD = 0
+		allEventCountFLD = 0L
+		eventCountFLD = 0L
 		state.sentForceNull = false
 		state.savedmymeta = null
 		state.savedmystruct = null
@@ -147,7 +147,8 @@ void streamStart() {
 			runIn(900, logsOff)
 		}
 		lastUpdatedEvent(true)
-		eventStreamConnect(url, "Bearer ${tkn}")
+		//eventStreamConnect(url, "Bearer ${tkn}")
+		interfaces.eventStream.connect(url, [headers:[Authorization:"Bearer ${tkn}".toString()]])
 	} else {
 		Logger("Unable to start stream... Missing Token: ($tkn) or API Url: [${url}] or structure [${state.structure}]", "warn")
 		setStreamStatusVal(false)
@@ -164,7 +165,8 @@ void streamStop() {
 	setStreamStatusVal(false)
 	blockStreaming(true)
 	if(sendNull) { sendRecent(true) }
-	eventStreamClose()
+	//eventStreamClose()
+	interfaces.eventStream.close()
 }
 
 @Field static Long allEventCountFLD 
@@ -172,11 +174,11 @@ void streamStop() {
 @Field static Map lastEventDataFLD
 @Field static Map camSaveFLD
 
-void parse(description) {
+void parse(String description) {
 	//log.warn "Event: ${description}"
 //	try {
 		if (!state.blockEventStreaming && description) {
-			def data = new JsonSlurper().parseText(description as String)
+			def data = new JsonSlurper().parseText(description)
 			if (data?.size()) {
 				allEventCountFLD = allEventCountFLD ? allEventCountFLD + 1L : 1L
 				//Logger("Stream Event Received...", "info")
@@ -188,7 +190,7 @@ void parse(description) {
 					def theRawEvent = [:] + data // make a copy
 
 					// This is the "cleaned up" event we will send to NST manager.
-					def theNewEvent = [:]
+					LinkedHashMap theNewEvent = [:]
 					theNewEvent.path = theRawEvent?.path
 					theNewEvent.data = [:]
 					theNewEvent.data.metadata = [:]
@@ -203,12 +205,12 @@ void parse(description) {
 					tempmymeta = mydata?.metadata
 
 					Boolean chgFound = true
-					def tchksum
+					String tchksum
 
 					if(tempmymeta) {
 						theNewEvent.data.metadata = [:] + theRawEvent.data.metadata
 						tchksum = generateMD5_A(tempmymeta.toString())
-						if(tchksum == state.savedmymeta) { chgFound = false }
+						if(tchksum == (String)state.savedmymeta) { chgFound = false }
 						//chgFound = getChanges(tempmymeta, state.savedmymeta, "/metatdata", "metadata")
 					}
 					if(tempmymeta && ( !state.savedmymeta || chgFound )) {
@@ -228,14 +230,14 @@ void parse(description) {
 					//theNewEvent.data.structures."${state.structure}" = [:] + mystruct
 					theNewEvent.data.structures = [:] + mydata.structures
 
-					tchksum = null
+					tchksum = (String)null
 					chgFound = true
 					def st0 = [:] + mystruct
 					//def st1 = state.savedmystruct
 					if(st0) {
 						st0.wheres = [:]
 						tchksum = generateMD5_A(st0.toString())
-						if(tchksum == state.savedmystruct) { chgFound = false }
+						if(tchksum == (String)state.savedmystruct) { chgFound = false }
 						//chgFound = getChanges(st0, st1, "/structure", "structure")
 					} else {
 						Logger("No Data in structures ${state.structure}", "warn")
@@ -261,9 +263,9 @@ void parse(description) {
 							theNewEvent.data.devices.thermostats."${t1}" = [:] + adjT1
 	
 							def t0 = [:]
-							def prevCheckSum = //[:]
+							String prevCheckSum
 							t0 = state.savedmythermostatsorig ?: [:]
-							if(t0?."${t1}") { prevCheckSum = t0[t1] }
+							if(t0?."${t1}") { prevCheckSum = (String)t0[t1] }
 							//Logger("thermostat ${i} ${t1} adjT1 ${adjT1}", "debug")
 							//Logger("thermostat ${i} ${t1} prevCheckSum ${prevCheckSum}", "debug")
 
@@ -281,9 +283,9 @@ void parse(description) {
 								somechg = true
 							}
 
-							prevCheckSum = //[:]
+							prevCheckSum = (String)null
 							t0 = state.savedmythermostats ?: [:]
-							if(t0?."${t1}") { prevCheckSum = t0[t1] }
+							if(t0?."${t1}") { prevCheckSum = (String)t0[t1] }
 
 							tchksum = null
 							chgFound = true
@@ -320,9 +322,9 @@ void parse(description) {
 							if(!adjT1) { Logger("No Data in smoke_co_alarms ${i} ${t1}", "warn"); return }
 							theNewEvent.data.devices.smoke_co_alarms."${t1}" = [:] + adjT1
 
-							def prevCheckSum // = [:]
+							String prevCheckSum // = [:]
 							def t0 = state.savedmyprotectsorig ?: [:]
-							if(t0?."${t1}") { prevCheckSum = t0[t1] }
+							if(t0?."${t1}") { prevCheckSum = (String)t0[t1] }
 
 							tchksum = null
 							chgFound = true
@@ -393,7 +395,7 @@ void parse(description) {
 							}
 							theNewEvent.data.devices.cameras."${t1}" = [:] + adjT1
 
-							tchksum = null
+							tchksum = (String)null
 							chgFound = true
 							if(adjT1) {
 								tchksum = generateMD5_A(adjT1.toString())
@@ -627,9 +629,9 @@ void apiStatusEvent(String issueDesc) {
 
 void lastUpdatedEvent(Boolean sendEvt=false) {
 	Date now = new Date()
-	def tf = new SimpleDateFormat("MMM d, yyyy - h:mm:ss a")
+	SimpleDateFormat tf = new SimpleDateFormat("MMM d, yyyy - h:mm:ss a")
 	tf.setTimeZone(getTimeZone())
-	String lastUpd = device.currentState("lastConnection")?.value
+//	String lastUpd = device.currentState("lastConnection")?.value
 	String lastDt = tf.format(now)
 //	state.lastUpdatedDt = lastDt?.toString()
 //	state.lastUpdatedDtFmt = formatDt(now)
@@ -647,45 +649,49 @@ static String lastN(String input, Integer n) {
 	return n > input?.size() ? input : input[-n..-1]
 }
 
+void Logger(GString msg, String logType = "debug") {
+	Logger(msg.toString(), logType)
+}
+
 void Logger(String msg, String logType = "debug") {
 	if(!logEnable || !msg) { return }
-	String smsg = "${device.displayName} (v${devVer()}) | ${msg}"
-	if(state.enRemDiagLogging == null) {
+	if((Boolean)state.enRemDiagLogging == null) {
 		state.enRemDiagLogging = parent?.getStateVal("enRemDiagLogging")
-		if(state.enRemDiagLogging == null) {
+		if((Boolean)state.enRemDiagLogging == null) {
 			state.enRemDiagLogging = false
 		}
 		//log.debug "set enRemDiagLogging to ${state.enRemDiagLogging}"
 	}
-        if(state.enRemDiagLogging) {
-		String theId = lastN(device.getId().toString(),5)
-                parent.saveLogtoRemDiagStore(smsg, logType, "EventStream-${theId}")
+        if((Boolean)state.enRemDiagLogging) {
+		String smsg = "${device.displayName} (v${devVer()}) | ${msg}".toString()
+		String theId = lastN((String)device.getId().toString(),5)
+		Boolean a=parent.saveLogtoRemDiagStore(smsg, logType, "EventStream-${theId}".toString())
         } else {
 		switch (logType) {
 		case "trace":
-			log.trace "${msg}"
+			log.trace msg
 			break
 		case "debug":
-			log.debug "${msg}"
+			log.debug msg
 			break
 		case "info":
-			log.info "${msg}"
+			log.info msg
 			break
 		case "warn":
-			log.warn "${msg}"
+			log.warn msg
 			break
 		case "error":
-			log.error "${msg}"
+			log.error msg
 			break
 		default:
-			log.debug "${msg}"
+			log.debug msg
 			break
 		}
 	}
 }
 
 //This will Print logs from the parent app when added to parent method that the child calls
-def log(message, level = "trace") {
+def log(String message, String level = "trace") {
 	Logger("PARENT_Log>> " + message, level)
 	return null // always call child interface with a return value
 }
@@ -700,8 +706,8 @@ def getSettingVal(String var) {
 	return settings[var] ?: null
 }
 
-String formatDt(dt) {
-	def tf = new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
+String formatDt(Date dt) {
+	SimpleDateFormat tf = new SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
 	if(getTimeZone()) { tf.setTimeZone(getTimeZone()) }
 	return tf.format(dt)
 }
