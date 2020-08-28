@@ -2,7 +2,7 @@
  *  Nest Eventstream
  *	Copyright (C) 2018, 2019 Anthony S..
  *	Author: Anthony Santilli (@tonesto7)
- *  Modified: 07/06/2020
+ *  Modified: 08/05/2020
  */
 
 import java.text.SimpleDateFormat
@@ -10,7 +10,8 @@ import groovy.json.*
 import java.security.MessageDigest
 import groovy.transform.Field
 
-static String devVer() { return "2.0.8" }
+static String devVer() { return "2.0.9" }
+static Boolean eric() { return false }
 
 metadata {
 	definition (name: "Nest Eventstream", namespace: "tonesto7", author: "Anthony S.", importUrl: "https://raw.githubusercontent.com/tonesto7/nst-manager-he/master/drivers/nstEventstream.groovy") {
@@ -44,7 +45,7 @@ void installed() {
 
 void initialize() {
 	log.trace "Device Initialized: (${device?.displayName})..."
-	if(state.streamRunning) {
+	if((Boolean)state.streamRunning) {
 		parent.streamDeviceInstalled(true)
 		streamStart()
 		if (logEnable) runIn(1800, logsOff)
@@ -63,6 +64,13 @@ void updated() {
 	state.remove("lastUpdatedDtFmt")
 	state.remove("allEventCount")
 	state.remove("eventCount")
+	state.remove('savedmymeta')
+	state.remove('savedmystruct')
+	state.remove('savedmythermostats')
+	state.remove('savedmythermostatsorig')
+	state.remove('savedmyprotects')
+	state.remove('savedmyprotectsorig')
+	state.remove('savedmycamerasorig')
 	parent?.streamDeviceInstalled(true)
 }
 
@@ -107,7 +115,7 @@ static Boolean isStreamDevice() { return true }
 
 // called by parent
 void blockStreaming(Boolean val) {
-	if (state.blockEventStreaming != val) {
+	if((Boolean)state.blockEventStreaming != val) {
 		Logger("blockStreaming(${val})")
 	}
 	state.blockEventStreaming = val
@@ -116,7 +124,7 @@ void blockStreaming(Boolean val) {
 // called by parent
 void streamStart() {
 	Logger("streamStart()")
-	if(state.streamRunning) {
+	if((Boolean)state.streamRunning) {
 		Logger("eventStream() already running...", "error")
 		streamStop()
 		return
@@ -131,13 +139,20 @@ void streamStart() {
 		allEventCountFLD = 0L
 		eventCountFLD = 0L
 		state.sentForceNull = false
-		state.savedmymeta = null
-		state.savedmystruct = null
-		state.savedmythermostats = [:]
-		state.savedmythermostatsorig = [:]
-		state.savedmyprotects = [:]
-		state.savedmyprotectsorig = [:]
-		state.savedmycamerasorig = [:]
+		savedFLDmymeta = (String)null
+		savedFLDmymetaD = [:]
+		savedFLDmystruct = (String)null
+		savedFLDmystructD = [:]
+		savedFLDmythermostats = [:]
+		savedFLDmythermostatsD = [:]
+		savedFLDmythermostatsorig = [:]
+		savedFLDmythermostatsorigD = [:]
+		savedFLDmyprotects = [:]
+		savedFLDmyprotectsD = [:]
+		savedFLDmyprotectsorig = [:]
+		savedFLDmyprotectsorigD = [:]
+		savedFLDmycamerasorig = [:]
+		savedFLDmycamerasorigD = [:]
 		//state.camSave = [:]
 		camSaveFLD = [:]
 		//state.lastEventData = [:]
@@ -159,7 +174,7 @@ void streamStart() {
 void streamStop() {
 	Logger("Stream Stopping...")
 	Boolean sendNull = false
-	if(state.streamRunning) {
+	if((Boolean)state.streamRunning) {
 		sendNull = true
 	}
 	setStreamStatusVal(false)
@@ -172,12 +187,26 @@ void streamStop() {
 @Field static Long allEventCountFLD 
 @Field static Long eventCountFLD 
 @Field static Map lastEventDataFLD
+@Field static String savedFLDmymeta = (String)null
+@Field static Map savedFLDmymetaD = [:]
+@Field static String savedFLDmystruct = (String)null
+@Field static Map savedFLDmystructD = [:]
+@Field static Map savedFLDmythermostats = [:]
+@Field static Map savedFLDmythermostatsD = [:]
+@Field static Map savedFLDmythermostatsorig = [:]
+@Field static Map savedFLDmythermostatsorigD = [:]
+@Field static Map savedFLDmyprotects = [:]
+@Field static Map savedFLDmyprotectsD = [:]
+@Field static Map savedFLDmyprotectsorig = [:]
+@Field static Map savedFLDmyprotectsorigD = [:]
+@Field static Map savedFLDmycamerasorig = [:]
+@Field static Map savedFLDmycamerasorigD = [:]
 @Field static Map camSaveFLD
 
 void parse(String description) {
 	//log.warn "Event: ${description}"
 //	try {
-		if (!state.blockEventStreaming && description) {
+		if (!(Boolean)state.blockEventStreaming && description) {
 			def data = new JsonSlurper().parseText(description)
 			if (data?.size()) {
 				allEventCountFLD = allEventCountFLD ? allEventCountFLD + 1L : 1L
@@ -187,7 +216,7 @@ void parse(String description) {
 				if(state.structure) {
 					//def theRawEvent = new JsonSlurper().parseText(description as String)
 					//def theRawEvent = new JsonSlurper().parseText(JsonOutput.toJson(data))
-					def theRawEvent = [:] + data // make a copy
+					Map theRawEvent = [:] + data // make a copy
 
 					// This is the "cleaned up" event we will send to NST manager.
 					LinkedHashMap theNewEvent = [:]
@@ -197,32 +226,39 @@ void parse(String description) {
 					theNewEvent.data.devices = [:]
 					theNewEvent.data.structures = [:]
 
-					def mydata = [:]
+					LinkedHashMap mydata = [:]
 					mydata = data?.data as Map
 					if(!mydata) { Logger("No Data in mydata", "warn") }
 
-					def tempmymeta = [:]
+					LinkedHashMap tempmymeta = [:]
 					tempmymeta = mydata?.metadata
 
 					Boolean chgFound = true
 					String tchksum
+					List ch
 
 					if(tempmymeta) {
 						theNewEvent.data.metadata = [:] + theRawEvent.data.metadata
 						tchksum = generateMD5_A(tempmymeta.toString())
-						if(tchksum == (String)state.savedmymeta) { chgFound = false }
-						//chgFound = getChanges(tempmymeta, state.savedmymeta, "/metatdata", "metadata")
+						if(tchksum == (String)savedFLDmymeta) { chgFound = false }
+						if(chgFound){
+							ch = getChanges(tempmymeta, savedFLDmymetaD, "/metatdata", "metadata")
+							if(!ch) chgFound=false
+						}
 					}
-					if(tempmymeta && ( !state.savedmymeta || chgFound )) {
+					if(tempmymeta && ( !savedFLDmymeta || chgFound )) {
 						chgd = true
-						state.savedmymeta = tchksum
-						//Logger("tempmymeta changed", "info")
-						//Logger("chgFound ${chgFound}", "info")
-						//Logger("tempmymeta ${tempmymeta.toString()}", "info")
-						//Logger("state.savedmyymeta ${state.savedmymeta.toString()}", "info")
+						savedFLDmymeta = tchksum
+						savedFLDmymetaD=tempmymeta
+						if(eric()){
+							Logger("tempmymeta changed", "info")
+							Logger("chgFound ${ch}", "info")
+							//Logger("tempmymeta ${tempmymeta.toString()}", "info")
+							//Logger("savedFLDmyymeta ${savedFLDmymeta.toString()}", "info")
+						}
 					}
 
-					def mystruct = [:]
+					LinkedHashMap mystruct = [:]
 					if(!mydata?.structures) { Logger("No Data in structures", "warn"); return }
 					mystruct = mydata.structures?."${state.structure}"
 					if(!mystruct) { /* Logger("No Data in structure ${state.structure}", "warn");*/ return }
@@ -230,157 +266,238 @@ void parse(String description) {
 					//theNewEvent.data.structures."${state.structure}" = [:] + mystruct
 					theNewEvent.data.structures = [:] + mydata.structures
 
+					ch=[]
 					tchksum = (String)null
 					chgFound = true
-					def st0 = [:] + mystruct
-					//def st1 = state.savedmystruct
+					Map st0 = [:] + mystruct
+					Map st1 = savedFLDmystructD
 					if(st0) {
 						st0.wheres = [:]
 						tchksum = generateMD5_A(st0.toString())
-						if(tchksum == (String)state.savedmystruct) { chgFound = false }
-						//chgFound = getChanges(st0, st1, "/structure", "structure")
+						if(tchksum == (String)savedFLDmystruct) { chgFound = false }
+						if(chgFound){
+							ch = getChanges(st0, st1, "/structure", "structure")
+							if(!ch) chgFound=false
+						}
 					} else {
 						Logger("No Data in structures ${state.structure}", "warn")
 						return
 					}
 
-					if(st0 && ( !state.savedmystruct || chgFound)) {
+					if(st0 && ( !savedFLDmystruct || chgFound)) {
 						chgd = true
-						state.savedmystruct = tchksum
-						//Logger("mystruct changed structure ${state.structure}", "info")
-						//Logger("mystruct chgFound ${chgFound}", "info")
+						savedFLDmystruct = tchksum
+						savedFLDmystructD = st0
+						if(eric()){
+							Logger("mystruct changed structure ${state.structure}", "info")
+							Logger("mystruct chgFound ${ch}", "info")
+						}
 					}
 
 					if(mystruct?.thermostats) {
 						theNewEvent.data.devices.thermostats = [:]
-						def tlen = mystruct.thermostats.size()
+						Integer tlen = mystruct.thermostats.size()
 						for (i = 0; i < tlen; i++) {
 							def t1 = mystruct.thermostats[i]
 
-							def adjT1 = [:]
+							ch=[]
+							Map adjT1 = [:]
 							adjT1 = mydata.devices.thermostats[t1]
 							if(!adjT1) { Logger("No Data in thermostat ${i} ${t1}", "warn"); return }
-							theNewEvent.data.devices.thermostats."${t1}" = [:] + adjT1
+							theNewEvent.data.devices.thermostats."${t1}" = adjT1
 	
-							def t0 = [:]
+							Map t0 = [:]
+							t0 = savedFLDmythermostatsorigD ?: [:]
+							Map adjT2= t0?."${t1}" ? (Map)t0[t1] : [:]
+
+							t0 = [:]
 							String prevCheckSum
-							t0 = state.savedmythermostatsorig ?: [:]
+							t0 = savedFLDmythermostatsorig ?: [:]
 							if(t0?."${t1}") { prevCheckSum = (String)t0[t1] }
 							//Logger("thermostat ${i} ${t1} adjT1 ${adjT1}", "debug")
 							//Logger("thermostat ${i} ${t1} prevCheckSum ${prevCheckSum}", "debug")
 
-							tchksum = null
+							tchksum = (String)null
 							chgFound = true
 							if(adjT1) {
 								tchksum = generateMD5_A(adjT1.toString())
 								if(tchksum == prevCheckSum) { chgFound = false }
-								//chgFound = getChanges(adjT1, adjT2, "/thermostats", "tstat")
+								if(chgFound){
+									ch = getChanges(adjT1, adjT2, "/thermostats", "tstat")
+									if(!ch) chgFound=false
+								}
 							}
 							if(adjT1 && ( !prevCheckSum || chgFound )) {
-								//t0 = state.savedmythermostatsorig
+								t0 = savedFLDmythermostatsorig
 								t0[t1] = tchksum
-								state.savedmythermostatsorig = t0
+								savedFLDmythermostatsorig = t0
+								t0 = savedFLDmythermostatsorigD ?: [:]
+								t0[t1] = adjT1
+								savedFLDmythermostatsorigD = t0
+								if(eric()){
+									Logger("thermostat SOME changes ${t1}", "info")
+									Logger("tstat SOME chgFound ${ch}", "info")
+								}
 								somechg = true
 							}
 
 							prevCheckSum = (String)null
-							t0 = state.savedmythermostats ?: [:]
+							t0 = savedFLDmythermostats ?: [:]
 							if(t0?."${t1}") { prevCheckSum = (String)t0[t1] }
 
-							tchksum = null
+							t0 = savedFLDmythermostatsD ?: [:]
+							Map at1 = [:]
+							if(t0?."${t1}") { at1 = t0[t1] }
+
+							ch=[]
+							Map at0
+							tchksum = (String)null
 							chgFound = true
 							if(adjT1) {
-								//def at0 = new JsonSlurper().parseText(JsonOutput.toJson(adjT1))
-								def at0 = [:] + adjT1 // make a copy
+								at0 = new JsonSlurper().parseText(JsonOutput.toJson(adjT1))
+									//Map at0 = [:] + adjT1 // make a copy
 								at0.last_connection = ""
-								//at0.where_id = ""
+									//at0.where_id = ""
 
-								//def at1 = new JsonSlurper().parseText(JsonOutput.toJson(adjT2))
-								//def at1 = [:] + adjT2
-								//at1.last_connection = ""
-								//at1.where_id = ""
+									//Map at1 = new JsonSlurper().parseText(JsonOutput.toJson(adjT2))
+									//Map at1 = [:] + adjT2
+									//at1.last_connection = ""
+									//at1.where_id = ""
 								tchksum = generateMD5_A(at0.toString())
 								if(tchksum == prevCheckSum) { chgFound = false }
-								//chgFound = getChanges(at0, at1, "/thermostats", "tstat")
+								if(chgFound){
+									ch = getChanges(at0, at1, "/thermostats", "tstat")
+									if(!ch) chgFound=false
+								}
 							}
 							if(adjT1 && ( !prevCheckSum || chgFound)) {
+								t0 = savedFLDmythermostats ?: [:]
 								t0[t1] = tchksum
-								state.savedmythermostats = t0
+								savedFLDmythermostats = t0
+								t0 = savedFLDmythermostatsD ?: [:]
+								t0[t1] = at0
+								savedFLDmythermostatsD = t0
+								if(eric()){
+									Logger("thermostat changed ${t1}", "info")
+									Logger("tstat chgFound ${ch}", "info")
+								}
 								chgd = true
-								//Logger("thermostat changed ${t1}", "info")
-								//Logger("tstat chgFound ${chgFound}", "info")
 							}
 						}
 					} // else Logger("no thermostats", "warn")
 					if(mystruct?.smoke_co_alarms) {
 						theNewEvent.data.devices.smoke_co_alarms = [:]
-						def tlen = mystruct.smoke_co_alarms.size()
+						Integer tlen = mystruct.smoke_co_alarms.size()
 						for (i = 0; i < tlen; i++) {
 							def t1 = mystruct.smoke_co_alarms[i]
+
+							ch=[]
 							def adjT1 = [:]
 							adjT1 = mydata.devices.smoke_co_alarms[t1]
 							if(!adjT1) { Logger("No Data in smoke_co_alarms ${i} ${t1}", "warn"); return }
 							theNewEvent.data.devices.smoke_co_alarms."${t1}" = [:] + adjT1
 
+							def t0 = [:]
+							t0 = savedFLDmyprotectsorigD ?: [:]
+							def adjT2= t0?."${t1}" ? (Map)t0[t1] : [:]
+
+							t0 = [:]
 							String prevCheckSum // = [:]
-							def t0 = state.savedmyprotectsorig ?: [:]
+							t0 = savedFLDmyprotectsorig ?: [:]
 							if(t0?."${t1}") { prevCheckSum = (String)t0[t1] }
 
-							tchksum = null
+							tchksum = (String)null
 							chgFound = true
 							if(adjT1) {
 								tchksum = generateMD5_A(adjT1.toString())
 								if(tchksum == prevCheckSum) { chgFound = false }
-								//chgFound = getChanges(adjT1, adjT2, "/protects", "prot")
+								if(chgFound){
+									ch = getChanges(adjT1, adjT2, "/protects", "prot")
+									if(!ch) chgFound=false
+								}
 							}
 							if(adjT1 && ( !prevCheckSum || chgFound)) {
+								t0 = savedFLDmyprotectsorig ?: [:]
 								t0[t1] = tchksum
-								state.savedmyprotectsorig = t0
+								savedFLDmyprotectsorig = t0
+								t0 = savedFLDmyprotectsorigD ?: [:]
+								t0[t1] = adjT1
+								savedFLDmyprotectsorigD = t0
+								if(eric()){
+									Logger("protect SOME ${chgFound} $prevCheckSum changes ${t1}", "info")
+									Logger("prot SOME chgFound ${ch}", "info")
+								}
 								somechg = true
 							}
 
-							prevCheckSum = null // this is a checksum [:]
-							t0 = state.savedmyprotects ?: [:]
-							if(t0?."${t1}") { prevCheckSum = t0[t1] }
+							prevCheckSum = (String)null // this is a checksum [:]
+							t0 = savedFLDmyprotects ?: [:]
+							if(t0?."${t1}") { prevCheckSum = (String)t0[t1] }
 
-							tchksum = null
-							chgFound = true
-							if(adjT1) {
-								//def at0 = new JsonSlurper().parseText(JsonOutput.toJson(adjT1))
-								def at0 = [:] + adjT1 // make a copy
-								at0.last_connection = ""
-								//at0.where_id = ""
-								//def at1 = new JsonSlurper().parseText(JsonOutput.toJson(adjT2))
-								//def at1 = [:] + adjT2
-								//at1.last_connection = ""
-								//at1.where_id = ""
+							t0 = savedFLDmyprotectsD ?: [:]
+							def at1 = [:]
+							String adjT2S="{}"
+							if(t0?."${t1}") { adjT2S = t0[t1] }
+
+							ch=[]
+							def at0
+							tchksum = (String)null
+							if(adjT1 && chgFound) {
+								chgFound = true
+								at0 = new JsonSlurper().parseText(JsonOutput.toJson(adjT1))
+									//at0 = [:] + adjT1 // make a copy
+								//at0.last_connection = (String)null
+								at0.remove('last_connection')
+									//at0.where_id = ""
+									//at1 = new JsonSlurper().parseText(JsonOutput.toJson(adjT2))
+								at1 = new JsonSlurper().parseText(adjT2S)
+									//at1 = [:] + adjT2
+								//at1.last_connection = (String)null
+								at1.remove('last_connection')
+									//at1.last_connection = ""
+									//at1.where_id = ""
 								tchksum = generateMD5_A(at0.toString())
 								if(tchksum == prevCheckSum) { chgFound = false }
-								//chgFound = getChanges(at0, at1, "/protects", "prot")
+								if(chgFound){
+									ch = getChanges(at0, at1, "/protects", "prot")
+									if(!ch) chgFound=false
+								}
 							}
 							if(adjT1 && ( !prevCheckSum || chgFound)) {
+								t0 = savedFLDmyprotectsorig ?: [:]
 								t0[t1] = tchksum
-								state.savedmyprotects = t0
+								savedFLDmyprotects = t0
+								t0 = savedFLDmyprotectsD ?: [:]
+								t0[t1] = JsonOutput.toJson(at0) //at0
+								savedFLDmyprotectsD = t0
+								if(eric()){
+									Logger("protect changed ${t1}", "info")
+									Logger("prot chgFound ${ch}", "info")
+								}
 								chgd = true
-								//Logger("protect changed ${t1}", "info")
-								//Logger("prot chgFound ${chgFound}", "info")
 							}
 						}
 					} // else Logger("no protects", "warn")
 					if(mystruct?.cameras) {
 						theNewEvent.data.devices.cameras = [:]
-						def camSave = [:]
-						def tlen = mystruct.cameras.size()
+						Map camSave = [:]
+						Integer tlen = mystruct.cameras.size()
 						for (i = 0; i < tlen; i++) {
 							def t1 = mystruct.cameras[i]
 
+							ch=[]
 							def adjT1 = [:]
 							adjT1 = mydata.devices.cameras[t1]
 							if(!adjT1) { Logger("No Data in cameras ${i} ${t1}", "warn"); return }
 
-							def t0 = state.savedmycamerasorig ?: [:]
-							def prevCheckSum // = [:]   this is a checksum [:]
-							if(t0?."${t1}") { prevCheckSum = t0[t1] }
+							def t0 = [:]
+							t0 = savedFLDmycamerasorigD ?: [:]
+							def adjT2= t0?."${t1}" ? (Map)t0[t1] : [:]
+
+							t0 = [:]
+							t0 = savedFLDmycamerasorig ?: [:]
+							String prevCheckSum // = [:]   this is a checksum [:]
+							if(t0?."${t1}") { prevCheckSum = (String)t0[t1] }
 
 							def myisonline = adjT1?.is_online
 							def myisstreaming = adjT1?.is_streaming
@@ -400,22 +517,30 @@ void parse(String description) {
 							if(adjT1) {
 								tchksum = generateMD5_A(adjT1.toString())
 								if(tchksum == prevCheckSum) { chgFound = false }
-								//chgFound = getChanges(adjT1, adjT2, "/cameras", "cam")
+								if(chgFound){
+									ch = getChanges(adjT1, adjT2, "/cameras", "cam")
+									if(!ch) chgFound=false
+								}
 							}
 							if(adjT1 && (!prevCheckSum || chgFound)) {     //adjT1.toString() != adjT2.toString()) {
+								t0 = savedFLDmycamerasorig ?: [:]
 								t0[t1] = tchksum
-								state.savedmycamerasorig = t0
+								savedFLDmycamerasorig = t0
 								if(!myisonline || !myisstreaming) {
 									somechg = true
 									chgFound = false
 								}
+								t0 = savedFLDmycamerasorigD ?: [:]
+								t0[t1] = adjT1
+								savedFLDmycamerasorigD = t0
 							}
 
 /*
-							t0 = state.savedmycameras ?: [:]
+							t0 = savedFLDmycameras ?: [:]
 							prevCheckSum = //[:]
 							if(t0?."${t1}") { prevCheckSum = t0[t1] }
 
+							ch=[]
 							tchksum = null
 							chgFound = true
 */
@@ -435,10 +560,12 @@ void parse(String description) {
 							//}
 							if(adjT1 && ( !prevCheckSum || chgFound)) {    //adjT1.toString() != adjT2.toString()) {
 								//t0[t1] = tchksum
-								//state.savedmycameras = t0
+								//savedFLDmycameras = t0
 								chgd = true
-								// Logger("camera changed ${t1}", "info")
-								// Logger("camera chgFound ${chgFound}", "info")
+								if(eric()){
+									Logger("camera changed ${t1}", "info")
+									Logger("camera chgFound ${ch}", "info")
+								}
 							}
 
 /*
@@ -471,7 +598,7 @@ void parse(String description) {
 					}  else {
 						//if(state.camSave) {
 						if(camSaveFLD) {
-							//Logger("using camSave", "warn")
+							if(eric())Logger("using camSave", "warn")
 							theNewEvent.data.devices.cameras = [:]
 							//theNewEvent.data.devices.cameras = state.camSave
 							theNewEvent.data.devices.cameras = camSaveFLD
@@ -488,14 +615,14 @@ void parse(String description) {
 				}
 				setStreamStatusVal(true)
 				if(!chgd && somechg) {
-					if(!state.runInSlowActive) {
+					if(!(Boolean)state.runInSlowActive) {
 						state.runInSlowActive = true
 						Logger("scheduling event", "info")
 						runIn(95, "sendRecent", [overwrite: true])
 					}
 				}
 				if(chgd) {
-					if(state.runInSlowActive) {
+					if((Boolean)state.runInSlowActive) {
 						Logger("unscheduling event", "info")
 						unschedule("sendRecent")  // or runIn(6000, "sendRecent", [overwrite: true])
 						state.runInSlowActive = false
@@ -505,13 +632,20 @@ void parse(String description) {
 				}
 			}
 		} else {
-			state.savedmymeta = null
-			state.savedmystruct = null
-			state.savedmythermostats = [:]
-			state.savedmythermostatsorig = [:]
-			state.savedmyprotects = [:]
-			state.savedmyprotectsorig = [:]
-			state.savedmycamerasorig = [:]
+			savedFLDmymeta = (String)null
+			savedFLDmymetaD = [:]
+			savedFLDmystruct = (String)null
+			savedFLDmystructD = [:]
+			savedFLDmythermostats = [:]
+			savedFLDmythermostatsD = [:]
+			savedFLDmythermostatsorig = [:]
+			savedFLDmythermostatsorigD = [:]
+			savedFLDmyprotects = [:]
+			savedFLDmyprotectsD = [:]
+			savedFLDmyprotectsorig = [:]
+			savedFLDmyprotectsorigD = [:]
+			savedFLDmycamerasorig = [:]
+			savedFLDmycamerasorigD = [:]
 			//state.camSave = [:]
 			camSaveFLD = [:]
 		}
@@ -527,28 +661,31 @@ String generateMD5_A(String s){
 	MessageDigest.getInstance("MD5").digest(s.bytes).encodeHex().toString()
 }
 
-def getChanges(mapA, mapB, String headstr, String objType=null) {
+List getChanges(mapA, mapB, String headstr, String objType=(String)null) {
 	def t0 = mapA
 	def t1 = mapB
 	def left = t0
 	def right = t1
-	def itemsChgd = []
+	List itemsChgd = []
 	//Logger("getChanges ${headstr} t0 ${t0}", "info")
 	//Logger("getChanges ${headstr} t1 ${t1}", "info")
 	if (left instanceof Map) {
 		String[] leftKeys = left.keySet()
-		String[] rightKeys = right.keySet()
+		String[] rightKeys = right?.keySet()
 		leftKeys.each {
 			if( left[it] instanceof Map ) {
-				def chgs = getChanges( left[it], right[it], "${headstr}/${it}", objType )
+				Map nr= right && right[it] ? right[it] : [:]
+				List chgs = getChanges( left[it], nr, "${headstr}/${it}".toString(), objType )
 				if(chgs && objType) {
 					itemsChgd += chgs
 				}
 			} else {
-				if (left[it].toString() != right[it].toString()) {
+				String nr= right && right[it] ? right[it].toString() : (String)null
+				String nl= left && left[it] ? left[it].toString() : (String)null
+				if (nl != nr) {
        					 if(objType) {
 //						Logger("getChanges ${headstr} IT: ${it}  LEFT: ${left[it]}   RIGHT:${right[it]}")
-						itemsChgd.push(it.toString())
+						itemsChgd.push("${it} ${left[it]} $nr".toString())
        				 	}
 				}
 			}
@@ -558,7 +695,7 @@ def getChanges(mapA, mapB, String headstr, String objType=null) {
 			return itemsChgd
 		}
 	}
-	return false
+	return itemsChgd
 }
 
 void sendRecent(Boolean forceNull=false) {
@@ -567,7 +704,7 @@ void sendRecent(Boolean forceNull=false) {
 	t0 = lastEventDataFLD
 	state.runInSlowActive = false
 	if(t0 || forceNull) {
-		if(forceNull && !state.sentForceNull) {
+		if(forceNull && !(Boolean)state.sentForceNull) {
 			t0 = [:]
 			state.sentForceNull = true
 			Logger("Forced Null sent Event # ${eventCountFLD} / ${allEventCountFLD}")
