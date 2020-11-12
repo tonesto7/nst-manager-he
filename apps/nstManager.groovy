@@ -2,7 +2,7 @@
  *  NST Manager
  *	Copyright (C) 2017-2020 Anthony Santilli
  *	Author: Anthony Santilli (@tonesto7) Eric Schott (@nh.schottfam)
- * June 24, 2020
+ * November 6,2020
  */
 
 import groovy.json.*
@@ -1856,7 +1856,8 @@ private Boolean getApiData(String type = sNULL) {
 			uri: getNestApiUrl(),
 			path: "$tPath",
 			contentType: "application/json",
-			headers: ["Authorization": "Bearer ${getNestAuthToken()}"]
+			headers: ["Authorization": "Bearer ${getNestAuthToken()}"],
+			timeout: 20
 	]
 	try {
 		httpGet(params) { resp ->
@@ -3255,7 +3256,8 @@ Boolean queueProcNestCmd(String uri, String typeId, String type, String obj, obj
 				"Content-Type": "application/json",
 				"Authorization": "Bearer ${tok}".toString()
 			],
-			body: data.toString()
+			body: data.toString(),
+			timeout: 20
 		]
 /*		//def urlPath
 		if((uri || (String)state.nestRedirectUrl) && !redir) {
