@@ -288,7 +288,7 @@ void apiStatusEvent(issueDesc) {
 	String curStat = device.currentState("apiStatus")?.value
 	String newStat = issueDesc
 	if(isStateChange(device, "apiStatus", newStat)) {
-		Logger("API Status is: (${newStat.capitalize()}) | Previous State: (${curStat.capitalize()})")
+		Logger("API Status is: (${newStat.capitalize()}) | Previous State: (${curStat.toString().capitalize()})")
 		sendEvent(name: "apiStatus", value: newStat, descriptionText: "API Status is: ${newStat}", displayed: true, isStateChange: true, state: newStat)
 	}
 }

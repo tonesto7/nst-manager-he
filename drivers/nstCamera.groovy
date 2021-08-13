@@ -314,7 +314,7 @@ void lastEventDataEvent(data, actZones) {
 	Boolean hasMotion = data?.has_motion ? data?.has_motion?.toBoolean() : false
 	Boolean hasSound = data?.has_sound ? data?.has_sound?.toBoolean() : false
 	def evtZoneIds = data?.activity_zone_ids
-	String evtZoneNames = null
+	String evtZoneNames = (String)null
 
 	String evtType = (!hasMotion ? "Sound Event" : "Motion Event") + "${hasPerson ? " (Person)" : ""}" + "${hasSound ? " (Sound)" : ""}"
 	if(actZones && evtZoneIds) {
@@ -328,16 +328,17 @@ void lastEventDataEvent(data, actZones) {
 		}
 	}
 
-	//log.debug "curStartDt: $curStartDt | curEndDt: $curEndDt || newStartDt: $newStartDt | newEndDt: $newEndDt"
-
 	state.lastEventDate = formatDt2(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0), "MMMMM d, yyyy")
 	state.lastEventTime = "${formatDt2(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t0), "h:mm:ssa")} to ${formatDt2(Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", t1), "h:mm:ssa")}"
 	if(state?.lastEventData) { state.lastEventData == null }
 
 	Boolean tryPic = false
-
+    
+	if(!evtZoneNames) evtZoneNames = "not set"
 	if(!state?.lastCamEvtData || (curStartDt != newStartDt || curEndDt != newEndDt) || isStateChange(device, "lastEventType", evtType) || isStateChange(device, "lastEventZones", evtZoneNames)) {
 		if(hasPerson || hasMotion || hasSound) {
+			//log.debug "curStartDt: $curStartDt | curEndDt: $curEndDt || newStartDt: $newStartDt | newEndDt: $newEndDt"
+			//log.debug "lastEventType: $evtType | lastEventZones: ${evtZoneNames.toString()}"
 			sendEvent(name: 'lastEventStart', value: newStartDt, descriptionText: "Last Event Start is ${newStartDt}", displayed: false)
 			sendEvent(name: 'lastEventEnd', value: newEndDt, descriptionText: "Last Event End is ${newEndDt}", displayed: false)
 			sendEvent(name: 'lastEventType', value: evtType, descriptionText: "Last Event Type was ${evtType}", displayed: false)
@@ -472,7 +473,7 @@ void apiStatusEvent(String issueDesc) {
 	String curStat = device.currentState("apiStatus")?.value
 	String newStat = issueDesc
 	if(isStateChange(device, "apiStatus", newStat)) {
-		Logger("API Status is: (${newStat.capitalize()}) | Previous State: (${curStat.capitalize()})")
+		Logger("API Status is: (${newStat.capitalize()}) | Previous State: (${curStat.toString().capitalize()})")
 		sendEvent(name: "apiStatus", value: newStat, descriptionText: "API Status is: ${newStat}", displayed: true, isStateChange: true, state: newStat)
 	}
 }

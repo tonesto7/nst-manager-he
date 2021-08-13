@@ -101,16 +101,19 @@ void stateRemove(key) {
         state.remove(key?.toString())
 }
 
+@SuppressWarnings('unused')
 def getDataByName(String name) {
 	state[name] ?: device.getDataValue(name)
 }
 
 def getDevTypeId() { return device?.getDevTypeId() }
 
+@SuppressWarnings('unused')
 def getDeviceStateData() {
 	return getState()
 }
 
+@SuppressWarnings('unused')
 static Boolean isStreamDevice() { return true }
 
 // called by parent
@@ -226,19 +229,17 @@ void parse(String description) {
 					theNewEvent.data.devices = [:]
 					theNewEvent.data.structures = [:]
 
-					LinkedHashMap mydata = [:]
-					mydata = data?.data as Map
+					LinkedHashMap mydata = data?.data as Map
 					if(!mydata) { Logger("No Data in mydata", "warn") }
 
-					LinkedHashMap tempmymeta = [:]
-					tempmymeta = mydata?.metadata
+					LinkedHashMap tempmymeta = (Map)mydata?.metadata
 
 					Boolean chgFound = true
-					String tchksum
-					List ch
+					String tchksum = (String)null
+					List ch = []
 
 					if(tempmymeta) {
-						theNewEvent.data.metadata = [:] + theRawEvent.data.metadata
+						theNewEvent.data.metadata = [:] + (Map)theRawEvent.data.metadata
 						tchksum = generateMD5_A(tempmymeta.toString())
 						if(tchksum == (String)savedFLDmymeta) { chgFound = false }
 						if(chgFound){
@@ -258,13 +259,12 @@ void parse(String description) {
 						}
 					}
 
-					LinkedHashMap mystruct = [:]
 					if(!mydata?.structures) { Logger("No Data in structures", "warn"); return }
-					mystruct = mydata.structures?."${state.structure}"
+					LinkedHashMap mystruct = mydata.structures?."${state.structure}"
 					if(!mystruct) { /* Logger("No Data in structure ${state.structure}", "warn");*/ return }
 
 					//theNewEvent.data.structures."${state.structure}" = [:] + mystruct
-					theNewEvent.data.structures = [:] + mydata.structures
+					theNewEvent.data.structures = [:] + (Map)mydata.structures
 
 					ch=[]
 					tchksum = (String)null
@@ -298,20 +298,17 @@ void parse(String description) {
 						theNewEvent.data.devices.thermostats = [:]
 						Integer tlen = mystruct.thermostats.size()
 						for (i = 0; i < tlen; i++) {
-							def t1 = mystruct.thermostats[i]
+							String t1 = (String)((List)mystruct.thermostats)[i]
 
 							ch=[]
-							Map adjT1 = [:]
-							adjT1 = mydata.devices.thermostats[t1]
+							Map adjT1 = (Map)mydata.devices.thermostats[t1]
 							if(!adjT1) { Logger("No Data in thermostat ${i} ${t1}", "warn"); return }
 							theNewEvent.data.devices.thermostats."${t1}" = adjT1
 	
-							Map t0 = [:]
-							t0 = savedFLDmythermostatsorigD ?: [:]
+							Map t0 = savedFLDmythermostatsorigD ?: [:]
 							Map adjT2= t0?."${t1}" ? (Map)t0[t1] : [:]
 
-							t0 = [:]
-							String prevCheckSum
+							String prevCheckSum = (String)null
 							t0 = savedFLDmythermostatsorig ?: [:]
 							if(t0?."${t1}") { prevCheckSum = (String)t0[t1] }
 							//Logger("thermostat ${i} ${t1} adjT1 ${adjT1}", "debug")
@@ -347,14 +344,14 @@ void parse(String description) {
 
 							t0 = savedFLDmythermostatsD ?: [:]
 							Map at1 = [:]
-							if(t0?."${t1}") { at1 = t0[t1] }
+							if(t0?."${t1}") { at1 = (Map)t0[t1] }
 
 							ch=[]
-							Map at0
+							Map at0 = null
 							tchksum = (String)null
 							chgFound = true
 							if(adjT1) {
-								at0 = new JsonSlurper().parseText(JsonOutput.toJson(adjT1))
+								at0 = (Map)(new JsonSlurper().parseText(JsonOutput.toJson(adjT1)))
 									//Map at0 = [:] + adjT1 // make a copy
 								at0.last_connection = ""
 									//at0.where_id = ""
@@ -389,20 +386,17 @@ void parse(String description) {
 						theNewEvent.data.devices.smoke_co_alarms = [:]
 						Integer tlen = mystruct.smoke_co_alarms.size()
 						for (i = 0; i < tlen; i++) {
-							def t1 = mystruct.smoke_co_alarms[i]
+							String t1 = (String)((List)mystruct.smoke_co_alarms)[i]
 
 							ch=[]
-							def adjT1 = [:]
-							adjT1 = mydata.devices.smoke_co_alarms[t1]
+							Map adjT1 = (Map)mydata.devices.smoke_co_alarms[t1]
 							if(!adjT1) { Logger("No Data in smoke_co_alarms ${i} ${t1}", "warn"); return }
 							theNewEvent.data.devices.smoke_co_alarms."${t1}" = [:] + adjT1
 
-							def t0 = [:]
-							t0 = savedFLDmyprotectsorigD ?: [:]
-							def adjT2= t0?."${t1}" ? (Map)t0[t1] : [:]
+							Map t0 = savedFLDmyprotectsorigD ?: [:]
+							Map adjT2= t0?."${t1}" ? (Map)t0[t1] : [:]
 
-							t0 = [:]
-							String prevCheckSum // = [:]
+							String prevCheckSum = (String)null
 							t0 = savedFLDmyprotectsorig ?: [:]
 							if(t0?."${t1}") { prevCheckSum = (String)t0[t1] }
 
@@ -435,22 +429,22 @@ void parse(String description) {
 							if(t0?."${t1}") { prevCheckSum = (String)t0[t1] }
 
 							t0 = savedFLDmyprotectsD ?: [:]
-							def at1 = [:]
+							Map at1
 							String adjT2S="{}"
 							if(t0?."${t1}") { adjT2S = t0[t1] }
 
 							ch=[]
-							def at0
+							Map at0 = [:]
 							tchksum = (String)null
 							if(adjT1 && chgFound) {
 								chgFound = true
-								at0 = new JsonSlurper().parseText(JsonOutput.toJson(adjT1))
+								at0 = (Map)(new JsonSlurper().parseText(JsonOutput.toJson(adjT1)))
 									//at0 = [:] + adjT1 // make a copy
 								//at0.last_connection = (String)null
 								at0.remove('last_connection')
 									//at0.where_id = ""
 									//at1 = new JsonSlurper().parseText(JsonOutput.toJson(adjT2))
-								at1 = new JsonSlurper().parseText(adjT2S)
+								at1 = (Map)(new JsonSlurper().parseText(adjT2S))
 									//at1 = [:] + adjT2
 								//at1.last_connection = (String)null
 								at1.remove('last_connection')
@@ -483,20 +477,17 @@ void parse(String description) {
 						Map camSave = [:]
 						Integer tlen = mystruct.cameras.size()
 						for (i = 0; i < tlen; i++) {
-							def t1 = mystruct.cameras[i]
+							String t1 = ((List)mystruct.cameras)[i]
 
 							ch=[]
-							def adjT1 = [:]
-							adjT1 = mydata.devices.cameras[t1]
+							Map adjT1 = (Map)mydata.devices.cameras[t1]
 							if(!adjT1) { Logger("No Data in cameras ${i} ${t1}", "warn"); return }
 
-							def t0 = [:]
-							t0 = savedFLDmycamerasorigD ?: [:]
+							def t0 = savedFLDmycamerasorigD ?: [:]
 							def adjT2= t0?."${t1}" ? (Map)t0[t1] : [:]
 
-							t0 = [:]
 							t0 = savedFLDmycamerasorig ?: [:]
-							String prevCheckSum // = [:]   this is a checksum [:]
+							String prevCheckSum  = (String)null // = [:]   this is a checksum [:]
 							if(t0?."${t1}") { prevCheckSum = (String)t0[t1] }
 
 							def myisonline = adjT1?.is_online
@@ -654,7 +645,6 @@ void parse(String description) {
 		log.error "parse Error: ${ex.message}" // no need to restart stream here if error
 	}
 */
-	return
 }
 
 String generateMD5_A(String s){
@@ -674,7 +664,7 @@ List getChanges(mapA, mapB, String headstr, String objType=(String)null) {
 		String[] rightKeys = right?.keySet()
 		leftKeys.each {
 			if( left[it] instanceof Map ) {
-				Map nr= right && right[it] ? right[it] : [:]
+				Map nr= right && right[it] ? (Map)right[it] : [:]
 				List chgs = getChanges( left[it], nr, "${headstr}/${it}".toString(), objType )
 				if(chgs && objType) {
 					itemsChgd += chgs
@@ -699,9 +689,8 @@ List getChanges(mapA, mapB, String headstr, String objType=(String)null) {
 }
 
 void sendRecent(Boolean forceNull=false) {
-	Map t0 = [:]
 	//t0 = state.lastEventData
-	t0 = lastEventDataFLD
+	Map t0 = lastEventDataFLD
 	state.runInSlowActive = false
 	if(t0 || forceNull) {
 		if(forceNull && !(Boolean)state.sentForceNull) {
@@ -732,6 +721,7 @@ void setStreamStatusVal(Boolean active) {
 	}
 }
 
+@SuppressWarnings('unused')
 def eventStreamStatus(String msg) {
 	if(!msg.contains("ALIVE:")) { Logger("Status: ${msg}") }
 	if (msg.contains("STOP:")) {
@@ -747,7 +737,7 @@ def eventStreamStatus(String msg) {
 }
 
 def getTimeZone() {
-	def tz = null
+	def tz
 	if (location?.timeZone) { tz = location?.timeZone }
 	else { tz = state.nestTimeZone ? TimeZone.getTimeZone(state.nestTimeZone) : null }
 	if (!tz) { Logger("getTimeZone: Hub or Nest TimeZone is not found...", "warn") }
@@ -838,9 +828,9 @@ String getDtNow() {
 	return formatDt(now)
 }
 
-def getSettingVal(String var) {
-	if(var == null) { return settings }
-	return settings[var] ?: null
+def getSettingVal(String svar) {
+	if(svar == null) { return settings }
+	return settings[svar] ?: null
 }
 
 String formatDt(Date dt) {
