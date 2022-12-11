@@ -2,7 +2,7 @@
  *  Nest Eventstream
  *	Copyright (C) 2018, 2019 Anthony S..
  *	Author: Anthony Santilli (@tonesto7)
- *  Modified: 08/05/2020
+ *  Modified: 12/10/2022
  */
 
 import java.text.SimpleDateFormat
@@ -214,8 +214,9 @@ void parse(String description) {
 			if (data?.size()) {
 				allEventCountFLD = allEventCountFLD ? allEventCountFLD + 1L : 1L
 				//Logger("Stream Event Received...", "info")
-				Boolean chgd = false
-				Boolean somechg = false
+				Boolean chgd, somechg
+				chgd = false
+				somechg = false
 				if(state.structure) {
 					//def theRawEvent = new JsonSlurper().parseText(description as String)
 					//def theRawEvent = new JsonSlurper().parseText(JsonOutput.toJson(data))
@@ -234,9 +235,9 @@ void parse(String description) {
 
 					LinkedHashMap tempmymeta = (Map)mydata?.metadata
 
-					Boolean chgFound = true
-					String tchksum = (String)null
-					List ch = []
+					Boolean chgFound; chgFound = true
+					String tchksum; tchksum = (String)null
+					List ch; ch = []
 
 					if(tempmymeta) {
 						theNewEvent.data.metadata = [:] + (Map)theRawEvent.data.metadata
@@ -297,6 +298,7 @@ void parse(String description) {
 					if(mystruct?.thermostats) {
 						theNewEvent.data.devices.thermostats = [:]
 						Integer tlen = mystruct.thermostats.size()
+						Integer i
 						for (i = 0; i < tlen; i++) {
 							String t1 = (String)((List)mystruct.thermostats)[i]
 
@@ -304,11 +306,11 @@ void parse(String description) {
 							Map adjT1 = (Map)mydata.devices.thermostats[t1]
 							if(!adjT1) { Logger("No Data in thermostat ${i} ${t1}", "warn"); return }
 							theNewEvent.data.devices.thermostats."${t1}" = adjT1
-	
-							Map t0 = savedFLDmythermostatsorigD ?: [:]
+
+							Map t0; t0 = savedFLDmythermostatsorigD ?: [:]
 							Map adjT2= t0?."${t1}" ? (Map)t0[t1] : [:]
 
-							String prevCheckSum = (String)null
+							String prevCheckSum; prevCheckSum = (String)null
 							t0 = savedFLDmythermostatsorig ?: [:]
 							if(t0?."${t1}") { prevCheckSum = (String)t0[t1] }
 							//Logger("thermostat ${i} ${t1} adjT1 ${adjT1}", "debug")
@@ -343,11 +345,11 @@ void parse(String description) {
 							if(t0?."${t1}") { prevCheckSum = (String)t0[t1] }
 
 							t0 = savedFLDmythermostatsD ?: [:]
-							Map at1 = [:]
+							Map at1; at1 = [:]
 							if(t0?."${t1}") { at1 = (Map)t0[t1] }
 
 							ch=[]
-							Map at0 = null
+							Map at0; at0 = null
 							tchksum = (String)null
 							chgFound = true
 							if(adjT1) {
@@ -385,6 +387,7 @@ void parse(String description) {
 					if(mystruct?.smoke_co_alarms) {
 						theNewEvent.data.devices.smoke_co_alarms = [:]
 						Integer tlen = mystruct.smoke_co_alarms.size()
+						Integer i
 						for (i = 0; i < tlen; i++) {
 							String t1 = (String)((List)mystruct.smoke_co_alarms)[i]
 
@@ -393,10 +396,10 @@ void parse(String description) {
 							if(!adjT1) { Logger("No Data in smoke_co_alarms ${i} ${t1}", "warn"); return }
 							theNewEvent.data.devices.smoke_co_alarms."${t1}" = [:] + adjT1
 
-							Map t0 = savedFLDmyprotectsorigD ?: [:]
+							Map t0; t0 = savedFLDmyprotectsorigD ?: [:]
 							Map adjT2= t0?."${t1}" ? (Map)t0[t1] : [:]
 
-							String prevCheckSum = (String)null
+							String prevCheckSum; prevCheckSum = (String)null
 							t0 = savedFLDmyprotectsorig ?: [:]
 							if(t0?."${t1}") { prevCheckSum = (String)t0[t1] }
 
@@ -434,7 +437,7 @@ void parse(String description) {
 							if(t0?."${t1}") { adjT2S = t0[t1] }
 
 							ch=[]
-							Map at0 = [:]
+							Map at0; at0 = [:]
 							tchksum = (String)null
 							if(adjT1 && chgFound) {
 								chgFound = true
@@ -476,6 +479,7 @@ void parse(String description) {
 						theNewEvent.data.devices.cameras = [:]
 						Map camSave = [:]
 						Integer tlen = mystruct.cameras.size()
+						Integer i
 						for (i = 0; i < tlen; i++) {
 							String t1 = ((List)mystruct.cameras)[i]
 
@@ -483,11 +487,11 @@ void parse(String description) {
 							Map adjT1 = (Map)mydata.devices.cameras[t1]
 							if(!adjT1) { Logger("No Data in cameras ${i} ${t1}", "warn"); return }
 
-							def t0 = savedFLDmycamerasorigD ?: [:]
+							Map t0; t0 = savedFLDmycamerasorigD ?: [:]
 							def adjT2= t0?."${t1}" ? (Map)t0[t1] : [:]
 
 							t0 = savedFLDmycamerasorig ?: [:]
-							String prevCheckSum  = (String)null // = [:]   this is a checksum [:]
+							String prevCheckSum; prevCheckSum  = (String)null // = [:]   this is a checksum [:]
 							if(t0?."${t1}") { prevCheckSum = (String)t0[t1] }
 
 							def myisonline = adjT1?.is_online
@@ -647,7 +651,7 @@ void parse(String description) {
 */
 }
 
-String generateMD5_A(String s){
+static String generateMD5_A(String s){
 	MessageDigest.getInstance("MD5").digest(s.bytes).encodeHex().toString()
 }
 
@@ -656,7 +660,7 @@ List getChanges(mapA, mapB, String headstr, String objType=(String)null) {
 	def t1 = mapB
 	def left = t0
 	def right = t1
-	List itemsChgd = []
+	List itemsChgd; itemsChgd = []
 	//Logger("getChanges ${headstr} t0 ${t0}", "info")
 	//Logger("getChanges ${headstr} t1 ${t1}", "info")
 	if (left instanceof Map) {
@@ -690,7 +694,7 @@ List getChanges(mapA, mapB, String headstr, String objType=(String)null) {
 
 void sendRecent(Boolean forceNull=false) {
 	//t0 = state.lastEventData
-	Map t0 = lastEventDataFLD
+	Map t0; t0 = lastEventDataFLD
 	state.runInSlowActive = false
 	if(t0 || forceNull) {
 		if(forceNull && !(Boolean)state.sentForceNull) {
@@ -737,9 +741,9 @@ def eventStreamStatus(String msg) {
 }
 
 def getTimeZone() {
-	def tz
-	if (location?.timeZone) { tz = location?.timeZone }
-	else { tz = state.nestTimeZone ? TimeZone.getTimeZone(state.nestTimeZone) : null }
+	TimeZone tz
+	if (location?.timeZone) { tz = (TimeZone)location?.timeZone }
+	else { tz = state.nestTimeZone ? TimeZone.getTimeZone((String)state.nestTimeZone) : null }
 	if (!tz) { Logger("getTimeZone: Hub or Nest TimeZone is not found...", "warn") }
 	return tz
 }
@@ -749,7 +753,7 @@ void apiStatusEvent(String issueDesc) {
 	String newStat = issueDesc
 	state.apiStatus = newStat
 	if(isStateChange(device, "apiStatus", newStat.toString())) {
-		Logger("API Status is: (${newStat.toString().capitalize()}) | Previous State: (${curStat.toString().capitalize()})")
+		Logger("API Status is: (${newStat.toString().capitalize()}) | Previous State: (${curStat.capitalize()})")
 		sendEvent(name: "apiStatus", value: newStat, descriptionText: "API Status is: ${newStat}", displayed: true, isStateChange: true)
 	}
 }

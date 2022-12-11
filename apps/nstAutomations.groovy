@@ -5,7 +5,7 @@
 |    Contributors: Ben W. (@desertblade)                                                    |
 |    A few code methods are modeled from those in CoRE by Adrian Caramaliu                  |
 |                                                                                           |
-|    June 7, 2021                                                                          |
+|    December 10, 2022                                                                      |
 |    License Info: https://github.com/tonesto7/nest-manager/blob/master/app_license.txt     |
 |********************************************************************************************/
 
@@ -599,11 +599,12 @@ void initAutoApp(){
 
 	if(autoType == "schMot" && isSchMotConfigured()){
 		updateScheduleStateMap()
-		List schedList=getScheduleList()
-		Boolean timersActive=false
+		List<Integer> schedList=getScheduleList()
+		Boolean timersActive; timersActive=false
 		String sLbl
-		Integer cnt=1
-		Integer numact=0
+		Integer cnt, numact
+		cnt=1
+		numact=0
 		schedList?.each { Integer scd ->
 			sLbl="schMot_${scd}_"
 			stateRemove("sched${cnt}restrictions")
@@ -1007,8 +1008,8 @@ void subscribeToEvents(){
 				subscribe(settings.schMotTstat, "thermostatFanMode", automationGenericEvt)
 			}
 
-			List schedList=getScheduleList()
-			Integer cnt=1
+			List<Integer> schedList=getScheduleList()
+			Integer cnt; cnt=1
 			List prlist=[]
 			List mtlist=[]
 			schedList?.each { Integer scd ->
@@ -1309,20 +1310,21 @@ void storeLastAction(String actionDesc, String actionDt, String autoType){
 		Map newVal=["actionDesc":actionDesc, "dt":actionDt, "autoType":autoType]
 		state.lastAutoActionData=newVal
 
-		List list=state.detailActionHistory ?: []
+		List list
+		list=state.detailActionHistory ?: []
 		Integer listSize=30
-		if(list?.size() < listSize){
+		if(list.size() < listSize){
 			list.push(newVal)
 		}
-		else if(list?.size() > listSize){
-			Integer nSz=(list?.size()-listSize) + 1
-			List nList=list?.drop(nSz)
-			nList?.push(newVal)
+		else if(list.size() > listSize){
+			Integer nSz=(list.size()-listSize) + 1
+			List nList=list.drop(nSz)
+			nList.push(newVal)
 			list=nList
 		}
-		else if(list?.size() == listSize){
-			List nList=list?.drop(1)
-			nList?.push(newVal)
+		else if(list.size() == listSize){
+			List nList=list.drop(1)
+			nList.push(newVal)
 			list=nList
 		}
 		if(list){ state.detailActionHistory=list }
@@ -1627,7 +1629,7 @@ void automationMotionEvt(evt){
 		String sLbl
 
 		Integer mySched=getCurrentSchedule()
-		List schedList=getScheduleList()
+		List<Integer> schedList=getScheduleList()
 
 		for (Integer cnt in schedList){
 			sLbl="schMot_${cnt}_"
@@ -1717,7 +1719,8 @@ def remSenShowTempsPage(){
 	}
 }
 
-Boolean remSendoSetCool(Double chgval, Double onTemp, Double offTemp){
+Boolean remSendoSetCool(Double ichgval, Double onTemp, Double offTemp){
+	Double chgval; chgval=ichgval
 	def remSenTstat=settings.schMotTstat
 	def remSenTstatMir=settings.schMotTstatMir
 
@@ -1735,7 +1738,7 @@ Boolean remSendoSetCool(Double chgval, Double onTemp, Double offTemp){
 
 		if(chgval != curCoolSetpoint){
 			scheduleAutomationEval(70)
-			Double cHeat=null
+			Double cHeat; cHeat=null
 			if(hvacMode in [sAUTO]){
 				if(curHeatSetpoint >= (offTemp-tempChangeVal)){
 					cHeat=offTemp - tempChangeVal
@@ -1759,7 +1762,8 @@ Boolean remSendoSetCool(Double chgval, Double onTemp, Double offTemp){
 	return false
 }
 
-Boolean remSendoSetHeat(Double chgval, Double onTemp, Double offTemp){
+Boolean remSendoSetHeat(Double ichgval, Double onTemp, Double offTemp){
+	Double chgval; chgval=ichgval
 	def remSenTstat=settings.schMotTstat
 	def remSenTstatMir=settings.schMotTstatMir
 
@@ -1777,7 +1781,7 @@ Boolean remSendoSetHeat(Double chgval, Double onTemp, Double offTemp){
 
 		if(chgval != curHeatSetpoint){
 			scheduleAutomationEval(70)
-			Double cCool=null
+			Double cCool; cCool=null
 			if(hvacMode in [sAUTO]){
 				if(curCoolSetpoint <= (offTemp+tempChangeVal)){
 					cCool=offTemp + tempChangeVal
@@ -1818,7 +1822,7 @@ void remSenCheck(){
 
 		Long execTime=now()
 
-		String noGoDesc=sBLANK
+		String noGoDesc; noGoDesc=sBLANK
 		if( !(List)settings.remSensorDay || !remSenTstat){
 			noGoDesc += !(List)settings.remSensorDay ? "Missing Required Sensor Selections" : sBLANK
 			noGoDesc += !remSenTstat ? "Missing Required Thermostat device" : sBLANK
@@ -1870,15 +1874,16 @@ void remSenCheck(){
 			LogAction("remSenCheck: Threshold Temp: ${threshold} | Change Temp Increments: ${tempChangeVal}", sINFO, false)
 */
 
-			Boolean chg=false
+			Boolean chg; chg=false
 			Double chgval
 			if(hvacMode in [sCOOL,sAUTO]){
 				//Changes Cool Setpoints
 				if((String)settings.remSenRuleType in ["Cool", "Heat_Cool", "Heat_Cool_Circ"]){
 					Double onTemp=reqSenCoolSetPoint + threshold
 					Double offTemp=reqSenCoolSetPoint
-					Boolean turnOn=false
-					Boolean turnOff=false
+					Boolean turnOn, turnOff
+					turnOn=false
+					turnOff=false
 
 					LogTrace("Remote Sensor: COOL - (Sensor Temp: ${curSenTemp} - CoolSetpoint: ${reqSenCoolSetPoint})")
 					if(curSenTemp <= offTemp){
@@ -1936,8 +1941,9 @@ void remSenCheck(){
 				if((String)settings.remSenRuleType in ["Heat", "Heat_Cool", "Heat_Cool_Circ"]){
 					Double onTemp=reqSenHeatSetPoint - threshold
 					Double offTemp=reqSenHeatSetPoint
-					Boolean turnOn=false
-					Boolean turnOff=false
+					Boolean turnOn, turnOff
+					turnOn=false
+					turnOff=false
 
 					//LogAction("Remote Sensor: HEAT - (Sensor Temp: ${curSenTemp} - HeatSetpoint: ${reqSenHeatSetPoint})", sINFO, false)
 					if(curSenTemp <= onTemp){
@@ -2003,7 +2009,7 @@ void remSenCheck(){
 @SuppressWarnings('unused')
 List getRemSenTempsToList(){
 	Integer mySched=getCurrentSchedule()
-	List sensors=[]
+	List sensors; sensors=[]
 	if(mySched){
 		String sLbl="schMot_${mySched}_"
 		if((List)settings["${sLbl}remSensor"]){
@@ -2037,7 +2043,8 @@ Double getTstatSetpoint(tstat, String type){
 }
 
 Double getRemoteSenThreshold(){
-	Double threshold=settings.remSenTempDiffDegrees?.toDouble()
+	Double threshold
+	threshold=settings.remSenTempDiffDegrees?.toDouble()
 	Integer mySched=getCurrentSchedule()
 	if(mySched){
 		String sLbl="schMot_${mySched}_"
@@ -2081,7 +2088,7 @@ Double getRemoteSenTemp(){
 }
 
 Double fixTempSetting(temp){
-	Double newtemp=temp?.toDouble()
+	Double newtemp; newtemp=temp?.toDouble()
 	if(temp != null){
 		if(getTemperatureScale() == "C"){
 			if(newtemp > 35.0D){    // setting was done in F
@@ -2102,8 +2109,8 @@ def setRemoteSenTstat(val){
 }
 
 Double getRemSenCoolSetTemp(String curMode=sNULL, Boolean isEco=false, Boolean useCurrent=true){
-	Double coolTemp
-	String theMode= curMode
+	Double coolTemp; coolTemp=null
+	String theMode; theMode= curMode
 	if(!theMode){
 		def tstat=settings.schMotTstat
 		theMode=tstat ? tstat.currentThermostatMode.toString() : sNULL
@@ -2167,8 +2174,9 @@ Double getRemSenCoolSetTemp(String curMode=sNULL, Boolean isEco=false, Boolean u
 }
 
 Double getRemSenHeatSetTemp(String curMode=sNULL, Boolean isEco=false, Boolean useCurrent=true){
-	Double heatTemp
-	String theMode=curMode != sNULL ? curMode : sNULL
+	Double heatTemp; heatTemp=null
+	String theMode
+	theMode=curMode != sNULL ? curMode : sNULL
 	if(theMode == sNULL){
 		def tstat=settings.schMotTstat
 		theMode=tstat ? tstat.currentThermostatMode.toString() : sNULL
@@ -2252,7 +2260,7 @@ void disableOverrideTemps(){
 Boolean remSenTempUpdate(temp, String mode){
 	//LogAction("remSenTempUpdate(${temp}, ${mode})", sINFO, false)
 
-	Boolean res=false
+	Boolean res; res=false
 	if(getIsAutomationDisabled()){ return res }
 	switch(mode){
 		case sHEAT:
@@ -2289,7 +2297,7 @@ Map remSenRuleEnum(String type=sNULL){
 	Boolean hasFan=(Boolean)state.schMotTstatHasFan
 
 	//log.debug "remSenRuleEnum -- hasFan: $hasFan (${state.schMotTstatHasFan} | canCool: $canCool (${state.schMotTstatCanCool} | canHeat: $canHeat (${state.schMotTstatCanHeat}"
-	Map vals=[:]
+	Map vals; vals=[:]
 	if(type){
 		if(type == "fan"){
 			vals=["Circ":"Eco/Circulate(Fan)"]
@@ -2336,8 +2344,8 @@ Boolean isFanCircConfigured(){
 }
 
 String getFanSwitchDesc(Boolean showOpt=true){
-	String swDesc=sBLANK
-	Integer swCnt=0
+	String swDesc; swDesc=sBLANK
+	Integer swCnt; swCnt=0
 	String pName=fanCtrlPrefix()
 	if(showOpt){
 		swDesc += (settings."${pName}FanSwitches" && (settings."${pName}FanSwitchSpeedCtrl" || settings."${pName}FanSwitchTriggerType" || (List)settings."${pName}FanSwitchHvacModeFilter")) ? "Fan Switch Config:" : sBLANK
@@ -2371,7 +2379,7 @@ String getFanSwitchDesc(Boolean showOpt=true){
 }
 
 Boolean getFanSwitchesSpdChk(){
-	Integer devCnt=0
+	Integer devCnt; devCnt=0
 	String pName=fanCtrlPrefix()
 	if(settings."${pName}FanSwitches"){
 		settings."${pName}FanSwitches"?.each { sw ->
@@ -2397,22 +2405,23 @@ void fanCtrlCheck(){
 		String curMode=settings.schMotTstat ? settings.schMotTstat.currentThermostatMode.toString() : sNULL
 		Boolean modeEco= (curMode in [sECO])
 
-		Double reqHeatSetPoint
-		Double reqCoolSetPoint
+		Double reqHeatSetPoint; reqHeatSetPoint=null
+		Double reqCoolSetPoint; reqCoolSetPoint=null
 		if(!modeEco){
 			reqHeatSetPoint=getRemSenHeatSetTemp(curMode)
 			reqCoolSetPoint=getRemSenCoolSetTemp(curMode)
 		}
 
-		String lastMode=settings.schMotTstat ? settings.schMotTstat?.currentpreviousthermostatMode?.toString() : sNULL
+		String lastMode
+		lastMode=settings.schMotTstat ? settings.schMotTstat?.currentpreviousthermostatMode?.toString() : sNULL
 		if(!lastMode && modeEco && isRemSenConfigured()){
 			if( /* !lastMode && */ state.extTmpTstatOffRequested && state.extTmplastMode){
 				lastMode=state.extTmplastMode
 			}
 		}
 		if(lastMode){
-			if(!reqHeatSetpoint){ reqHeatSetPoint=getRemSenHeatSetTemp(lastMode, modeEco, false) }
-			if(!reqCoolSetpoint){ reqCoolSetPoint=getRemSenCoolSetTemp(lastMode, modeEco, false) }
+			if(!reqHeatSetPoint){ reqHeatSetPoint=getRemSenHeatSetTemp(lastMode, modeEco, false) }
+			if(!reqCoolSetPoint){ reqCoolSetPoint=getRemSenCoolSetTemp(lastMode, modeEco, false) }
 			if(isRemSenConfigured()){
 				if(reqHeatSetPoint == null){ reqHeatSetPoint=state.extTmpSavedHTemp }
 				if(reqCoolSetPoint == null){ reqCoolSetPoint=state.extTmpSavedCTemp }
@@ -2433,7 +2442,7 @@ void fanCtrlCheck(){
 		LogAction("fanCtrlCheck: Desired Temps - Heat: ${reqHeatSetPoint} | Cool: ${reqCoolSetPoint}", sINFO, false)
 		LogAction("fanCtrlCheck: Current Thermostat Sensor Temp: ${curTstatTemp} Temp Difference: (${tempDiff})", sINFO, false)
 
-		Boolean circWantsOn=null
+		Boolean circWantsOn; circWantsOn=null
 		if(isFanCircConfigured()){
 			Double adjust=(getTemperatureScale() == "C") ? 0.5D : 1.0D
 			Double threshold=!settings.fanCtrlTempDiffDegrees ? adjust : settings.fanCtrlTempDiffDegrees.toDouble()
@@ -2455,7 +2464,7 @@ void fanCtrlCheck(){
 */
 //			Map sTemp=getReqSetpointTemp(curTstatTemp, reqHeatSetPoint, reqCoolSetPoint)
 			String resultMode=(String)sTemp.type
-			Boolean can_Circ=false
+			Boolean can_Circ; can_Circ=false
 			if(
 				!(hvacMode in [sOFF]) && (
 					( hvacMode in [sCOOL] && schMotFanRuleType in ["Cool_Circ"]) ||
@@ -2495,7 +2504,7 @@ Map getReqSetpointTemp(curTemp, reqHeatSetPoint, reqCoolSetPoint){
 	Boolean canCool=state.schMotTstatCanCool
 	String hvacMode=tstat ? tstat.currentThermostatMode.toString() : sNULL
 	String operState=tstat ? tstat.currentThermostatOperatingState.toString() : sNULL
-	String opType=hvacMode
+	String opType; opType=hvacMode
 
 	if(hvacMode == sOFF){
 		return ["req":null, "type":sOFF]
@@ -2513,7 +2522,9 @@ Map getReqSetpointTemp(curTemp, reqHeatSetPoint, reqCoolSetPoint){
 	return ["req":temp, "type":opType]
 }
 
-def doFanOperation(Double tempDiff, Double curTstatTemp, Double curHeatSetpoint, Double curCoolSetpoint, Boolean circWantsOn){
+def doFanOperation(Double tempDiff, Double curTstatTemp, Double curHeatSetpoint, Double curCoolSetpoint, Boolean icircWantsOn){
+	Boolean circWantsOn
+	circWantsOn=icircWantsOn
 	String pName=fanCtrlPrefix()
 	try {
 		def tstat=settings.schMotTstat
@@ -2533,7 +2544,7 @@ def doFanOperation(Double tempDiff, Double curTstatTemp, Double curHeatSetpoint,
 		Boolean savedHaveRun=(Boolean)state.haveRunFan
 
 		//def wantFanOn=circWantsOn != null ? circWantsOn ? false
-		Boolean wantFanOn=false
+		Boolean wantFanOn; wantFanOn=false
 //	1:"Heating/Cooling", 2:"With Fan Only", 3:"Heating", 4:"Cooling"
 
 		List validOperModes
@@ -2573,9 +2584,10 @@ def doFanOperation(Double tempDiff, Double curTstatTemp, Double curHeatSetpoint,
 			circWantsOn=false  // force off of fans
 		}
 
-		Boolean allOff=true
+		Boolean allOff; allOff=true
 		settings."${pName}FanSwitches"?.each { sw ->
-			Boolean swOn=(sw?.currentSwitch?.toString() == sON)
+			Boolean swOn
+			swOn=(sw?.currentSwitch?.toString() == sON)
 			if(wantFanOn || circWantsOn){
 				if(!swOn && !savedHaveRun){
 					LogAction("doFanOperation: Fan Switch (${sw?.displayName}) is (${swOn ? "ON" : "OFF"}) | Turning '${sw}' Switch (ON)", sINFO, false)
@@ -2651,6 +2663,7 @@ Integer getFanCtrlFanOffDtSec(){ return !(String)state.fanCtrlFanOffDt ? 100000 
 def circulateFanControl(operType, Double curSenTemp, Double reqSetpointTemp, Double threshold, can_Circ){
 	String pName=fanCtrlPrefix()
 
+	Boolean theFanIsOn; theFanIsOn=null
 	def tstat=settings.schMotTstat
 	def tstatsMir=settings.schMotTstatMir
 
@@ -2662,12 +2675,14 @@ def circulateFanControl(operType, Double curSenTemp, Double reqSetpointTemp, Dou
 	String curTstatFanMode=tstat?.currentThermostatFanMode?.toString()
 	Boolean fanOn=(curTstatFanMode == sON || curTstatFanMode == "circulate")
 
-	Boolean returnToAuto=!can_Circ
+	Boolean returnToAuto
+	returnToAuto=!can_Circ
 	if(hvacMode in [sOFF]){ returnToAuto=true }
 
 	Long nn = now()
-	Long fanRunStart=(String)state.fanCtrlRunDt ? Date.parse("E MMM dd HH:mm:ss z yyyy", (String)state.fanCtrlRunDt).getTime() : nn
-	Long fanOff=(String)state.fanCtrlFanOffDt  ? Date.parse("E MMM dd HH:mm:ss z yyyy", (String)state.fanCtrlFanOffDt).getTime() : nn
+	Long fanRunStart, fanOff
+	fanRunStart=(String)state.fanCtrlRunDt ? Date.parse("E MMM dd HH:mm:ss z yyyy", (String)state.fanCtrlRunDt).getTime() : nn
+	fanOff=(String)state.fanCtrlFanOffDt  ? Date.parse("E MMM dd HH:mm:ss z yyyy", (String)state.fanCtrlFanOffDt).getTime() : nn
 	// Track approximate fan on / off times
 	if( !fanOn && fanRunStart > fanOff ){
 		state.fanCtrlFanOffDt=getDtNow()
@@ -2759,7 +2774,7 @@ def circulateFanControl(operType, Double curSenTemp, Double reqSetpointTemp, Dou
 
 Boolean getCirculateFanTempOk(Double senTemp, Double reqsetTemp, Double threshold, Boolean fanOn, String operType){
 
-	Boolean turnOn=false
+	Boolean turnOn; turnOn=false
 //	String tempScaleStr=tUnitStr()
 /*
 	Double adjust=(getTemperatureScale() == "C") ? 0.5 : 1.0
@@ -2805,13 +2820,14 @@ Boolean getCirculateFanTempOk(Double senTemp, Double reqsetTemp, Double threshol
 	//LogAction(" ┌ Final Result: (${strCapitalize(turnOn)})", sINFO, false)
 //	LogAction("getCirculateFanTempOk: ", sINFO, false)
 
-	String resultStr="getCirculateFanTempOk: The Temperature Difference is "
+	String resultStr
+	resultStr="getCirculateFanTempOk: The Temperature Difference is "
 	if(turnOn){
 		resultStr += " within "
 	}else{
 		resultStr += " Outside "
 	}
-	Boolean disp=false
+	Boolean disp; disp=false
 	resultStr += "of Threshold Limits | "
 	if(!turnOn && fanOn){
 		resultStr += "Turning Thermostat Fan OFF"
@@ -2842,8 +2858,8 @@ Boolean isHumCtrlConfigured(){
 String humCtrlSwitchDesc(Boolean showOpt=true){
 	if((List)settings.humCtrlSwitches){
 		Integer cCnt=((List)settings.humCtrlSwitches).size() ?: 0
-		String str=sBLANK
-		Integer cnt=0
+		String str; str=sBLANK
+		Integer cnt; cnt=0
 		str += "Switch Status:"
 		((List)settings.humCtrlSwitches).sort { it?.displayName }?.each { dev ->
 			cnt=cnt+1
@@ -2864,8 +2880,8 @@ String humCtrlSwitchDesc(Boolean showOpt=true){
 String humCtrlHumidityDesc(){
 	if((List)settings.humCtrlHumidity){
 		Integer cCnt=((List)settings.humCtrlHumidity).size() ?: 0
-		String str=sBLANK
-		Integer cnt=0
+		String str; str=sBLANK
+		Integer cnt; cnt=0
 		str += "Sensor Humidity (average): (${getDeviceVarAvg((List)settings.humCtrlHumidity, "currentHumidity")}%)"
 		((List)settings.humCtrlHumidity).sort { it?.displayName }?.each { dev ->
 			cnt=cnt+1
@@ -2879,7 +2895,7 @@ String humCtrlHumidityDesc(){
 }
 
 Double getHumCtrlTemperature(){
-	Double extTemp=0.0D
+	Double extTemp; extTemp=0.0D
 	if(!(Boolean)settings.humCtrlUseWeather && settings.humCtrlTempSensor){
 		extTemp=getDeviceTemp(settings.humCtrlTempSensor)
 	}else{
@@ -2892,7 +2908,7 @@ Double getHumCtrlTemperature(){
 }
 
 Integer getMaxHumidity(Double curExtT){
-	Double maxhum=15.0D
+	Double maxhum; maxhum=15.0D
 	Double curExtTemp = curExtT
 	if(curExtTemp != null){
 		if(curExtTemp >= adj_temp(40.0D)){
@@ -2944,7 +2960,7 @@ void humCtrlCheck(){
 		if(state.haveRunHumidifier == null){ state.haveRunHumidifier=false }
 		Boolean savedHaveRun=(Boolean)state.haveRunHumidifier
 
-		Boolean humOn=false
+		Boolean humOn; humOn=false
 
 		if(curHum < maxHum){
 			humOn=true
@@ -2953,7 +2969,7 @@ void humCtrlCheck(){
 //	1:"Heating/Cooling", 2:"With Fan Only", 3:"Heating", 4:"Cooling" 5:"All Operating Modes"
 
 		List validOperModes
-		Boolean validOperating=true
+		Boolean validOperating; validOperating=true
 		switch ( settings.humCtrlSwitchTriggerType?.toInteger() ){
 			case 1:
 				validOperModes=["heating", "cooling"]
@@ -2976,7 +2992,7 @@ void humCtrlCheck(){
 				break
 		}
 
-		Boolean validHvac=true
+		Boolean validHvac; validHvac=true
 		if( !( ("any" in (List)settings.humCtrlSwitchHvacModeFilter) || (hvacMode in (List)settings.humCtrlSwitchHvacModeFilter) ) ){
 			//LogAction("humCtrlCheck: Evaluating turn humidifier off; Thermostat Mode does not Match the required Mode", sINFO, false)
 			validHvac=false  // force off
@@ -3074,7 +3090,7 @@ void getExtConditions( doEvent=false ){
 			Long f_temp
 			if(getTemperatureScale() == "C"){
 				c_temp=temp0
-				f_temp=((c_temp * (9.0D / 5.0D)) + 32.0D)
+				f_temp=Math.round((c_temp * (9.0D / 5.0D)) + 32.0D)
 			}else{
 				f_temp=temp0.toLong()
 				c_temp=((f_temp - 32.0D) * (5.0D / 9.0D))
@@ -3084,7 +3100,7 @@ void getExtConditions( doEvent=false ){
 
 			c_temp=estimateDewPoint(hum0, c_temp)
 			if(state.curWeaTemp_c < c_temp){ c_temp=state.curWeaTemp_c }
-			f_temp=c_temp * 9.0D/5.0D + 32.0D
+			f_temp=Math.round(c_temp * 9.0D/5.0D + 32.0D)
 			state.curWeatherDewpointTemp_c=Math.round(c_temp.round(1) * 2.0D) / 2.0D
 			state.curWeatherDewpointTemp_f=Math.round(f_temp) as Integer
 		}
@@ -3107,7 +3123,7 @@ private static Double estimateDewPoint(Double rh,Double t){
 }
 
 Double getExtTmpTemperature(){
-	Double extTemp=0.0D
+	Double extTemp; extTemp=0.0D
 	if(!(Boolean)settings.extTmpUseWeather && settings.extTmpTempSensor){
 		extTemp=getDeviceTemp(settings.extTmpTempSensor)
 	}else{
@@ -3120,7 +3136,7 @@ Double getExtTmpTemperature(){
 }
 
 Double getExtTmpDewPoint(){
-	Double extDp=0.0D
+	Double extDp; extDp=0.0D
 	if((Boolean)settings.extTmpUseWeather && (state.curWeatherDewpointTemp_f || state.curWeatherDewpointTemp_c)){
 		if((String)getTemperatureScale() == "C"){ extDp=roundTemp(state.curWeatherDewpointTemp_c.toDouble()) }
 		else { extDp=roundTemp(state.curWeatherDewpointTemp_f.toDouble()) }
@@ -3132,15 +3148,16 @@ Double getExtTmpDewPoint(){
 Double getDesiredTemp(){
 	def extTmpTstat=settings.schMotTstat
 	String curMode=extTmpTstat ? extTmpTstat.currentThermostatMode?.toString() : sNULL
-	Boolean modeOff=(curMode in [sOFF])
-	Boolean modeEco=(curMode in [sECO])
-	Boolean modeCool=(curMode == sCOOL)
-	Boolean modeHeat=(curMode == sHEAT)
-	Boolean modeAuto=(curMode == sAUTO)
+	Boolean modeOff, modeEco, modeCool, modeHeat, modeAuto
+	modeOff=(curMode in [sOFF])
+	modeEco=(curMode in [sECO])
+	modeCool=(curMode == sCOOL)
+	modeHeat=(curMode == sHEAT)
+	modeAuto=(curMode == sAUTO)
 
-	Double desiredHeatTemp=getRemSenHeatSetTemp(curMode)
-	Double desiredCoolTemp=getRemSenCoolSetTemp(curMode)
-	String lastMode=extTmpTstat?.currentpreviousthermostatMode?.toString()
+	Double desiredHeatTemp; desiredHeatTemp=getRemSenHeatSetTemp(curMode)
+	Double desiredCoolTemp; desiredCoolTemp=getRemSenCoolSetTemp(curMode)
+	String lastMode; lastMode=extTmpTstat?.currentpreviousthermostatMode?.toString()
 	if(modeEco){
 		if( !lastMode && state.extTmpTstatOffRequested && state.extTmplastMode){
 			lastMode=state.extTmplastMode
@@ -3159,7 +3176,7 @@ Double getDesiredTemp(){
 		}
 	}
 
-	Double desiredTemp=0.0D
+	Double desiredTemp; desiredTemp=0.0D
 	if(!modeOff){
 		if(desiredHeatTemp && modeHeat)		{ desiredTemp=desiredHeatTemp }
 		else if(desiredCoolTemp && modeCool)	{ desiredTemp=desiredCoolTemp }
@@ -3194,24 +3211,26 @@ Boolean extTmpTempOk(Boolean disp=false, Boolean last=false){
 
 		String curMode=extTmpTstat ? extTmpTstat?.currentThermostatMode?.toString() : sNULL
 		Boolean modeOff=(curMode == sOFF)
-		Boolean modeCool=(curMode == sCOOL)
-		Boolean modeHeat=(curMode == sHEAT)
-		Boolean modeEco=(curMode == sECO)
-		Boolean modeAuto=(curMode == sAUTO)
+		Boolean modeCool, modeHeat, modeEco, modeAuto
+		modeCool=(curMode == sCOOL)
+		modeHeat=(curMode == sHEAT)
+		modeEco=(curMode == sECO)
+		modeAuto=(curMode == sAUTO)
 
 		Boolean canHeat=state.schMotTstatCanHeat
 		Boolean canCool=state.schMotTstatCanCool
 
 		//LogAction(meth+"Inside Temp: ${intTemp} | curMode: ${curMode} | modeOff: ${modeOff} | modeEco: ${modeEco} | modeAuto: ${modeAuto} || extTmpTstatOffRequested: ${state.extTmpTstatOffRequested}", sINFO, false)
 
-		Boolean retval=true
-		Boolean externalTempOk=true
-		Boolean internalTempOk=true
+		Boolean retval, externalTempOk, internalTempOk
+		retval=true
+		externalTempOk=true
+		internalTempOk=true
 
 		Boolean dpOk= curDp<dpLimit || !canCool
 		if(!dpOk){ retval=false }
 
-		String str=sBLANK
+		String str; str=sBLANK
 
 /*
 		Boolean modeEco=(curMode in [sECO])
@@ -3236,14 +3255,15 @@ Boolean extTmpTempOk(Boolean disp=false, Boolean last=false){
 			retval=false
 		}
 
-		Double desiredHeatTemp
-		Double desiredCoolTemp
+		Double desiredHeatTemp; desiredHeatTemp=null
+		Double desiredCoolTemp; desiredCoolTemp=null
 		if(modeAuto && retval){
 			desiredHeatTemp=getRemSenHeatSetTemp(curMode)
 			desiredCoolTemp=getRemSenCoolSetTemp(curMode)
 		}
 
-		String lastMode=extTmpTstat?.currentpreviousthermostatMode?.toString()
+		String lastMode
+		lastMode=extTmpTstat?.currentpreviousthermostatMode?.toString()
 		if(curMode == sECO){
 			if(!lastMode && state.extTmpTstatOffRequested && state.extTmplastMode){
 				lastMode=state.extTmplastMode
@@ -3275,7 +3295,7 @@ Boolean extTmpTempOk(Boolean disp=false, Boolean last=false){
 		}
 
 		Double tempDiff
-		Double desiredTemp
+		Double desiredTemp; desiredTemp=null
 		Double insideThresh
 
 		if(!modeAuto && retval){
@@ -3360,7 +3380,8 @@ void extTmpTempCheck(Boolean cTimeOut=false){
 
 			if(state."${pName}TimeoutOn" == null){ state."${pName}TimeoutOn"=false }
 			if(cTimeOut){ state."${pName}TimeoutOn"=true }
-			Boolean timeOut=state."${pName}TimeoutOn" ?: false
+			Boolean timeOut
+			timeOut=state."${pName}TimeoutOn" ?: false
 
 			String curMode=extTmpTstat ? extTmpTstat?.currentThermostatMode?.toString() : sNULL
 			Boolean modeOff=(curMode in [sOFF])
@@ -3424,7 +3445,7 @@ void extTmpTempCheck(Boolean cTimeOut=false){
 				String rmsg
 				if(okToRestore){
 					if(getExtTmpWhileOffDtSec() >= (getExtTmpOnDelayVal() - 5) || timeOut || !safetyOk){
-						String lastMode=sNULL
+						String lastMode; lastMode=sNULL
 						if(state.extTmpRestoreMode){
 							lastMode=extTmpTstat?.currentpreviousthermostatMode?.toString()
 							if(!lastMode){ lastMode=state.extTmpRestoreMode }
@@ -3447,7 +3468,7 @@ void extTmpTempCheck(Boolean cTimeOut=false){
 								}
 
 								rmsg=meth+"Restoring '${extTmpTstat?.label}' to '${strCapitalize(lastMode)}' mode: "
-								Boolean needAlarm=false
+								Boolean needAlarm; needAlarm=false
 								if(!safetyOk){
 									rmsg += "External Temp Safety Temps reached"
 									needAlarm=true
@@ -3490,7 +3511,7 @@ void extTmpTempCheck(Boolean cTimeOut=false){
 					}
 				}else{
 					if(modeInActive){
-						if(timeout || !safetyOk){
+						if(timeOut || !safetyOk){
 							LogAction(meth+"Timeout or Safety temps exceeded and Unable to restore settings okToRestore is false", sWARN, true)
 							state."${pName}TimeoutOn"=false
 						}
@@ -3621,7 +3642,7 @@ void extTmpDpOrTempEvt(String type){
 static String conWatPrefix(){ return "conWat" }
 
 String autoStateDesc(String autotype){
-	String str=sBLANK
+	String str; str=sBLANK
 	String t0=state."${autotype}RestoreMode"
 	Boolean t1=state."${autotype}TstatOffRequested"
 	str += "ECO State:"
@@ -3634,8 +3655,8 @@ String autoStateDesc(String autotype){
 String conWatContactDesc(){
 	if(settings.conWatContacts){
 		Integer cCnt=settings.conWatContacts?.size() ?: 0
-		String str=sBLANK
-		Integer cnt=0
+		String str; str=sBLANK
+		Integer cnt; cnt=0
 		str += "Contact Status:"
 		settings.conWatContacts.sort { it.displayName }?.each { dev ->
 			cnt=cnt+1
@@ -3684,7 +3705,8 @@ void conWatCheck(Boolean cTimeOut=false){
 
 			if(state."${pName}TimeoutOn" == null){ state."${pName}TimeoutOn"=false }
 			if(cTimeOut){ state."${pName}TimeoutOn"=true }
-			Boolean timeOut=state."${pName}TimeoutOn" ?: false
+			Boolean timeOut
+			timeOut=state."${pName}TimeoutOn" ?: false
 			String curMode=conWatTstat ? conWatTstat.currentThermostatMode.toString() : sNULL
 			Boolean modeEco=(curMode in [sECO])
 			//def curNestPres=getTstatPresence(conWatTstat)
@@ -3723,7 +3745,7 @@ void conWatCheck(Boolean cTimeOut=false){
 				String rmsg
 				if(okToRestore){
 					if(getConWatCloseDtSec() >= (getConWatOnDelayVal() - 5) || timeOut || !safetyOk){
-						String lastMode=sNULL
+						String lastMode; lastMode=sNULL
 						if(state.conWatRestoreMode){
 							lastMode=conWatTstat?.currentpreviousthermostatMode?.toString()
 							if(!lastMode){ lastMode=state.conWatRestoreMode }
@@ -3747,7 +3769,7 @@ void conWatCheck(Boolean cTimeOut=false){
 									}
 								}
 								rmsg="Restoring '${conWatTstat?.label}' to '${strCapitalize(lastMode)}' mode: "
-								Boolean needAlarm=false
+								Boolean needAlarm; needAlarm=false
 								if(!safetyOk){
 									rmsg += "Global Safety Values reached"
 									needAlarm=true
@@ -3873,7 +3895,7 @@ void conWatContactEvt(evt){
 		String curMode=conWatTstat ? conWatTstat?.currentThermostatMode?.toString() : sNULL
 		Boolean isModeOff=(curMode in [sECO])
 		Boolean conOpen=((String)evt?.value == "open")
-		Boolean canSched=false
+		Boolean canSched; canSched=false
 		Map timeVal
 		if(conOpen){
 			state.conWatOpenDt=getDtNow()
@@ -3906,8 +3928,8 @@ static String leakWatPrefix(){ return "leakWat" }
 String leakWatSensorsDesc(){
 	if((List)settings.leakWatSensors){
 		Integer cCnt=settings.leakWatSensors?.size() ?: 0
-		String str=sBLANK
-		Integer cnt=0
+		String str; str=sBLANK
+		Integer cnt; cnt=0
 		str += "Leak Sensors:"
 		((List)settings.leakWatSensors)?.sort { it?.displayName }?.each { dev ->
 			cnt=cnt+1
@@ -3972,7 +3994,7 @@ void leakWatCheck(){
 
 				if(okToRestore){
 					if(getLeakWatDryDtSec() >= (getLeakWatOnDelayVal() - 5) || !safetyOk){
-						String lastMode=sNULL
+						String lastMode; lastMode=sNULL
 						if(state.leakWatRestoreMode){ lastMode=(String)state.leakWatRestoreMode }
 						if(lastMode && (lastMode != curMode || !safetyOk)){
 							scheduleAutomationEval(70)
@@ -3988,7 +4010,7 @@ void leakWatCheck(){
 									}
 								}
 								rmsg="Restoring '${leakWatTstat?.label}' to '${strCapitalize(lastMode)}' mode: "
-								Boolean needAlarm=false
+								Boolean needAlarm; needAlarm=false
 								if(!safetyOk){
 									rmsg += "External Temp Safety Temps reached"
 									needAlarm=true
@@ -4094,7 +4116,7 @@ void leakWatSensorEvt(evt){
 		Boolean isModeOff=(curMode == sOFF)
 		Boolean leakWet=(evt?.value == "wet")
 
-		Boolean canSched=false
+		Boolean canSched; canSched=false
 		Map timeVal
 		if(leakWet){
 			canSched=true
@@ -4138,7 +4160,7 @@ def nestModePresPage(){
 				input "nModeAwayModes", sMODE, title: imgTitle(getAppImg("mode_away_icon.png"), inputTitleStr("Modes to Set Nest Location 'Away'")), multiple: true, submitOnChange: true, required: modeReq
 				if((List)settings.nModeHomeModes || (List)settings.nModeAwayModes){
 					//Logger("in part 11")
-					String str=sBLANK
+					String str; str=sBLANK
 					String locPres=getNestLocPres()
 					String locMode=location.mode.toString()
 					str += locMode || locPres ? "Location Mode Status:" : sBLANK
@@ -4219,8 +4241,8 @@ def nestModePresPage(){
 String nModePresenceDesc(){
 	if((List)settings.nModePresSensor){
 		Integer cCnt=((List)settings.nModePresSensor).size() ?: 0
-		String str=sBLANK
-		Integer cnt=0
+		String str; str=sBLANK
+		Integer cnt; cnt=0
 		str += "Presence Status:"
 		((List)settings.nModePresSensor).sort { it?.displayName }?.each { dev ->
 			cnt=cnt+1
@@ -4262,7 +4284,7 @@ void adjustCameras(Boolean on, String sendAutoType=sNULL){
 		List foundCams = (List)settings.nModeCamsSel ?: cams.collect { parent.getDevice(it) }  //parent.getCameraDevice(it) }
 		foundCams.each { dev ->
 			if(dev){
-				String didstr="On"
+				String didstr; didstr="On"
 				try {
 					if(on){
 						dev?.on()
@@ -4286,15 +4308,16 @@ void adjustCameras(Boolean on, String sendAutoType=sNULL){
 
 void adjustEco(Boolean on, String senderAutoType){
 	def tstats=parent.getSettingVal("thermostats")
-	def foundTstats
+	def foundTstats; foundTstats=null
 	if(tstats){
 		foundTstats=tstats.collect { dni ->
 		//foundTstats=tstats?.each { d1 ->
 			def d1=parent.getDevice(dni)
 			//def d1=parent.getThermostatDevice(dni)
 			if(d1){
-				String didstr=sNULL
-				String tstatAction=sNULL
+				String didstr, tstatAction
+				didstr=sNULL
+				tstatAction=sNULL
 				String curMode=d1.currentThermostatMode
 				String prevMode=d1.currentpreviousthermostatMode
 				//LogAction("adjustEco: CURMODE: ${curMode} ON: ${on} PREVMODE: ${prevMode}", sINFO, false)
@@ -4382,8 +4405,9 @@ void checkNestMode(){
 			String awayDesc=awayPresDesc+awaySwitDesc+modeDesc
 			String homeDesc=homePresDesc+homeSwitDesc+modeDesc
 
-			Boolean away=false
-			Boolean home=false
+			Boolean away, home
+			away=false
+			home=false
 
 // ERS figure out what state we are in
 			if((List)settings.nModePresSensor && !settings.nModeSwitch){
@@ -4427,8 +4451,9 @@ void checkNestMode(){
 			}
 			if(t2){ state.nModeTstatLocAway=true }
 
-			Boolean homeChgd=false
-			Boolean nestModeChgd=false
+			Boolean homeChgd, nestModeChgd
+			homeChgd=false
+			nestModeChgd=false
 			if((Boolean)state.nModeLastHome != home){
 				homeChgd=true
 				LogAction("NestMode Home Changed: ${homeChgd} Home: ${home}", sINFO, false)
@@ -4437,7 +4462,7 @@ void checkNestMode(){
 			String t5=getNestLocPres()
 			if((String)state.nModeLastNestMode != t5){
 				nestModeChgd=true
-				String t6=sINFO
+				String t6; t6=sINFO
 				if(!homeChgd){
 					t6=sWARN
 				}
@@ -4445,7 +4470,7 @@ void checkNestMode(){
 				state.nModeLastNestMode=t5
 			}
 
-			Boolean didsomething=false
+			Boolean didsomething; didsomething=false
 
 // Manage state changes
 			if(away && !nestModeAway){
@@ -4526,21 +4551,22 @@ private String tempRangeValues(){
 	return (getTemperatureScale() == "C") ? "10..32" : "50..90"
 }
 
-private static List timeComparisonOptionValues(){
+private static List<String> timeComparisonOptionValues(){
 	return ["custom time", "midnight", "sunrise", "noon", "sunset"]
 }
 
-private static List timeDayOfWeekOptions(){
+private static List<String> timeDayOfWeekOptions(){
 	return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 }
 
-private String getDayOfWeekName(Date date=null){
+private String getDayOfWeekName(Date idate=null){
+	Date date
+	date=idate
 	if(!date){
 		date=adjustTime()
 	}
 	Integer theDay=date.day
-	List alist=[]
-	alist=timeDayOfWeekOptions()
+	List<String> alist=timeDayOfWeekOptions()
 	//LogAction("theDay: $theDay date.date: ${date.day}")
 	return alist[theDay]
 }
@@ -4568,7 +4594,8 @@ private getDayOfWeekNumber(date=null){
 
 //adjusts the time to local timezone
 // TODO HE this may not be right
-private Date adjustTime(time=null){
+private Date adjustTime(itime=null){
+	def time; time=itime
 	if(time instanceof String){
 		//get UTC time
 		time=timeToday(time, location.timeZone).getTime()
@@ -4587,7 +4614,8 @@ private Date adjustTime(time=null){
 	return null
 }
 
-private String formatLocalTime(time, format="EEE, MMM d yyyy @ h:mm a z"){
+private String formatLocalTime(itime, format="EEE, MMM d yyyy @ h:mm a z"){
+	def time; time=itime
 	if(time instanceof Long){
 		time=new Date(time)
 	}
@@ -4598,12 +4626,13 @@ private String formatLocalTime(time, format="EEE, MMM d yyyy @ h:mm a z"){
 	if(!(time instanceof Date)){
 		return null
 	}
-	SimpleDateFormat formatter=new java.text.SimpleDateFormat(format)
-	formatter.setTimeZone(location.timeZone)
-	return (String)formatter.format(time)
+	SimpleDateFormat formatter=new SimpleDateFormat(format)
+	formatter.setTimeZone((TimeZone)location.timeZone)
+	return formatter.format(time)
 }
 
-private static convertDateToUnixTime(date){
+private static convertDateToUnixTime(idate){
+	def date; date=idate
 	if(!date){
 		return null
 	}
@@ -4632,13 +4661,13 @@ private static String formatHour(h){
 }
 
 private static Map cleanUpMap(Map map){
-	List washer=[]
+	List<String> washer; washer=[]
 	//find dirty laundry
 	for (item in map){
-		if(item.value == null) washer.push(item.key)
+		if(item.value == null) washer.push((String)item.key)
 	}
 	//clean it
-	for (item in washer){
+	for (String item in washer){
 		map.remove(item)
 	}
 	washer=null
@@ -4646,11 +4675,11 @@ private static Map cleanUpMap(Map map){
 }
 
 private String buildDeviceNameList(List devices, String suffix){
-	def cnt=1
-	String result=sBLANK
+	Integer cnt; cnt=1
+	String result; result=sBLANK
 	for (device in devices){
-		def label=getDeviceLabel(device)
-		result += "$label" + (cnt < devices.size() ? (cnt == devices.size() - 1 ? " $suffix " : ", ") : sBLANK)
+		String label=getDeviceLabel(device)
+		result += label + (cnt < devices.size() ? (cnt == devices.size() - 1 ? " $suffix " : ", ") : sBLANK)
 		cnt++
 	}
 	if(result == sBLANK){ result=sNULL }
@@ -4662,12 +4691,12 @@ private String getDeviceLabel(device){
 }
 
 Integer getCurrentSchedule(){
-	Boolean noSched=false
-	Integer mySched
+	Boolean noSched; noSched=false
+	Integer mySched; mySched=null
 
-	List schedList=getScheduleList()
-	String res1=sBLANK
-	Integer ccnt=1
+	List<Integer> schedList=getScheduleList()
+	String res1; res1=sBLANK
+	Integer ccnt; ccnt=1
 	for (Integer cnt in schedList){
 		res1=checkRestriction(cnt)
 		if(res1 == null){ break }
@@ -4684,7 +4713,7 @@ Integer getCurrentSchedule(){
 private String checkRestriction(Integer cnt){
 	//LogTrace("checkRestriction:( $cnt )")
 	String sLbl="schMot_${cnt}_"
-	String restriction=sBLANK
+	String restriction; restriction=sBLANK
 	Boolean act=settings["${sLbl}SchedActive"]
 	if(act){
 		Map apprestrict=(Map)state."sched${cnt}restrictions"
@@ -4745,11 +4774,11 @@ public Map getActiveScheduleState(){
 }
 
 Boolean getSchRestrictDoWOk(Integer cnt){
-	Map apprestrict=(Map)state.activeSchedData
-	Boolean result=true
+	Map<String,Map> apprestrict=(Map<String,Map>)state.activeSchedData
+	Boolean result; result=true
 	apprestrict?.each { sch ->
 		if(sch.key.toInteger() == cnt){
-			if(!(getDayOfWeekName() in sch.value.w)){
+			if(!(getDayOfWeekName() in (List)sch.value.w)){
 				result=false
 			}
 		}
@@ -4757,16 +4786,19 @@ Boolean getSchRestrictDoWOk(Integer cnt){
 	return result
 }
 
-Boolean checkTimeCondition(String timeFrom, String timeFromCustom, Integer timeFromOffset, String timeTo, String timeToCustom, Integer timeToOffset){
+Boolean checkTimeCondition(String timeFrom, String timeFromCustom, Integer itimeFromOffset, String timeTo, String timeToCustom, Integer itimeToOffset){
+	Integer timeFromOffset; timeFromOffset=itimeFromOffset
+	Integer timeToOffset; timeToOffset=itimeToOffset
 	Date time=adjustTime()
 	//convert to minutes since midnight
 	Integer tc=time.hours * 60 + time.minutes
-	Integer tf = 0
-	Integer tt = 0
-	Integer i=0
+	Integer tf,tt,i
+	tf = 0
+	tt = 0
+	i=0
 	while (i < 2){
-		Date t=null
-		Integer h=null
+		Date t; t=null
+		Integer h; h=null
 		Integer m
 		switch(i == 0 ? timeFrom : timeTo){
 			case "custom time":
@@ -4801,7 +4833,7 @@ Boolean checkTimeCondition(String timeFrom, String timeFromCustom, Integer timeF
 				tf=h * 60 + m + (Integer)cast(timeFromOffset, "number")
 				break
 			case 1:
-				tt=h * 60 + m + (Integer)cast(timeFromOffset, "number")
+				tt=h * 60 + m + (Integer)cast(timeToOffset, "number")
 				break
 		}
 		i += 1
@@ -4838,7 +4870,7 @@ private cast(value, String dataType){
 				if(value.toLowerCase() in trueStrings)
 					return (Integer) 1
 			}
-			Integer result=0
+			Integer result; result=0
 			try {
 				result=(Integer) value
 			} catch(ignored){
@@ -4854,7 +4886,7 @@ private cast(value, String dataType){
 				if(value.toLowerCase() in trueStrings)
 					return 1L
 			}
-			Long result=0L
+			Long result; result=0L
 			try {
 				result=(Long)value
 			} catch(ignored){
@@ -4869,7 +4901,7 @@ private cast(value, String dataType){
 				if(value.toLowerCase() in trueStrings)
 					return (float)1.0
 			}
-			def result=(float) 0
+			def result; result=(float) 0
 			try {
 				result=(float) value
 			} catch(ignored){
@@ -4893,32 +4925,32 @@ private cast(value, String dataType){
 @Field static Map svSunTFLD
 
 private void initSunriseAndSunset(){
-        Map t0=svSunTFLD
-        Long t=now()
-        if(t0!=null){
-                if(t<(Long)t0.nextM){
-                        //rtD.sunTimes=[:]+t0
-                }else{ t0=null; svSunTFLD=null }
+	Map t0; t0=svSunTFLD
+	Long t; t=now()
+    if(t0!=null){
+            if(t<(Long)t0.nextM){
+                //rtD.sunTimes=[:]+t0
+            }else{ t0=null; svSunTFLD=null }
+    }
+    if(t0==null){
+        Map sunTimes=app.getSunriseAndSunset()
+        if(sunTimes.sunrise==null){
+            log.warn 'Actual sunrise and sunset times are unavailable; please reset the location for your hub'
+            Long t1=timeToday('00:00', location.timeZone).getTime()
+            sunTimes.sunrise=new Date(Math.round(t1+7.0D*3600000.0D))
+            sunTimes.sunset=new Date(Math.round(t1+19.0D*3600000.0D))
+            t=0L
         }
-        if(t0==null){
-                Map sunTimes=app.getSunriseAndSunset()
-                if(sunTimes.sunrise==null){
-                        log.warn 'Actual sunrise and sunset times are unavailable; please reset the location for your hub'
-                        Long t1=timeToday('00:00', location.timeZone).getTime()
-                        sunTimes.sunrise=new Date(Math.round(t1+7.0D*3600000.0D))
-                        sunTimes.sunset=new Date(Math.round(t1+19.0D*3600000.0D))
-                        t=0L
-                }
-                t0=[
-                        s: sunTimes,
-                        updated: t,
-                        nextM: timeTodayAfter('23:59', '00:00', location.timeZone).getTime()
-                ]
-                if(t!=0L){
-                        svSunTFLD=t0
-                        if(eric())log.debug 'updating global sunrise'
-                }
+        t0=[
+            s: sunTimes,
+            updated: t,
+            nextM: timeTodayAfter('23:59', '00:00', location.timeZone).getTime()
+            ]
+        if(t!=0L){
+            svSunTFLD=t0
+            if(eric())log.debug 'updating global sunrise'
         }
+    }
 }
 
 //TODO is this expensive?
@@ -4986,8 +5018,9 @@ Boolean checkOnMotion(String sLbl, Integer mySched, Boolean motionOn){
 		Integer ontimedelay=(settings."${sLbl}MDelayValOn"?.toInteger() ?: 60) * 1000		// default to 60s
 		Integer offtimedelay=(settings."${sLbl}MDelayValOff"?.toInteger() ?: 30*60) * 1000	// default to 30 min
 
-		Long ontimeNum=lastActiveMotionDt + ontimedelay
-		Long offtimeNum=lastInactiveMotionDt + offtimedelay
+		Long ontimeNum, offtimeNum
+		ontimeNum=lastActiveMotionDt + ontimedelay
+		offtimeNum=lastInactiveMotionDt + offtimedelay
 
 		Long nowDt=now() // Date.parse("E MMM dd HH:mm:ss z yyyy", getDtNow()).getTime()
 		if(ontimeNum > offtimeNum){  // means motion is on now, so ensure offtime is in future
@@ -5006,7 +5039,7 @@ Boolean checkOnMotion(String sLbl, Integer mySched, Boolean motionOn){
 		String offtime=formatDt( new Date(offtimeNum) )
 
 		LogAction("checkOnMotion: [ActiveDt: (${state."${sLbl}MotionActiveDt"}) | OnTime: ($ontime) | InActiveDt: (${state."${sLbl}MotionInActiveDt"}) | OffTime: ($offtime)]", sINFO, false)
-		Boolean result=false
+		Boolean result; result=false
 		if(nowDt >= ontimeNum && nowDt <= offtimeNum){
 			result=true
 		}
@@ -5036,7 +5069,8 @@ void setTstatTempCheck(){
 		String pName=schMotPrefix()
 		String meth="setTstatTempCheck: | "
 
-		String curMode=tstat ? tstat?.currentThermostatMode?.toString() : sNULL
+		String curMode
+		curMode=tstat ? tstat?.currentThermostatMode?.toString() : sNULL
 
 		String lastMode=(String)state.schMotlastMode
 		Boolean samemode=lastMode == curMode
@@ -5067,7 +5101,7 @@ void setTstatTempCheck(){
 		if(noSched){
 			LogAction(meth+"Skipping check [No matching Schedule]", sINFO, false)
 		}else{
-			Boolean samemotion = true
+			Boolean samemotion; samemotion = true
 
 			if((Boolean)state."schedule${mySched}MotionEnabled") {
 				String sLbl = "schMot_${mySched}_"
@@ -5103,7 +5137,7 @@ void setTstatTempCheck(){
 
 			Boolean schedMatch= (samesched && samemotion)
 
-			String strv="Using "
+			String strv; strv="Using "
 			if(schedMatch){ strv=sBLANK }
 			if((Boolean)state."schedule${mySched}MotionEnabled") {
 				LogAction(meth + "${strv}Schedule ${mySched} (${previousSched}) use Motion settings: ${(Boolean) state."motion${mySched}UseMotionSettings"} | isBtwn: $isBtwn | previousBtwn: $previousBtwn | motionOn $motionOn", sDEBUG, false)
@@ -5114,7 +5148,8 @@ void setTstatTempCheck(){
 				Map hvacSettings=(Map)state."sched${mySched}restrictions"
 				Boolean useMotion=(Boolean)state."motion${mySched}UseMotionSettings"
 
-				String newHvacMode=(!useMotion ? hvacSettings?.hvacm : (hvacSettings?.mhvacm ?: hvacSettings?.hvacm))
+				String newHvacMode
+				newHvacMode=(!useMotion ? hvacSettings?.hvacm : (hvacSettings?.mhvacm ?: hvacSettings?.hvacm))
 				if(newHvacMode && (newHvacMode != curMode)){
 
 					if(newHvacMode == "rtnFromEco"){
@@ -5131,12 +5166,12 @@ void setTstatTempCheck(){
 
 					if(newHvacMode && (newHvacMode.toString() != curMode)){
 						if(setTstatMode(settings.schMotTstat, newHvacMode, pName)){
-							storeLastAction("Set ${tstat} Mode to ${strCapitalize(newHvacMode)}", getDtNow(), pName, tstat)
+							storeLastAction("Set ${tstat} Mode to ${strCapitalize(newHvacMode)}", getDtNow(), pName)
 							LogAction(meth+"Setting ${tstat} Thermostat Mode to (${strCapitalize(newHvacMode)})", sINFO, false)
 						}else{ LogAction(meth+"Error Setting ${tstat} Thermostat Mode to (${strCapitalize(newHvacMode)})", sWARN, true) }
 						if(tstatMir){
 							if(setMultipleTstatMode(tstatMir, newHvacMode, pName)){
-							LogAction(meth+"Mirroring (${newHvacMode}) to ${tstatMir}", sINFO, false)
+							    LogAction(meth+"Mirroring (${newHvacMode}) to ${tstatMir}", sINFO, false)
 							}
 						}
 					}
@@ -5155,9 +5190,10 @@ void setTstatTempCheck(){
 				Boolean isModeOff= (curMode in [sOFF, sECO])
 				String tstatHvacMode=curMode
 
-				Double heatTemp=null
-				Double coolTemp=null
-				Boolean needChg=false
+				Double heatTemp, coolTemp
+				heatTemp=null
+				coolTemp=null
+				Boolean needChg; needChg=false
 
 				if(!isModeOff && state.schMotTstatCanHeat){
 					Double oldHeat=getTstatSetpoint(tstat, sHEAT)
@@ -5228,7 +5264,7 @@ def schMotModePage(){
 				tStatPhys=tstat.currentNestType != "virtual"
 //Logger("in schmotModePage3")
 
-				String str=sBLANK
+				String str; str=sBLANK
 				Double reqSenHeatSetPoint=getRemSenHeatSetTemp()
 				Double reqSenCoolSetPoint=getRemSenCoolSetTemp()
 				Double curZoneTemp=getRemoteSenTemp()
@@ -5242,8 +5278,8 @@ def schMotModePage(){
 				str += tempSrcStr ? "Zone Status:\n• Temp Source:${tempSrcStr.length() > 15 ? "\n  └" : sBLANK} ${tempSrcStr}" : sBLANK
 				str += curZoneTemp ? "\n• Temperature: (${curZoneTemp}${tempScaleStr})" : sBLANK
 
-				String hstr=canHeat ? "H: ${reqSenHeatSetPoint}${tempScaleStr}" : sBLANK
-				String cstr=canHeat && canCool ? "/" : sBLANK
+				String hstr; hstr=canHeat ? "H: ${reqSenHeatSetPoint}${tempScaleStr}" : sBLANK
+				String cstr; cstr=canHeat && canCool ? "/" : sBLANK
 				cstr += canCool ? "C: ${reqSenCoolSetPoint}${tempScaleStr}" : sBLANK
 				str += "\n• Setpoints: (${hstr}${cstr})\n"
 
@@ -5327,11 +5363,11 @@ def schMotModePage(){
 			section("Fan Control:"){
 				if(tStatPhys || (Boolean)settings.schMotOperateFan){
 					String desc=sBLANK
-					String titStr=sBLANK
+					String titStr; titStr=sBLANK
 					if((Boolean)state.schMotTstatHasFan){ titStr += "Use HVAC Fan for Circulation\nor\n" }
 					titStr += "Run External Fan while HVAC is Operating"
 					input (name: "schMotOperateFan", type: sBOOL, title: imgTitle(getAppImg("fan_control_icon.png"), inputTitleStr("${titStr}?")), description: desc, required: false, defaultValue: false, submitOnChange: true)
-					String fanCtrlDescStr=sBLANK
+					String fanCtrlDescStr; fanCtrlDescStr=sBLANK
 					String t0=getFanSwitchDesc()
 					if((Boolean)settings.schMotOperateFan){
 						fanCtrlDescStr += t0 ? "${t0}" : sBLANK
@@ -5349,13 +5385,13 @@ def schMotModePage(){
 					String desc=sBLANK
 					input (name: "schMotRemoteSensor", type: sBOOL, title: imgTitle(getAppImg("remote_sensor_icon.png"), inputTitleStr("Use Alternate Temp Sensors to Control Zone temperature?")), description: desc, required: false, defaultValue: false, submitOnChange: true)
 					if((Boolean)settings.schMotRemoteSensor){
-						String remSenDescStr=sBLANK
+						String remSenDescStr; remSenDescStr=sBLANK
 						remSenDescStr += (String)settings.remSenRuleType ? "Rule-Type: ${getEnumValue(remSenRuleEnum("heatcool"), (String)settings.remSenRuleType)}" : sBLANK
 						remSenDescStr += settings.remSenTempDiffDegrees ? ("\n • Threshold: (${settings.remSenTempDiffDegrees}${tempScaleStr})") : sBLANK
 						remSenDescStr += settings.remSenTstatTempChgVal ? ("\n • Adjust Temp: (${settings.remSenTstatTempChgVal}${tempScaleStr})") : sBLANK
 
 						String hstr=remSenHeatTempsReq() ? "H: ${fixTempSetting(settings.remSenDayHeatTemp) ?: 0}${tempScaleStr}" : sBLANK
-						String cstr=remSenHeatTempsReq() && remSenCoolTempsReq() ? "/" : sBLANK
+						String cstr; cstr=remSenHeatTempsReq() && remSenCoolTempsReq() ? "/" : sBLANK
 						cstr += remSenCoolTempsReq() ? "C: ${fixTempSetting(settings.remSenDayCoolTemp) ?: 0}${tempScaleStr}" : sBLANK
 						remSenDescStr += ((List)settings.remSensorDay && (settings.remSenDayHeatTemp || settings.remSenDayCoolTemp)) ? "\n • Default Temps:\n   └ (${hstr}${cstr})" : sBLANK
 
@@ -5364,7 +5400,7 @@ def schMotModePage(){
 						remSenDescStr += (settings.vthermostat) ? "\n• Enabled" : sBLANK
 
 						//remote sensor/Day
-						String dayModeDesc=sBLANK
+						String dayModeDesc; dayModeDesc=sBLANK
 						dayModeDesc += (List)settings.remSensorDay ? "\n\nDefault Sensor${((List)settings.remSensorDay)?.size() > 1 ? "s" : sBLANK}:" : sBLANK
 //						Integer rCnt=((List)settings.remSensorDay)?.size()
 						((List)settings.remSensorDay)?.each { t ->
@@ -5394,7 +5430,7 @@ def schMotModePage(){
 					String desc=sBLANK
 					input (name: "schMotWaterOff", type: sBOOL, title: imgTitle(getAppImg("leak_icon.png"), inputTitleStr("Turn Off if Water Leak is detected?")), description: desc, required: false, defaultValue: false, submitOnChange: true)
 					if((Boolean)settings.schMotWaterOff){
-						String leakDesc=sBLANK
+						String leakDesc; leakDesc=sBLANK
 						String t0=leakWatSensorsDesc()
 						leakDesc += (settings.leakWatSensors && t0) ? t0 : sBLANK
 						leakDesc += settings.leakWatSensors ? '\n\n'+autoStateDesc("leakWat") : sBLANK
@@ -5418,7 +5454,7 @@ def schMotModePage(){
 					String desc=sBLANK
 					input (name: "schMotContactOff", type: sBOOL, title: imgTitle(getAppImg("open_window.png"), inputTitleStr("Set ECO if Door/Window Contact Open?")), description: desc, required: false, defaultValue: false, submitOnChange: true)
 					if((Boolean)settings.schMotContactOff){
-						String conDesc=sBLANK
+						String conDesc; conDesc=sBLANK
 						String t0=conWatContactDesc()
 						conDesc += (settings.conWatContacts && t0) ? t0 : sBLANK
 						conDesc += settings.conWatContacts ? '\n\n'+autoStateDesc("conWat") : sBLANK
@@ -5446,7 +5482,7 @@ def schMotModePage(){
 				String desc=sBLANK
 				input (name: "schMotHumidityControl", type: sBOOL, title: imgTitle(getAppImg("humidity_automation_icon.png"), inputTitleStr("Turn Humidifier On / Off?")), description: desc, required: false, defaultValue: false, submitOnChange: true)
 				if((Boolean)settings.schMotHumidityControl){
-					String humDesc=sBLANK
+					String humDesc; humDesc=sBLANK
 					humDesc += ((List)settings.humCtrlSwitches) ? humCtrlSwitchDesc() : sBLANK
 					humDesc += ((List)settings.humCtrlHumidity) ? "${(List)settings.humCtrlSwitches ? "\n\n" : sBLANK}${humCtrlHumidityDesc()}" : sBLANK
 					humDesc += ((Boolean)settings.humCtrlUseWeather || settings.humCtrlTempSensor) ? "\n\nSettings:" : sBLANK
@@ -5464,7 +5500,7 @@ def schMotModePage(){
 					String desc=sBLANK
 					input (name: "schMotExternalTempOff", type: sBOOL, title: imgTitle(getAppImg("external_temp_icon.png"), inputTitleStr("Set ECO if External Temp is near comfort settings")), description: desc, required: false, defaultValue: false, submitOnChange: true)
 					if((Boolean)settings.schMotExternalTempOff){
-						String extDesc=sBLANK
+						String extDesc; extDesc=sBLANK
 						extDesc += ((Boolean)settings.extTmpUseWeather || settings.extTmpTempSensor) ? autoStateDesc("extTmp")+'\n\n' : sBLANK
 						extDesc += ((Boolean)settings.extTmpUseWeather || settings.extTmpTempSensor) ? "Settings:" : sBLANK
 						extDesc += (!(Boolean)settings.extTmpUseWeather && settings.extTmpTempSensor) ? "\n • Sensor: (${getExtTmpTemperature()}${tempScaleStr})" : sBLANK
@@ -5504,7 +5540,7 @@ def schMotModePage(){
 }
 
 String getSchedLbl(Integer num){
-	String result=sBLANK
+	String result; result=sBLANK
 	if(num){
 		Map schData=(Map)state.activeSchedData
 		schData?.each { sch ->
@@ -5556,14 +5592,16 @@ def tstatConfigAutoPage6(params){ def t0=[:]; t0.configType="humCtrl"; return ts
 def tstatConfigAutoPage7(params){ def t0=[:]; t0.configType="extTmp"; return tstatConfigAutoPage( t0 ) }
 
 def tstatConfigAutoPage(params){
-	String configType=params?.configType
+	String configType
+	configType=params?.configType
 	if(params && params.configType){
 		//Logger("tstatConfigAutoPage got params")
 		state.tempTstatConfigPageData=params; configType=params.configType
 	}else{ configType=state.tempTstatConfigPageData?.configType }
-	String pName=sBLANK
-	String pTitle=sBLANK
-	String pDesc=sNULL
+	String pName, pTitle, pDesc
+	pName=sBLANK
+	pTitle=sBLANK
+	pDesc=sNULL
 	switch(configType){
 		case "tstatSch":
 			pName=schMotPrefix()
@@ -5625,7 +5663,7 @@ def tstatConfigAutoPage(params){
 
 			if(configType == "tstatSch"){
 				section(){
-					String str=sBLANK
+					String str; str=sBLANK
 					str += "• Temperature: (${tStatTemp})"
 					str += "\n• Setpoints: (H: ${canHeat ? "${tStatHeatSp}${tempScaleStr}" : "NA"} / C: ${canCool ? "${tStatCoolSp}${tempScaleStr}" : "NA"})"
 					paragraph imgTitle(getAppImg("info_icon2.png"), paraTitleStr("${tStatName}\nSchedules and Setpoints:")), state: sCOMPLT
@@ -5704,7 +5742,7 @@ def tstatConfigAutoPage(params){
 				}
 			}
 
-			Boolean cannotLock
+			Boolean cannotLock; cannotLock=null
 			Double defHeat
 			Double defCool
 			Double curTemp
@@ -5837,7 +5875,7 @@ def tstatConfigAutoPage(params){
 					Boolean req=!settings.conWatContacts
 					input name: "conWatContacts", type: "capability.contactSensor", title: imgTitle(getAppImg("contact_icon.png"), inputTitleStr("Which Contact(s)?")), multiple: true, submitOnChange: true, required: req
 					if(settings.conWatContacts){
-						String str=sBLANK
+						String str; str=sBLANK
 						str += settings.conWatContacts ? conWatContactDesc()+'\n' : sBLANK
 						paragraph imgTitle(getAppImg("i_inst"), paraTitleStr(str)), state: (str != sBLANK ? sCOMPLT : null)
 					}
@@ -5906,7 +5944,7 @@ TODO this does not work...
 						Boolean req= !(List)settings.humCtrlHumidity
 						input name: "humCtrlHumidity", type: "capability.relativeHumidityMeasurement", title: imgTitle(getAppImg("humidity_icon.png"), inputTitleStr("Which Humidity Sensor(s)?")), multiple: true, submitOnChange: true, required: req
 						if((List)settings.humCtrlHumidity){
-							String str=sBLANK
+							String str; str=sBLANK
 							str += "${humCtrlHumidityDesc()}\n"
 							paragraph imgTitle(getAppImg("i_inst"), paraTitleStr("${str}")), state: (str != sBLANK ? sCOMPLT : null)
 						}
@@ -5932,7 +5970,7 @@ TODO this does not work...
 							Boolean senReq= (!(Boolean)settings.humCtrlUseWeather && !settings.humCtrlTempSensor)
 							input "humCtrlTempSensor", "capability.temperatureMeasurement", title: imgTitle(getAppImg("i_t"), inputTitleStr("Select a Temp Sensor?")), submitOnChange: true, multiple: false, required: senReq
 							if(settings.humCtrlTempSensor){
-								String str=sBLANK
+								String str; str=sBLANK
 								str += "Sensor Status:"
 								str += "\n└ Temp: (${settings.humCtrlTempSensor?.currentTemperature}${tempScaleStr})"
 								paragraph imgTitle(getAppImg("i_inst"), paraTitleStr("${str}")), state: (str != sBLANK ? sCOMPLT : null)
@@ -5970,7 +6008,7 @@ TODO this does not work...
 						Boolean senReq=(!(Boolean)settings.extTmpUseWeather && !settings.extTmpTempSensor)
 						input "extTmpTempSensor", "capability.temperatureMeasurement", title: imgTitle(getAppImg("i_t"), inputTitleStr("Select a Temp Sensor?")), submitOnChange: true, multiple: false, required: senReq
 						if(settings.extTmpTempSensor){
-							String str=sBLANK
+							String str; str=sBLANK
 							str += "Sensor Status:"
 							str += "\n└ Temp: (${settings.extTmpTempSensor?.currentTemperature}${tempScaleStr})"
 							paragraph imgTitle(getAppImg("i_inst"), paraTitleStr(str)), state: (str != sBLANK ? sCOMPLT : null)
@@ -6020,7 +6058,7 @@ TODO this does not work...
 @SuppressWarnings('unused')
 def scheduleConfigPage(params){
 	//LogTrace("scheduleConfigPage ($params)")
-	def sData=params?.sData
+	def sData; sData=params?.sData
 	if(params && params.sData){
 		state.t_tempSData=params
 		sData=params.sData
@@ -6032,7 +6070,7 @@ def scheduleConfigPage(params){
 			def tstat=settings.schMotTstat
 			Boolean canHeat=(Boolean)state.schMotTstatCanHeat
 			Boolean canCool=(Boolean)state.schMotTstatCanCool
-			String str=sBLANK
+			String str; str=sBLANK
 			Double reqSenHeatSetPoint=getRemSenHeatSetTemp()
 			Double reqSenCoolSetPoint=getRemSenCoolSetTemp()
 			Double curZoneTemp=getRemoteSenTemp()
@@ -6041,8 +6079,9 @@ def scheduleConfigPage(params){
 			section(){
 				str += "Zone Status:\n• Temp Source: (${tempSrcStr})\n• Temperature: (${curZoneTemp}${tempScaleStr})"
 
-				String hstr=canHeat ? "H: ${reqSenHeatSetPoint}${tempScaleStr}" : sBLANK
-				String cstr=canHeat && canCool ? "/" : sBLANK
+				String hstr, cstr
+				hstr=canHeat ? "H: ${reqSenHeatSetPoint}${tempScaleStr}" : sBLANK
+				cstr=canHeat && canCool ? "/" : sBLANK
 				cstr += canCool ? "C: ${reqSenCoolSetPoint}${tempScaleStr}" : sBLANK
 				str += "\n• Setpoints: (${hstr}${cstr})\n"
 
@@ -6085,7 +6124,7 @@ def schMotSchedulePage8(params){ def t0=[:]; t0.sNum=8; return schMotSchedulePag
 
 def schMotSchedulePage(params){
 	//LogTrace("schMotSchedulePage($params)")
-	Integer sNum=params?.sNum
+	Integer sNum; sNum=params?.sNum
 	if(params?.sNum){
 		state.t_schedData=params
 		sNum=params?.sNum
@@ -6099,24 +6138,25 @@ def schMotSchedulePage(params){
 	}
 }
 
-List getScheduleList(){
+List<Integer> getScheduleList(){
 	def cnt=null // parent ? parent?.state?.appData?.settings.schedules?.count : null
-	Integer maxCnt=cnt ? cnt.toInteger() : 8
+	Integer maxCnt
+	maxCnt=cnt ? cnt.toInteger() : 8
 	maxCnt=Math.min( Math.max(maxCnt,4), 8)
 	if(maxCnt < state.scheduleList?.size()){
 		maxCnt=state.scheduleList?.size()
 		LogAction("A schedule size issue has occurred. The configured schedule size is smaller than the previous configuration restoring previous schedule size.", sWARN, true)
 	}
-	List list=1..maxCnt
+	List<Integer> list=1..maxCnt
 	state.scheduleList=list
 	return list
 }
 
 def showUpdateSchedule(Integer sNum=null, List hideStr=null){
 	updateScheduleStateMap()
-	List schedList=getScheduleList()  // setting in initAutoApp adjust # of schedule slots
+	List<Integer> schedList=getScheduleList()  // setting in initAutoApp adjust # of schedule slots
 	Boolean lact
-	Boolean act=true
+	Boolean act; act=true
 	String sLbl
 	schedList?.each { Integer scd ->
 		sLbl="schMot_${scd}_"
@@ -6250,13 +6290,13 @@ Map getScheduleDesc(Integer num=null){
 	Integer schNum
 	Map schData
 
-	def sData=schedData
+	def sData; sData=schedData
 	if(num){
 		sData=schedData?.find { it?.key?.toInteger() == num }
 	}
 	if(sData?.size()){
 		sData.sort().each { scd ->
-			String str=sBLANK
+			String str; str=sBLANK
 			schNum=scd.key
 			schData=scd.value
 			String sLbl="schMot_${schNum}_"
@@ -6278,8 +6318,8 @@ Map getScheduleDesc(Integer num=null){
 			//restriction section
 			str += isRestrict ? "\n ${isSw || isPres || isTemp ? "├" : "└"} Restrictions:" : sBLANK
 //			Integer mLen=schData?.m ? schData?.m?.toString().length() : 0
-			String mStr=sBLANK
-			Integer mdSize=1
+			String mStr; mStr=sBLANK
+			Integer mdSize; mdSize=1
 			schData?.m?.each { md ->
 				mStr += md ? "\n ${isSw || isPres || isTemp ? "│ ${(isDayRes || isTimeRes || isPres || isSw) ? "│" : "    "}" : "   "} ${mdSize < schData.m?.size() ? "├" : "└"} ${md.toString()}" : sBLANK
 				mdSize=mdSize+1
@@ -6362,9 +6402,10 @@ String getScheduleTimeDesc(String timeFrom, String timeFromCustom, Integer timeF
 	SimpleDateFormat tf=new SimpleDateFormat("h:mm a")
 		tf.setTimeZone(location?.timeZone)
 	String spl=showPreLine ? "│" : sBLANK
-	String timeToVal=sNULL
-	String timeFromVal=sNULL
-	Integer i=0
+	String timeToVal, timeFromVal
+	timeToVal=sNULL
+	timeFromVal=sNULL
+	Integer i; i=0
 	if(timeFrom && timeTo){
 		while (i < 2){
 			switch(i == 0 ? timeFrom : timeTo){
@@ -6401,7 +6442,7 @@ String getScheduleTimeDesc(String timeFrom, String timeFromCustom, Integer timeF
 		}
 	}
 	Boolean timeOk= ((timeFrom && (timeFromCustom || timeFromOffset) && timeTo && (timeToCustom || timeToOffset)) && checkTimeCondition(timeFrom, timeFromCustom, timeFromOffset, timeTo, timeToCustom, timeToOffset))
-	String out=sBLANK
+	String out; out=sBLANK
 	out += (timeFromVal && timeToVal) ? "Time:${timeOk ? " (${okSym()})" : " (${notOkSym()})"}\n │ ${spl}     ├ $timeFromVal\n │ ${spl}     ├   to\n │ ${spl}     └ $timeToVal" : sBLANK
 	return out
 }
@@ -6468,7 +6509,7 @@ Double roundTemp(Double temp){
 void updateScheduleStateMap(){
 	if(autoType == "schMot" && isSchMotConfigured()){
 		Map actSchedules=[:]
-		Integer numAct=0
+		Integer numAct; numAct=0
 		getScheduleList()?.each { Integer scdNum ->
 			String sLbl="schMot_${scdNum}_"
 			Map newScd
@@ -6553,7 +6594,8 @@ void schMotCheck(){
 	LogTrace("schMotCheck")
 	try {
 		if(getIsAutomationDisabled()){ return }
-		Integer schWaitVal=settings.schMotWaitVal?.toInteger() ?: 60
+		Integer schWaitVal
+		schWaitVal=settings.schMotWaitVal?.toInteger() ?: 60
 		if(schWaitVal > 120){ schWaitVal=120 }
 		Integer t0=getAutoRunSec()
 		if(t0 < schWaitVal){
@@ -6615,18 +6657,19 @@ void storeLastEventData(evt){
 		state.lastEventData=newVal
 		//log.debug "LastEvent: ${state.lastEventData}"
 
-		List list=state.detailEventHistory ?: []
+		List list
+		list=(List)state.detailEventHistory ?: []
 		Integer listSize=15
-		if(list?.size() < listSize){
+		if(list.size() < listSize){
 			list.push(newVal)
 		}
-		else if(list?.size() > listSize){
-			Integer nSz=(list?.size()-listSize) + 1
+		else if(list.size() > listSize){
+			Integer nSz=(list.size()-listSize) + 1
 			List nList=list?.drop(nSz)
 			nList.push(newVal)
 			list=nList
 		}
-		else if(list?.size() == listSize){
+		else if(list.size() == listSize){
 			List nList=list?.drop(1)
 			nList?.push(newVal)
 			list=nList
@@ -6643,13 +6686,15 @@ void storeExecutionHistory(val, String method=sNULL){
 		}
 		if(method in ["watchDogCheck", "checkNestMode", "schMotCheck"]){
 			state.autoExecMS=val ?: null
-			def list=state.evalExecutionHistory ?: []
+			List list
+			list=(List)state.evalExecutionHistory ?: []
 			Integer listSize=20
 			list=addToList(val, list, listSize)
 			if(list){ state.evalExecutionHistory=list }
 		}
 		if(!(method in ["watchDogCheck", "checkNestMode"])){
-			def list=state.detailExecutionHistory ?: []
+			List list
+			list=(List)state.detailExecutionHistory ?: []
 			Integer listSize=30
 			list=addToList([val, method, getDtNow()], list, listSize)
 			if(list){ state.detailExecutionHistory=list }
@@ -6660,7 +6705,8 @@ void storeExecutionHistory(val, String method=sNULL){
 //	}
 }
 
-static List addToList(val, List list, Integer listSize){
+static List addToList(val, List ilist, Integer listSize){
+	List list; list=ilist
 	if(list?.size() < listSize){
 		list.push(val)
 	}else if(list?.size() > listSize){
@@ -6737,7 +6783,7 @@ def setNotificationPage5(params){
 }
 
 def setNotificationPage(params){
-	String pName=params?.pName
+	String pName; pName=params?.pName
 	Boolean allowSpeech
 	Boolean allowAlarm
 	Boolean showSched
@@ -6752,7 +6798,7 @@ def setNotificationPage(params){
 		section(sBLANK){
 		//section("Notification Preferences:"){
 			input "${pName}NotifOn", sBOOL, title: imgTitle(getAppImg("i_not"), inputTitleStr("Enable Notifications?")), description: (!settings["${pName}NotifOn"] ? "Enable Text, Voice, or Alarm Notifications" : sBLANK), required: false, defaultValue: false, submitOnChange: true
-			Boolean fixSettings=false
+			Boolean fixSettings; fixSettings=false
 			if((Boolean)settings["${pName}NotifOn"]){
 //				section("Use NST Manager Settings:"){
 					input "${pName}UseMgrNotif", sBOOL, title: imgTitle(getAppImg("notification_icon2.png"), inputTitleStr("Use Manager Settings?")), defaultValue: true, submitOnChange: true, required: false
@@ -7018,7 +7064,7 @@ def voiceNotifString(phrase, pName){
 
 String getNotifConfigDesc(String pName){
 	//LogTrace("getNotifConfigDesc pName: $pName")
-	String str=sBLANK
+	String str; str=sBLANK
 	if(settings."${pName}NotifOn"){
 		// str += "Notification Status:"
 		// if(!getRecipientDesc(pName)){
@@ -7081,7 +7127,7 @@ def getVoiceNotifConfigDesc(pName){
 */
 
 String getAlarmNotifConfigDesc(String pName){
-	String str=sBLANK
+	String str; str=sBLANK
 	if(settings."${pName}NotifOn" && settings["${pName}AllowAlarmNotif"]){
 		def alarms=getInputToStringDesc((List)settings["${pName}AlarmDevices"], true)
 		str += alarms ? "\n • Alarm Devices:${alarms.size() > 1 ? "\n" : sBLANK}${alarms}" : sBLANK
@@ -7090,7 +7136,7 @@ String getAlarmNotifConfigDesc(String pName){
 }
 
 String getAlertNotifConfigDesc(String pName){
-	String str=sBLANK
+	String str; str=sBLANK
 //TODO not sure we do all these
 	if(settings."${pName}NotifOn" && (settings["${pName}_Alert_1_Delay"] || settings["${pName}_Alert_2_Delay"]) && (settings["${pName}AllowSpeechNotif"] || settings["${pName}AllowAlarmNotif"])){
 		str += settings["${pName}_Alert_1_Delay"] ? "\nAlert (1) Status:\n  • Delay: (${getEnumValue(longTimeSecEnum(), settings["${pName}_Alert_1_Delay"])})" : sBLANK
@@ -7110,8 +7156,8 @@ String getAlertNotifConfigDesc(String pName){
 }
 
 static String getInputToStringDesc(List inpt, Boolean addSpace=false){
-	Integer cnt=0
-	String str=sBLANK
+	Integer cnt; cnt=0
+	String str; str=sBLANK
 	if(inpt){
 		inpt.sort().each { item ->
 			cnt=cnt+1
@@ -7181,7 +7227,7 @@ def setDayModeTimePage5(params){
 }
 
 def setDayModeTimePage(params){
-	String pName=params?.pName
+	String pName; pName=params?.pName
 	if(params?.pName){
 		state.t_setDayData=params
 	}else{
@@ -7216,7 +7262,7 @@ String getDayModeTimeDesc(String pName){
 	Boolean inverted=settings."${pName}DmtInvert" ?: null
 	List swOnInput=(List)settings."${pName}rstrctSWOn"
 	List swOffInput=(List)settings."${pName}rstrctSWOff"
-	String str=sBLANK
+	String str; str=sBLANK
 	String days=getInputToStringDesc(dayInput)
 	String modes=getInputToStringDesc(modeInput)
 	String swOn=getInputToStringDesc(swOnInput)
@@ -7232,8 +7278,8 @@ String getDayModeTimeDesc(String pName){
 }
 
 String getRestSwitch(List swlist){
-	String swDesc=sBLANK
-	Integer swCnt=0
+	String swDesc; swDesc=sBLANK
+	Integer swCnt; swCnt=0
 	Integer rmSwCnt=swlist?.size() ?: 0
 	swlist?.sort { it?.displayName }?.each { sw ->
 		swCnt=swCnt+1
@@ -7266,7 +7312,7 @@ Boolean autoScheduleOk(String autoType){
 		dayOk= (!(List) settings."${autoType}Days" || ((inDay && !inverted) || (!inDay && inverted)))
 
 		//scheduleTimeOk
-		Boolean timeOk=true
+		Boolean timeOk; timeOk=true
 		if(settings."${autoType}StartTime" && settings."${autoType}StopTime"){
 			Date st1=timeToday(settings."${autoType}StartTime", getTimeZone())
 			Date end1=timeToday(settings."${autoType}StopTime", getTimeZone())
@@ -7275,8 +7321,8 @@ Boolean autoScheduleOk(String autoType){
 			timeOk=(inTime && !inverted) || (!inTime && inverted)
 		}
 
-		Boolean soFarOk=modeOk && dayOk && timeOk
-		Boolean swOk=true
+		Boolean soFarOk; soFarOk=modeOk && dayOk && timeOk
+		Boolean swOk; swOk=true
 		if(soFarOk && (List)settings."${autoType}rstrctSWOn"){
 			for(sw in (List)settings["${autoType}rstrctSWOn"]){
 				if(sw.currentValue(sSWIT) != sON){
@@ -7465,8 +7511,8 @@ def alarmEvtSchedCleanup(String autoType){
 
 Boolean sendEventAlarmAction(Integer evtNum, String autoType){
 	LogAction("sendEventAlarmAction evtNum: $evtNum autoType: $autoType", sINFO, false)
+	Boolean resval; resval=false
 	try {
-		Boolean resval=false
 		Boolean allowNotif=settings."${autoType}NotifOn" ? true : false
 		Boolean allowAlarm=allowNotif && settings."${autoType}AllowAlarmNotif"
 		def aDev=settings["${autoType}AlarmDevices"]
@@ -7615,7 +7661,7 @@ Boolean checkThermostatDupe(tstatOne, tstatTwo){
 }
 
 static Boolean checkModeDuplication(modeOne, modeTwo){
-	Boolean result=false
+	Boolean result; result=false
 	if(modeOne && modeTwo){
 		modeOne?.each { dm ->
 			if(dm in modeTwo){
@@ -7632,7 +7678,7 @@ private List getDeviceSupportedCommands(dev){
 
 Boolean checkFanSpeedSupport(dev){
 	List req=["setSpeed"]
-	Integer devCnt=0
+	Integer devCnt; devCnt=0
 	List devData=getDeviceSupportedCommands(dev)
 	devData.each { cmd ->
 		if(cmd.name in req){ devCnt=devCnt+1 }
@@ -7660,8 +7706,9 @@ void getTstatCapabilities(tstat, String autoType, Boolean dyn=false){
 }
 
 Map getSafetyTemps(tstat, Boolean usedefault=true){
-	Double minTemp=tstat?.currentSafetyTempMin?.doubleValue
-	Double maxTemp=tstat?.currentSafetyTempMax?.doubleValue
+	Double minTemp, maxTemp
+	minTemp=tstat?.currentSafetyTempMin?.doubleValue
+	maxTemp=tstat?.currentSafetyTempMax?.doubleValue
 	if(minTemp == 0.0D){
 		if(usedefault){ minTemp=(getTemperatureScale() == "C") ? 7.0D : 45.0D }
 		else { minTemp=null }
@@ -7674,7 +7721,8 @@ Map getSafetyTemps(tstat, Boolean usedefault=true){
 }
 
 Double getComfortDewpoint(tstat, Boolean usedefault=true){
-	Double maxDew=tstat?.currentComfortDewpointMax?.doubleValue
+	Double maxDew
+	maxDew=tstat?.currentComfortDewpointMax?.doubleValue
 	maxDew=maxDew ?: 0.0D
 	if(maxDew == 0.0D){
 		if(usedefault){
@@ -7788,13 +7836,15 @@ Boolean isSomebodyHome(List sensors){
 }
 
 String getTstatPresence(tstat){
-	String pres="not present"
+	String pres
+	pres="not present"
 	if(tstat){ pres=tstat?.currentPresence }
 	return pres
 }
 
 Boolean setTstatMode(tstat, String mode, String autoType=sNULL){
-	Boolean result=false
+	Boolean result
+	result=false
 	if(mode && tstat){
 		String curMode=tstat?.currentThermostatMode?.toString()
 		if(curMode != mode){
@@ -7825,7 +7875,8 @@ Boolean setTstatMode(tstat, String mode, String autoType=sNULL){
 }
 
 Boolean setMultipleTstatMode(tstats, String mode, String autoType=sNULL){
-	Boolean result=false
+	Boolean result
+	result=false
 	if(tstats && mode){
 		tstats?.each { ts ->
 			Boolean retval
@@ -7852,16 +7903,17 @@ Boolean setMultipleTstatMode(tstats, String mode, String autoType=sNULL){
 }
 
 Boolean setTstatAutoTemps(tstat, Double coolSetpoint, Double heatSetpoint, String pName, mir=null){
-	Boolean retVal=false
-	String setStr="No thermostat device"
+	Boolean retVal; retVal=false
+	String setStr; setStr="No thermostat device"
 	Boolean heatFirst
-	Boolean setHeat
-	Boolean setCool
-	String hvacMode="unknown"
-	Double reqCool=null
-	Double reqHeat=null
-	Double curCoolSetpoint=null
-	Double curHeatSetpoint=null
+	Boolean setHeat; setHeat=null
+	Boolean setCool; setCool=null
+	String hvacMode; hvacMode="unknown"
+	Double reqCool, reqHeat, curCoolSetpoint, curHeatSetpoint
+	reqCool=null
+	reqHeat=null
+	curCoolSetpoint=null
+	curHeatSetpoint=null
 	String tempScaleStr=tUnitStr()
 
 	if(tstat){
@@ -7916,7 +7968,7 @@ Boolean setTstatAutoTemps(tstat, Double coolSetpoint, Double heatSetpoint, Strin
 			setStr += "heatSetpoint: (${reqHeat}${tempScaleStr}) "
 			if(reqHeat != curHeatSetpoint){
 				tstat?.setHeatingSetpoint(reqHeat)
-				storeLastAction("Set ${tstat} Heat Setpoint ${reqHeat}${tempScaleStr}", getDtNow(), pName, tstat)
+				storeLastAction("Set ${tstat} Heat Setpoint ${reqHeat}${tempScaleStr}".toString(), getDtNow(), pName)
 				if(mir){ mir*.setHeatingSetpoint(reqHeat) }
 			}
 		}
@@ -7924,7 +7976,8 @@ Boolean setTstatAutoTemps(tstat, Double coolSetpoint, Double heatSetpoint, Strin
 			setStr += "coolSetpoint: (${reqCool}${tempScaleStr}) "
 			if(reqCool != curCoolSetpoint){
 				tstat?.setCoolingSetpoint(reqCool)
-				storeLastAction("Set ${tstat} Cool Setpoint ${reqCool}", getDtNow(), pName, tstat)
+				storeLastAction("Set ${tstat} Cool Setpoint ${reqCool}".toString(), getDtNow(), pName)
+
 				if(mir){ mir*.setCoolingSetpoint(reqCool) }
 			}
 		}
@@ -7932,7 +7985,7 @@ Boolean setTstatAutoTemps(tstat, Double coolSetpoint, Double heatSetpoint, Strin
 			setStr += "heatSetpoint: (${reqHeat}${tempScaleStr})"
 			if(reqHeat != curHeatSetpoint){
 				tstat?.setHeatingSetpoint(reqHeat)
-				storeLastAction("Set ${tstat} Heat Setpoint ${reqHeat}${tempScaleStr}", getDtNow(), pName, tstat)
+				storeLastAction("Set ${tstat} Heat Setpoint ${reqHeat}${tempScaleStr}".toString(), getDtNow(), pName)
 				if(mir){ mir*.setHeatingSetpoint(reqHeat) }
 			}
 		}
@@ -8036,7 +8089,7 @@ static Map alarmActionsEnum(){
 }
 
 static def getEnumValue(Map enumName, inputName){
-	def result="unknown"
+	def result; result="unknown"
 	List resultList=[]
 	Boolean inputIsList= getObjType(inputName) == "List"
 	if(enumName){
@@ -8092,7 +8145,7 @@ String getChildAppVer(appName){ return appName?.appVersion() ? "v${appName?.appV
 
 //Returns app State Info
 Integer getStateSize(){
-	String resultJson=new groovy.json.JsonOutput().toJson(state)
+	String resultJson= JsonOutput.toJson((Map)state)
 	return resultJson?.length()
 }
 Integer getStateSizePerc()		{ return (Integer) ((stateSize / 100000)*100).toDouble().round(0) }
@@ -8124,9 +8177,9 @@ static String getObjType(obj){
 
 //def getShowHelp(){ return state.showHelp == false ? false : true }
 
-def getTimeZone(){
-	def tz=null
-	if(location?.timeZone){ tz=location?.timeZone }
+TimeZone getTimeZone(){
+	TimeZone tz; tz=null
+	if(location?.timeZone){ tz=(TimeZone)location.timeZone }
 	//else { tz=getNestTimeZone() ? TimeZone.getTimeZone(getNestTimeZone()) : null }
 	if(!tz){ LogAction("getTimeZone: Hub or Nest TimeZone not found", sWARN, true) }
 	return tz
@@ -8184,7 +8237,7 @@ Long GetTimeDiffSeconds(String strtDate, String stpDate=sNULL, String methName=s
 		String stopVal=stpDate ? stpDate.toString() : formatDt(now)
 		Long start=Date.parse("E MMM dd HH:mm:ss z yyyy", strtDate).getTime()
 		Long stop=Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
-		Long diff=(stop - start) / 1000L
+		Long diff=Math.round((stop - start) / 1000L)
 		LogTrace("[GetTimeDiffSeconds] Results for '$methName': ($diff seconds)")
 		return diff
 	}else{ return null }
@@ -8200,9 +8253,9 @@ Boolean daysOk(days){
 */
 String time2Str(String time){
 	if(time){
-		Date t=timeToday(time, getTimeZone())
-		SimpleDateFormat f=new java.text.SimpleDateFormat("h:mm a")
-		f.setTimeZone(getTimeZone() ?: timeZone(time))
+		Date t=(Date)timeToday(time, getTimeZone())
+		SimpleDateFormat f=new SimpleDateFormat("h:mm a")
+		f.setTimeZone(getTimeZone() ?: TimeZone.getDefault()) //timeZone(time))
 		return (String)f.format(t)
 	}
 	return sNULL
@@ -8295,7 +8348,7 @@ def toQueryString(Map m){
 |									LOGGING AND Diagnostic										|
 *************************************************************************************************/
 
-static String lastN(String input, n){
+static String lastN(String input, Integer n){
 	return n > input?.size() ? input : input[-n..-1]
 	//return n > input?.size() ? input : n ? input[-n..-1] : ''
 }
@@ -8323,7 +8376,7 @@ void LogAction(String msg, String type=sDEBUG, Boolean showAlways=false, String 
 
 void Logger(String msg, String type=sDEBUG, String logSrc=sNULL, Boolean noSTlogger=false){
 	if(msg && type){
-		String labelstr=sBLANK
+		String labelstr; labelstr=sBLANK
 		if((Boolean)state.dbgAppndName == null){
 			Boolean tval=parent ? parent.getSettingVal("dbgAppndName") : settings.dbgAppndName
 			state.dbgAppndName=(tval || tval == null)
